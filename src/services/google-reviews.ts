@@ -184,7 +184,7 @@ export class GoogleReviewsService {
             rating: review.rating,
             text: review.text,
             date: new Date(review.time * 1000).toISOString().split('T')[0],
-            helpful: review.rating * 2, // Simuloidaan helpful-laskenta
+            helpful: 0, // Will be populated if available from API response
             language: 'fi',
             source: 'Google',
             demographics: await this.extractDemographics(
