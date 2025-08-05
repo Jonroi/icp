@@ -295,6 +295,13 @@ export function CompetitorAnalyzer({
           {/* Competitor Input */}
           <div className='space-y-4'>
             <Label>Add Competitors to Analyze</Label>
+            <div className='bg-blue-50 border border-blue-200 rounded-md p-3 mb-4'>
+              <p className='text-sm text-blue-800'>
+                💡 <strong>Huomio:</strong> LLM voi generoida osoite-ehdotuksia
+                automaattisesti, mutta tarkista aina että linkit ovat oikeita
+                ennen analyysiä.
+              </p>
+            </div>
             {competitors.map((competitor, index) => (
               <Card key={index} className='p-4 space-y-3'>
                 <div className='flex items-center justify-between'>
@@ -337,6 +344,9 @@ export function CompetitorAnalyzer({
                         updateCompetitor(index, 'website', e.target.value)
                       }
                     />
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Tarkista linkki ennen analyysiä
+                    </p>
                   </div>
                   <div>
                     <Label>Social Media</Label>
@@ -347,6 +357,9 @@ export function CompetitorAnalyzer({
                         updateCompetitor(index, 'social', e.target.value)
                       }
                     />
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Tarkista linkki ennen analyysiä
+                    </p>
                   </div>
                 </div>
               </Card>
