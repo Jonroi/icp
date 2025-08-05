@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,29 +10,23 @@ import {
   Download,
   Search,
   Eye,
+  Save,
+  Upload,
+  Trash2,
 } from 'lucide-react';
-// import { AIService } from '@/services/ai';
+import { AIService } from '@/services/ai';
+import type { CompetitorAnalysis } from '@/services/ai';
 
 interface CompetitorAnalyzerProps {
   onCompetitorDataCollected: (competitors: unknown[]) => void;
 }
 
-interface CompetitorAnalysis {
+interface CompetitorAnalysisResult {
   name: string;
   website: string;
   social: string;
   websiteContent: string;
-  analysis: {
-    targetAudience: string[];
-    painPoints: string[];
-    valueProposition: string;
-    pricingStrategy: string;
-    marketingChannels: string[];
-    strengths: string[];
-    weaknesses: string[];
-    opportunities: string[];
-    threats: string[];
-  };
+  analysis: CompetitorAnalysis;
 }
 
 export function CompetitorAnalyzer({
@@ -41,12 +35,14 @@ export function CompetitorAnalyzer({
   const [competitors, setCompetitors] = useState<
     Array<{ name: string; website: string; social: string }>
   >([{ name: '', website: '', social: '' }]);
-  const [analysis, setAnalysis] = useState<CompetitorAnalysis[]>([]);
+  const [analysis, setAnalysis] = useState<CompetitorAnalysisResult[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedCompetitor, setSelectedCompetitor] =
-    useState<CompetitorAnalysis | null>(null);
+    useState<CompetitorAnalysisResult | null>(null);
+  const [savedCompetitors, setSavedCompetitors] = useState<string[]>([]);
+  const [showLoadMenu, setShowLoadMenu] = useState(false);
 
-  // const aiService = new AIService(apiKey || '');
+  const aiService = new AIService();
 
   const addCompetitor = () => {
     setCompetitors([...competitors, { name: '', website: '', social: '' }]);
@@ -69,59 +65,29 @@ export function CompetitorAnalyzer({
     try {
       const validCompetitors = competitors.filter((c) => c.name && c.website);
 
-             // Simuloidaan kilpailija-analyysi
-       const mockAnalysis: CompetitorAnalysis[] = validCompetitors.map(
-         (comp) => ({
+      // Käytä AI-palvelua analysoimaan kilpailijat
+      const analysisPromises = validCompetitors.map(async (comp) => {
+        // Hae sivuston sisältö
+        const websiteContent = await aiService.scrapeWebsite(comp.website);
+
+        // Luo analyysi AI:lla
+        const analysis = await aiService.generateCompetitorAnalysis(
+          comp,
+          websiteContent,
+        );
+
+        return {
           name: comp.name,
           website: comp.website,
           social: comp.social,
-          websiteContent: `Simulated content from ${comp.website}`,
-          analysis: {
-            targetAudience: [
-              'Tech-savvy professionals aged 25-40',
-              'Small to medium businesses',
-              'Marketing managers and directors',
-            ],
-            painPoints: [
-              'Limited budget for marketing tools',
-              'Time constraints in campaign management',
-              'Difficulty measuring ROI',
-            ],
-            valueProposition:
-              'AI-powered marketing automation that saves time and increases conversions',
-            pricingStrategy: 'Freemium model with premium tiers',
-            marketingChannels: [
-              'LinkedIn',
-              'Google Ads',
-              'Content Marketing',
-              'Email',
-            ],
-            strengths: [
-              'Strong brand recognition',
-              'Comprehensive feature set',
-              'Good customer support',
-            ],
-            weaknesses: [
-              'High pricing for small businesses',
-              'Complex onboarding process',
-              'Limited customization options',
-            ],
-            opportunities: [
-              'Growing demand for AI tools',
-              'Expansion to new markets',
-              'Partnership opportunities',
-            ],
-            threats: [
-              'New competitors entering market',
-              'Economic downturn affecting budgets',
-              'Regulatory changes',
-            ],
-          },
-        }),
-      );
+          websiteContent: websiteContent,
+          analysis: analysis,
+        };
+      });
 
-      setAnalysis(mockAnalysis);
-      onCompetitorDataCollected(mockAnalysis);
+      const analysisResults = await Promise.all(analysisPromises);
+      setAnalysis(analysisResults);
+      onCompetitorDataCollected(analysisResults);
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -142,13 +108,187 @@ export function CompetitorAnalyzer({
     URL.revokeObjectURL(url);
   };
 
+  // Load saved competitors list on component mount
+  useEffect(() => {
+    loadSavedCompetitorsList();
+  }, []);
+
+  // Close load menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showLoadMenu) {
+        const target = event.target as Element;
+        if (!target.closest('.relative')) {
+          setShowLoadMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showLoadMenu]);
+
+  const loadSavedCompetitorsList = () => {
+    const saved = Object.keys(localStorage)
+      .filter((key) => key.startsWith('competitor-'))
+      .map((key) => key.replace('competitor-', ''));
+    setSavedCompetitors(saved);
+  };
+
+  const saveCompetitor = (competitorData: CompetitorAnalysisResult) => {
+    const key = `competitor-${competitorData.name}`;
+    const dataToSave = {
+      ...competitorData,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(key, JSON.stringify(dataToSave));
+    loadSavedCompetitorsList();
+    alert(`Kilpailija "${competitorData.name}" tallennettu onnistuneesti!`);
+  };
+
+  const saveCompetitorInput = (competitor: {
+    name: string;
+    website: string;
+    social: string;
+  }) => {
+    if (!competitor.name.trim()) {
+      alert('Kilpailijan nimi on pakollinen tallentamiseen!');
+      return;
+    }
+
+    const key = `competitor-${competitor.name}`;
+    const dataToSave = {
+      name: competitor.name,
+      website: competitor.website,
+      social: competitor.social,
+      websiteContent: '',
+      analysis: null,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(key, JSON.stringify(dataToSave));
+    loadSavedCompetitorsList();
+    alert(
+      `Kilpailijan perustiedot "${competitor.name}" tallennettu onnistuneesti!`,
+    );
+  };
+
+  const loadCompetitor = (competitorName: string) => {
+    const key = `competitor-${competitorName}`;
+    const savedData = localStorage.getItem(key);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+
+        // Check if competitor already exists in current list
+        const existingIndex = competitors.findIndex(
+          (c) => c.name === competitorName,
+        );
+        const existingAnalysisIndex = analysis.findIndex(
+          (a) => a.name === competitorName,
+        );
+
+        if (existingIndex !== -1) {
+          // Update existing competitor
+          const newCompetitors = [...competitors];
+          newCompetitors[existingIndex] = {
+            name: parsed.name,
+            website: parsed.website,
+            social: parsed.social,
+          };
+          setCompetitors(newCompetitors);
+        } else {
+          // Add as new competitor
+          setCompetitors([
+            ...competitors,
+            {
+              name: parsed.name,
+              website: parsed.website,
+              social: parsed.social,
+            },
+          ]);
+        }
+
+        if (parsed.analysis && existingAnalysisIndex !== -1) {
+          // Update existing analysis
+          const newAnalysis = [...analysis];
+          newAnalysis[existingAnalysisIndex] = parsed;
+          setAnalysis(newAnalysis);
+        } else if (parsed.analysis) {
+          // Add as new analysis
+          setAnalysis([...analysis, parsed]);
+        }
+
+        const analysisStatus = parsed.analysis
+          ? 'analyysi mukaan lukien'
+          : 'perustiedot';
+        alert(
+          `Kilpailija "${competitorName}" ladattu onnistuneesti (${analysisStatus})!`,
+        );
+        setShowLoadMenu(false);
+      } catch (error) {
+        console.error('Error loading competitor:', error);
+        alert('Virhe ladattaessa kilpailijaa.');
+      }
+    }
+  };
+
+  const deleteCompetitor = (competitorName: string) => {
+    const key = `competitor-${competitorName}`;
+    localStorage.removeItem(key);
+    loadSavedCompetitorsList();
+    alert(`Kilpailija "${competitorName}" poistettu!`);
+  };
+
   return (
     <div className='space-y-6'>
       <Card>
         <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Target className='h-5 w-5' />
-            Competitor Analyzer
+          <CardTitle className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <Target className='h-5 w-5' />
+              Competitor Analyzer
+            </div>
+            <div className='relative'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setShowLoadMenu(!showLoadMenu)}>
+                <Upload className='h-4 w-4 mr-2' />
+                Lataa tallennetut ({savedCompetitors.length})
+              </Button>
+
+              {showLoadMenu && savedCompetitors.length > 0 && (
+                <Card className='absolute right-0 top-12 z-10 w-80 max-h-60 overflow-y-auto'>
+                  <CardContent className='p-3'>
+                    <div className='space-y-2'>
+                      {savedCompetitors.map((name) => (
+                        <div
+                          key={name}
+                          className='flex items-center justify-between p-2 border rounded'>
+                          <span className='text-sm font-medium'>{name}</span>
+                          <div className='flex gap-1'>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() => loadCompetitor(name)}>
+                              <Upload className='h-3 w-3' />
+                            </Button>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() => deleteCompetitor(name)}>
+                              <Trash2 className='h-3 w-3' />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className='space-y-4'>
@@ -159,14 +299,23 @@ export function CompetitorAnalyzer({
               <Card key={index} className='p-4 space-y-3'>
                 <div className='flex items-center justify-between'>
                   <h4 className='font-medium'>Competitor {index + 1}</h4>
-                  {competitors.length > 1 && (
+                  <div className='flex gap-2'>
+                    {competitors.length > 1 && (
+                      <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => removeCompetitor(index)}>
+                        Remove
+                      </Button>
+                    )}
                     <Button
-                      variant='ghost'
+                      variant='default'
                       size='sm'
-                      onClick={() => removeCompetitor(index)}>
-                      Remove
+                      onClick={() => saveCompetitorInput(competitor)}>
+                      <Save className='h-4 w-4 mr-1' />
+                      Tallenna
                     </Button>
-                  )}
+                  </div>
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
                   <div>
@@ -233,7 +382,7 @@ export function CompetitorAnalyzer({
               </div>
               <Button variant='outline' size='sm' onClick={exportAnalysis}>
                 <Download className='h-4 w-4 mr-2' />
-                Export
+                Export All
               </Button>
             </CardTitle>
           </CardHeader>
@@ -247,12 +396,21 @@ export function CompetitorAnalyzer({
                       {comp.website}
                     </p>
                   </div>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    onClick={() => setSelectedCompetitor(comp)}>
-                    <Eye className='h-4 w-4' />
-                  </Button>
+                  <div className='flex gap-2'>
+                    <Button
+                      variant='default'
+                      size='sm'
+                      onClick={() => saveCompetitor(comp)}>
+                      <Save className='h-4 w-4 mr-1' />
+                      Tallenna
+                    </Button>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      onClick={() => setSelectedCompetitor(comp)}>
+                      <Eye className='h-4 w-4' />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>

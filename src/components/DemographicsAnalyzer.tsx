@@ -45,7 +45,7 @@ export function DemographicsAnalyzer({
     if (reviews.length > 0) {
       analyzeDemographics();
     }
-  }, [reviews]);
+  }, [reviews, analyzeDemographics]);
 
   const analyzeDemographics = useCallback(async () => {
     setIsAnalyzing(true);
