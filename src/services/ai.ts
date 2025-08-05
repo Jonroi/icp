@@ -55,7 +55,7 @@ export class AIService {
   private ollamaUrl: string;
 
   constructor(apiKey?: string) {
-    this.useLocalLLM = !apiKey || apiKey === 'mock';
+    this.useLocalLLM = !apiKey;
     this.ollamaUrl = 'http://localhost:11434/api/generate';
   }
 
@@ -80,14 +80,16 @@ export class AIService {
 
   // Analysoi asiakasarvostelut
   async analyzeReviews(reviews: CustomerReview[]): Promise<string> {
-    if (reviews.length === 0) return '';
+    if (reviews.length === 0) return 'No reviews to analyze';
 
     const reviewTexts = reviews.map((r) => r.text).join('\n');
 
     if (this.useLocalLLM) {
       return this.analyzeWithOllama(reviewTexts);
     } else {
-      return this.analyzeWithMock(reviewTexts);
+      throw new Error(
+        'No AI service available. Please provide an API key or set up Ollama.',
+      );
     }
   }
 
@@ -113,41 +115,6 @@ Anna vastaus suomeksi ja ole ytimekäs.`;
     }
   }
 
-  // Analysoi mock-datalla
-  private async analyzeWithMock(text: string): Promise<string> {
-    const positiveWords = [
-      'hyvä',
-      'erinomainen',
-      'loistava',
-      'suosittelen',
-      'tyytyväinen',
-    ];
-    const negativeWords = ['huono', 'huonoa', 'pettymys', 'ongelma', 'virhe'];
-
-    const textLower = text.toLowerCase();
-    const positiveCount = positiveWords.filter((word) =>
-      textLower.includes(word),
-    ).length;
-    const negativeCount = negativeWords.filter((word) =>
-      textLower.includes(word),
-    ).length;
-
-    return `Mock-analyysi:
-    
-Positiivisia sanoja: ${positiveCount}
-Negatiivisia sanoja: ${negativeCount}
-Sentiment: ${
-      positiveCount > negativeCount
-        ? 'Positiivinen'
-        : negativeCount > positiveCount
-        ? 'Negatiivinen'
-        : 'Neutraali'
-    }
-
-Alkuperäiset arvostelut:
-${text}`;
-  }
-
   // Luo ICP-profiileja
   async generateICPs(
     competitors: CompetitorData[],
@@ -161,7 +128,9 @@ ${text}`;
         additionalContext,
       );
     } else {
-      return this.generateMockICPs();
+      throw new Error(
+        'No AI service available. Please provide an API key or set up Ollama.',
+      );
     }
   }
 
@@ -214,11 +183,11 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
         return Array.isArray(icps) ? icps : [icps];
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        return this.generateMockICPs();
+        throw new Error('Failed to parse ICP data from AI response');
       }
     } catch (error) {
       console.error('Ollama ICP generation error:', error);
-      return this.generateMockICPs();
+      throw error;
     }
   }
 
@@ -233,7 +202,9 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
         websiteContent,
       );
     } else {
-      return this.generateMockCompetitorAnalysis();
+      throw new Error(
+        'No AI service available. Please provide an API key or set up Ollama.',
+      );
     }
   }
 
@@ -278,135 +249,11 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
         return analysis;
       } catch (parseError) {
         console.error('JSON parse error:', parseError);
-        return this.generateMockCompetitorAnalysis();
+        throw new Error('Failed to parse competitor analysis from AI response');
       }
     } catch (error) {
       console.error('Ollama competitor analysis error:', error);
-      return this.generateMockCompetitorAnalysis();
+      throw error;
     }
-  }
-
-  // Luo mock kilpailija-analyysi
-  private generateMockCompetitorAnalysis(): CompetitorAnalysis {
-    return {
-      targetAudience: [
-        'Tech-savvy professionals aged 25-40',
-        'Small to medium businesses',
-        'Marketing managers and directors',
-      ],
-      painPoints: [
-        'Limited budget for marketing tools',
-        'Time constraints in campaign management',
-        'Difficulty measuring ROI',
-      ],
-      valueProposition:
-        'AI-powered marketing automation that saves time and increases conversions',
-      pricingStrategy: 'Freemium model with premium tiers',
-      marketingChannels: [
-        'LinkedIn',
-        'Google Ads',
-        'Content Marketing',
-        'Email',
-      ],
-      strengths: [
-        'Strong brand recognition',
-        'Comprehensive feature set',
-        'Good customer support',
-      ],
-      weaknesses: [
-        'High pricing for small businesses',
-        'Complex onboarding process',
-        'Limited customization options',
-      ],
-      opportunities: [
-        'Growing demand for AI tools',
-        'Expansion to new markets',
-        'Partnership opportunities',
-      ],
-      threats: [
-        'New competitors entering market',
-        'Economic downturn affecting budgets',
-        'Regulatory changes',
-      ],
-    };
-  }
-
-  // Luo mock ICP:t
-  generateMockICPs(): ICP[] {
-    return [
-      {
-        name: 'Tech-savvy Startup Founder',
-        description:
-          'Nuori startup-perustaja, joka etsii tehokkaita markkinointityökaluja',
-        demographics: {
-          age: '25-35',
-          gender: 'Sekä miehet että naiset',
-          location: 'Helsinki, Espoo, Vantaa',
-          income: '€50,000-100,000',
-          education: 'Korkeakoulututkinto',
-        },
-        psychographics: {
-          interests: ['Teknologia', 'Yrittäjyys', 'Innovaatio'],
-          values: ['Tehokkuus', 'Skalautuvuus', 'Laatu'],
-          lifestyle: 'Kiireinen, teknologiaorientoitunut',
-          painPoints: [
-            'Ajan puute',
-            'Rajoitettu budjetti',
-            'Monimutkaiset työkalut',
-          ],
-        },
-        behavior: {
-          onlineHabits: ['Sosiaalinen media', 'LinkedIn', 'Tech-blogit'],
-          purchasingBehavior: 'Tutkii huolellisesti, vertailee vaihtoehtoja',
-          brandPreferences: ['Apple', 'Slack', 'Notion'],
-        },
-        goals: [
-          'Kasvattaa liiketoimintaa',
-          'Parantaa markkinointitehokkuutta',
-          'Säästää aikaa',
-        ],
-        challenges: [
-          'Rajoitettu markkinointibudjetti',
-          'Kilpailu',
-          'Ajan puute',
-        ],
-        preferredChannels: ['LinkedIn', 'Email', 'Content Marketing'],
-      },
-      {
-        name: 'Marketing Manager',
-        description:
-          'Kokemusmarkkinointipäällikkö, joka haluaa parantaa kampanjoiden tehokkuutta',
-        demographics: {
-          age: '30-45',
-          gender: 'Sekä miehet että naiset',
-          location: 'Suurkaupungit',
-          income: '€60,000-120,000',
-          education: 'Korkeakoulututkinto',
-        },
-        psychographics: {
-          interests: ['Markkinointi', 'Analytiikka', 'Strategia'],
-          values: ['Tulokset', 'Data', 'Kokemus'],
-          lifestyle: 'Ammattimainen, tuloksista kiinnostunut',
-          painPoints: ['ROI-mittaaminen', 'Budjetin hallinta', 'Ajan puute'],
-        },
-        behavior: {
-          onlineHabits: ['LinkedIn', 'Marketing-blogit', 'Analytics-työkalut'],
-          purchasingBehavior: 'Tutkii dataa, haluaa ROI:n',
-          brandPreferences: ['Google Analytics', 'HubSpot', 'Mailchimp'],
-        },
-        goals: [
-          'Parantaa kampanjoiden ROI:ta',
-          'Automatisoida prosesseja',
-          'Kasvattaa konversioita',
-        ],
-        challenges: ['Budjetin rajoitukset', 'Kilpailu', 'Teknologian muutos'],
-        preferredChannels: [
-          'LinkedIn',
-          'Email',
-          'Content Marketing',
-          'Google Ads',
-        ],
-      },
-    ];
   }
 }

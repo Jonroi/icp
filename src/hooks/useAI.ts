@@ -7,23 +7,38 @@ export function useAI(apiKey?: string) {
   const [error, setError] = useState<string | null>(null);
   const [generatedICPs, setGeneratedICPs] = useState<ICP[]>([]);
 
-  const generateICPs = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const generateICPs = useCallback(
+    async (
+      competitors: CompetitorData[],
+      reviews: CustomerReview[],
+      additionalContext: string = '',
+    ) => {
+      if (!apiKey) {
+        setError('API key is required for ICP generation');
+        return;
+      }
 
-    try {
-      // For now, use mock data for testing
-      // TODO: Replace with actual AI call when API key is available
-      const aiService = new AIService(apiKey || 'mock');
-      const icps = aiService.generateMockICPs();
+      setIsLoading(true);
+      setError(null);
 
-      setGeneratedICPs(icps);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate ICPs');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiKey]);
+      try {
+        const aiService = new AIService(apiKey);
+        const icps = await aiService.generateICPs(
+          competitors,
+          reviews,
+          additionalContext,
+        );
+        setGeneratedICPs(icps);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Failed to generate ICPs',
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiKey],
+  );
 
   const generateICPsWithAI = useCallback(
     async (

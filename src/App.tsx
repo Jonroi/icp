@@ -77,8 +77,8 @@ const campaignIdeas = [
       'Ready to double your conversion rate? Download our free ebook, "The Ultimate Guide to Website Personalization" and learn the strategies top marketers use.',
     hook: 'Get the secrets to higher conversions.',
     imageSuggestion:
-      'A professional-looking mockup of the ebook cover, perhaps on a tablet or a desk with other business-related items.',
-    imageHint: 'ebook cover mockup',
+      'A professional-looking cover design for the ebook, perhaps on a tablet or a desk with other business-related items.',
+    imageHint: 'ebook cover design',
   },
 ];
 
@@ -105,7 +105,7 @@ export default function WizardPage() {
   //   useState<unknown>(null);
   // const [competitorAnalysis, setCompetitorAnalysis] = useState<unknown[]>([]);
 
-  // AI hook - for now without API key (uses mock data)
+  // AI hook - requires API key for real analysis
   const { generateICPs, generateICPsWithAI, generatedICPs, isLoading, error } =
     useAI();
   const [generatedCampaign, setGeneratedCampaign] = useState<{
@@ -498,10 +498,12 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
       console.error('Failed to fetch company info:', error);
       let errorMessage = `Failed to fetch info for ${companyName}`;
 
-      if (error.name === 'AbortError') {
-        errorMessage = `Research timeout for ${companyName} (30s limit)`;
-      } else if (error.message?.includes('Failed to fetch')) {
-        errorMessage = `Ollama not running. Please start Ollama first.`;
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = `Research timeout for ${companyName} (30s limit)`;
+        } else if (error.message?.includes('Failed to fetch')) {
+          errorMessage = `Ollama not running. Please start Ollama first.`;
+        }
       }
 
       setCompanyInfoStatus({
@@ -586,10 +588,12 @@ Review 5 text here`;
       console.error('Failed to fetch reviews:', error);
       let errorMessage = `Failed to fetch reviews for ${companyName}`;
 
-      if (error.name === 'AbortError') {
-        errorMessage = `Reviews timeout for ${companyName} (25s limit)`;
-      } else if (error.message?.includes('Failed to fetch')) {
-        errorMessage = `Ollama not running. Please start Ollama first.`;
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = `Reviews timeout for ${companyName} (25s limit)`;
+        } else if (error.message?.includes('Failed to fetch')) {
+          errorMessage = `Ollama not running. Please start Ollama first.`;
+        }
       }
 
       setReviewsStatus({
@@ -1043,7 +1047,7 @@ Review 5 text here`;
                           source: c.name,
                         }));
 
-                      // Use real AI if we have data, otherwise use mock
+                      // Use real AI if we have data and API key
                       if (competitorData.length > 0) {
                         generateICPsWithAI(
                           competitorData,
@@ -1051,7 +1055,7 @@ Review 5 text here`;
                           additionalContext,
                         );
                       } else {
-                        generateICPs();
+                        generateICPs([], [], '');
                       }
                     }}
                     disabled={isLoading}>
@@ -1102,7 +1106,7 @@ Review 5 text here`;
                           <CardTitle className='flex items-center justify-between'>
                             {icp.name}
                             <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded'>
-                              Mock ICP
+                              Real ICP
                             </span>
                           </CardTitle>
                         </CardHeader>
