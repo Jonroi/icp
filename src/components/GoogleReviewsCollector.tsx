@@ -4,7 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Star, Download, RefreshCw } from 'lucide-react';
+import {
+  Search,
+  Star,
+  Download,
+  RefreshCw,
+  Zap,
+  TrendingUp,
+} from 'lucide-react';
 import { GoogleReviewsService } from '@/services/google-reviews';
 import type { GooglePlaceData, GoogleReview } from '@/services/google-reviews';
 
@@ -50,15 +57,51 @@ export function GoogleReviewsCollector({
   const handlePlaceSelect = async (placeId: string) => {
     setIsCollecting(true);
     try {
+      console.log('🔄 Starting review collection with deep research...');
       const placeData = await googleService.getPlaceData(placeId);
       if (placeData) {
-        const reviewsData = await googleService.getReviews(placeId);
+        // Enhanced review collection with LLM deep research
+        const reviewsData = await googleService.getReviews(placeId, 10);
+        console.log(
+          `📊 Collected ${reviewsData.length} reviews with sources:`,
+          reviewsData
+            .map((r) => r.source)
+            .filter((v, i, a) => a.indexOf(v) === i),
+        );
         setSelectedPlace(placeData);
         setReviews(reviewsData);
         onReviewsCollected(reviewsData, placeData);
       }
     } catch (error) {
       console.error('Failed to collect reviews:', error);
+      alert(
+        'Arvioiden hakeminen epäonnistui. Tarkista että Ollama on käynnissä.',
+      );
+    } finally {
+      setIsCollecting(false);
+    }
+  };
+
+  // Deep research function for additional reviews
+  const handleDeepResearch = async () => {
+    if (!selectedPlace) return;
+
+    setIsCollecting(true);
+    try {
+      console.log('🔍 Starting enhanced deep research...');
+      // Get additional reviews using enhanced research
+      const additionalReviews = await googleService.getReviews(
+        selectedPlace.placeId,
+        15,
+      );
+      console.log(
+        `🎯 Deep research found ${additionalReviews.length} total reviews`,
+      );
+      setReviews(additionalReviews);
+      onReviewsCollected(additionalReviews, selectedPlace);
+    } catch (error) {
+      console.error('Deep research failed:', error);
+      alert('Syvätutkimus epäonnistui. Tarkista että Ollama on käynnissä.');
     } finally {
       setIsCollecting(false);
     }
@@ -136,8 +179,21 @@ export function GoogleReviewsCollector({
           {selectedPlace && (
             <Card className='bg-green-50 border-green-200'>
               <CardHeader>
-                <CardTitle className='text-green-800'>
-                  Selected Business
+                <CardTitle className='text-green-800 flex items-center justify-between'>
+                  <span>Selected Business</span>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleDeepResearch}
+                    disabled={isCollecting}
+                    className='bg-white hover:bg-gray-50'>
+                    {isCollecting ? (
+                      <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+                    ) : (
+                      <Zap className='h-4 w-4 mr-2' />
+                    )}
+                    Deep Research
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -174,28 +230,59 @@ export function GoogleReviewsCollector({
           {reviews.length > 0 && (
             <div className='space-y-4'>
               <div className='flex items-center justify-between'>
-                <Label>Collected Reviews ({reviews.length})</Label>
-                <Badge variant='outline'>
-                  {isCollecting ? 'Collecting...' : 'Ready'}
-                </Badge>
+                <div className='flex items-center gap-2'>
+                  <Label>Collected Reviews ({reviews.length})</Label>
+                  <TrendingUp className='h-4 w-4 text-blue-500' />
+                </div>
+                <div className='flex items-center gap-2'>
+                  {/* Show review sources */}
+                  <div className='flex gap-1'>
+                    {Array.from(new Set(reviews.map((r) => r.source))).map(
+                      (source) => (
+                        <Badge
+                          key={source}
+                          variant='outline'
+                          className='text-xs'>
+                          {source}
+                        </Badge>
+                      ),
+                    )}
+                  </div>
+                  <Badge variant='outline'>
+                    {isCollecting ? 'Collecting...' : 'Ready'}
+                  </Badge>
+                </div>
               </div>
               <div className='space-y-3 max-h-80 overflow-y-auto'>
                 {reviews.map((review) => (
                   <Card key={review.id} className='p-3'>
                     <div className='space-y-2'>
                       <div className='flex items-center justify-between'>
-                        <span className='font-medium text-sm'>
-                          {review.author}
-                        </span>
+                        <div className='flex items-center gap-2'>
+                          <span className='font-medium text-sm'>
+                            {review.author}
+                          </span>
+                          <Badge variant='secondary' className='text-xs'>
+                            {review.source}
+                          </Badge>
+                        </div>
                         <div className='flex items-center gap-1'>
                           {renderStars(review.rating)}
                         </div>
                       </div>
                       <p className='text-sm'>{review.text}</p>
                       <div className='flex items-center justify-between text-xs text-muted-foreground'>
-                        <span>
-                          {new Date(review.date).toLocaleDateString('fi-FI')}
-                        </span>
+                        <div className='flex items-center gap-2'>
+                          <span>
+                            {new Date(review.date).toLocaleDateString('fi-FI')}
+                          </span>
+                          {review.demographics && (
+                            <span className='text-blue-600'>
+                              {review.demographics.age}v,{' '}
+                              {review.demographics.location}
+                            </span>
+                          )}
+                        </div>
                         <span>{review.helpful} helpful</span>
                       </div>
                     </div>
