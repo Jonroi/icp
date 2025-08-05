@@ -325,7 +325,7 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama2:7b',
+          model: 'llama3.2:3b',
           prompt: prompt,
           stream: false,
         }),
@@ -345,24 +345,26 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
 
       for (const line of lines) {
         if (line.toLowerCase().includes('website:')) {
-          const url = line.split(':')[1]?.trim();
+          const colonIndex = line.indexOf(':');
+          const url = line.substring(colonIndex + 1).trim();
           if (url && url !== 'unknown' && url.startsWith('http')) {
             website = url;
           }
         }
         if (line.toLowerCase().includes('linkedin:')) {
-          const url = line.split(':')[1]?.trim();
+          const colonIndex = line.indexOf(':');
+          const url = line.substring(colonIndex + 1).trim();
           if (url && url !== 'unknown' && url.startsWith('http')) {
             linkedin = url;
           }
         }
       }
 
-            // Fallback: Generate likely URLs if LLM didn't find anything
+      // Fallback: Generate likely URLs if LLM didn't find anything
       if (!website && !linkedin) {
         console.log('🔄 LLM found nothing, generating fallback URLs...');
         const cleanName = companyName.toLowerCase().replace(/[^a-z]/g, '');
-        
+
         // Generate likely website URLs (try common patterns)
         const possibleWebsites = [
           `https://www.${cleanName}.com`,
@@ -370,10 +372,10 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
           `https://www.${cleanName}.net`,
         ];
         website = possibleWebsites[0]; // Use .com as primary
-        
+
         // Generate likely LinkedIn URL
         linkedin = `https://www.linkedin.com/company/${cleanName}`;
-        
+
         return {
           website: website,
           social: linkedin,
@@ -548,7 +550,7 @@ Review 5 text here`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama2:7b',
+          model: 'llama3.2:3b',
           prompt: prompt,
           stream: false,
         }),
