@@ -28,12 +28,15 @@ import {
   Wand2,
   Save,
   Trash2,
-  Pencil,
   Image as ImageIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAI } from '@/hooks/useAI';
-import type { CompetitorData, CustomerReview } from '@/services/ai';
+// import type { CompetitorData, CustomerReview } from '@/services/ai';
+import { GoogleReviewsCollector } from '@/components/GoogleReviewsCollector';
+import { DemographicsAnalyzer } from '@/components/DemographicsAnalyzer';
+import { CompetitorAnalyzer } from '@/components/CompetitorAnalyzer';
+import type { GoogleReview } from '@/services/google-reviews';
 
 type Competitor = {
   name: string;
@@ -79,6 +82,10 @@ export default function WizardPage() {
   ]);
   const [reviews, setReviews] = useState<string>('');
   const [additionalContext, setAdditionalContext] = useState<string>('');
+  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
+  // const [demographicsAnalysis, setDemographicsAnalysis] =
+  //   useState<unknown>(null);
+  // const [competitorAnalysis, setCompetitorAnalysis] = useState<unknown[]>([]);
 
   // AI hook - for now without API key (uses mock data)
   const { generateICPs, generatedICPs, isLoading, error } = useAI();
@@ -125,6 +132,18 @@ export default function WizardPage() {
     });
   };
 
+  const handleGoogleReviewsCollected = (reviews: GoogleReview[]) => {
+    setGoogleReviews(reviews);
+  };
+
+  const handleDemographicsAnalysisComplete = () => {
+    // setDemographicsAnalysis(analysis);
+  };
+
+  const handleCompetitorDataCollected = () => {
+    // setCompetitorAnalysis(competitors);
+  };
+
   return (
     <div className='space-y-6'>
       <div>
@@ -137,14 +156,17 @@ export default function WizardPage() {
       </div>
 
       <Tabs defaultValue='icp-generator'>
-        <TabsList className='grid w-full grid-cols-4'>
+        <TabsList className='grid w-full grid-cols-6'>
           <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
-          <TabsTrigger value='icp-profiles'>ICP Profiles</TabsTrigger>
-          <TabsTrigger value='campaign-designer'>Campaign Designer</TabsTrigger>
-          <TabsTrigger value='campaign-library'>
-            Campaign Idea Library
+          <TabsTrigger value='google-reviews'>Google Reviews</TabsTrigger>
+          <TabsTrigger value='competitor-analysis'>
+            Competitor Analysis
           </TabsTrigger>
+          <TabsTrigger value='demographics'>Demographics</TabsTrigger>
+          <TabsTrigger value='campaign-designer'>Campaign Designer</TabsTrigger>
+          <TabsTrigger value='campaign-library'>Campaign Library</TabsTrigger>
         </TabsList>
+
         <TabsContent value='icp-generator'>
           <Card className='mt-4'>
             <CardHeader className='flex-row items-start justify-between'>
@@ -274,23 +296,7 @@ export default function WizardPage() {
                 <Button
                   className='flex-1'
                   onClick={() => {
-                    const competitorData: CompetitorData[] = competitors
-                      .filter((c) => c.name && c.website)
-                      .map((c) => ({
-                        name: c.name,
-                        website: c.website,
-                        social: c.social,
-                      }));
-
-                    const reviewData: CustomerReview[] = reviews
-                      .split('\n')
-                      .filter((line) => line.trim())
-                      .map((text) => ({
-                        text: text.trim(),
-                        source: 'Manual input',
-                      }));
-
-                    generateICPs(competitorData, reviewData, additionalContext);
+                    generateICPs();
                   }}
                   disabled={isLoading}>
                   <Sparkles className='mr-2 h-4 w-4' />
@@ -360,44 +366,26 @@ export default function WizardPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value='icp-profiles'>
-          <Card className='mt-4'>
-            <CardHeader>
-              <CardTitle>ICP Profiles</CardTitle>
-              <CardDescription>
-                Manage your generated Ideal Customer Profiles.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-              {generatedICPs.map((icp) => (
-                <Card key={icp.id}>
-                  <CardHeader>
-                    <CardTitle>{icp.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className='text-sm text-muted-foreground'>
-                      {icp.description}
-                    </p>
-                  </CardContent>
-                  <CardFooter className='gap-2'>
-                    <Button variant='secondary' className='flex-1'>
-                      <Wand2 className='mr-2 h-4 w-4' /> Use in Designer
-                    </Button>
-                    <Button variant='outline' size='icon'>
-                      <Pencil className='h-4 w-4' />
-                    </Button>
-                    <Button variant='outline' size='icon'>
-                      <Save className='h-4 w-4' />
-                    </Button>
-                    <Button variant='destructive' size='icon'>
-                      <Trash2 className='h-4 w-4' />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </CardContent>
-          </Card>
+
+        <TabsContent value='google-reviews'>
+          <GoogleReviewsCollector
+            onReviewsCollected={handleGoogleReviewsCollected}
+          />
         </TabsContent>
+
+        <TabsContent value='competitor-analysis'>
+          <CompetitorAnalyzer
+            onCompetitorDataCollected={handleCompetitorDataCollected}
+          />
+        </TabsContent>
+
+        <TabsContent value='demographics'>
+          <DemographicsAnalyzer
+            reviews={googleReviews}
+            onAnalysisComplete={handleDemographicsAnalysisComplete}
+          />
+        </TabsContent>
+
         <TabsContent value='campaign-designer'>
           <Card className='mt-4'>
             <CardHeader className='flex-row items-start justify-between'>
@@ -537,6 +525,7 @@ export default function WizardPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value='campaign-library'>
           <Card className='mt-4'>
             <CardHeader className='flex-row items-center justify-between'>
