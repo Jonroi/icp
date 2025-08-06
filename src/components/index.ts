@@ -14,8 +14,3 @@ export { CompetitorForm } from './icp/CompetitorForm';
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
-
-// Existing components
-export { GoogleReviewsCollector } from './GoogleReviewsCollector';
-export { DemographicsAnalyzer } from './DemographicsAnalyzer';
-export { CompetitorAnalyzer } from './CompetitorAnalyzer';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAI } from './useAI';
+import { AIService, type ICP } from '@/services/ai';
 import { ProjectService } from '@/services/project-service';
 import type { Competitor, ProjectData } from '@/services/project-service';
 import { CompanySearchService } from '@/services/company-search-service';
@@ -46,8 +46,11 @@ export function useAppState() {
     [key: number]: boolean;
   }>({});
 
-  // AI hook
-  const { generateICPsWithAI, generatedICPs, isLoading, error } = useAI();
+  // AI service
+  const aiService = new AIService();
+  const [generatedICPs, setGeneratedICPs] = useState<ICP[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load saved projects and competitors list on mount
   useEffect(() => {
@@ -357,20 +360,31 @@ export function useAppState() {
 
     try {
       // Show loading state
+      setIsLoading(true);
+      setError(null);
       console.log('Generating ICPs with competitor data:', competitorData);
       console.log('Review data:', reviewData);
       console.log('Additional context:', additionalContext);
 
       // Use AI to generate ICPs
-      await generateICPsWithAI(competitorData, reviewData, additionalContext);
+      const icps = await aiService.generateICPs(
+        competitorData,
+        reviewData,
+        additionalContext,
+      );
+      setGeneratedICPs(icps);
 
-      // The generatedICPs will be automatically updated by the useAI hook
       console.log('ICPs generated successfully');
     } catch (error) {
       console.error('Error generating ICPs:', error);
+      setError(
+        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b',
+      );
       alert(
         'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b',
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -14,6 +14,5 @@ export {
 // Reviews service
 export { ReviewsService } from './reviews-service';
 
-// Existing services
+// AI services
 export * from './ai';
-export * from './multi-source-reviews';
