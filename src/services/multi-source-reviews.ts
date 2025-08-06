@@ -532,12 +532,99 @@ export class MultiSourceReviewsService {
     occupation?: string;
   }> {
     try {
-      // Use only pattern-based extraction (no LLM)
-      return this.extractDemographicsFromPatterns(text, authorName);
+      // Use LLM for more accurate age estimation
+      const ageEstimation = await this.estimateAgeWithLLM(text);
+
+      // Use pattern-based extraction for other demographics
+      const patternDemographics = this.extractDemographicsFromPatterns(
+        text,
+        authorName,
+      );
+
+      return {
+        ...patternDemographics,
+        age: ageEstimation, // Use LLM-estimated age if available
+      };
     } catch (error) {
       console.error('Error extracting demographics:', error);
       // Return basic estimation based on name patterns
       return this.extractDemographicsFromPatterns(text, authorName);
+    }
+  }
+
+  // LLM-based age estimation for more accurate results
+  private async estimateAgeWithLLM(text: string): Promise<number | undefined> {
+    try {
+      const prompt = `Analyze the following review and estimate:
+1. The likely age range of the author (provide as a single number representing the most likely age)
+2. Whether the tone is informal/formal
+3. The native language or country clues (if any)
+
+Review:
+${text.substring(0, 500)}
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "estimatedAge": 25,
+  "ageConfidence": "high|medium|low",
+  "tone": "informal|formal|mixed",
+  "languageClues": "Finnish|English|other",
+  "reasoning": "Brief explanation of age estimation"
+}
+
+Consider these factors for age estimation:
+- Language complexity and vocabulary
+- Cultural references and interests
+- Writing style and formality
+- Technology usage patterns
+- Life stage indicators (student, professional, family, etc.)
+- Finnish cultural context and language patterns
+
+Respond with ONLY the JSON object, no additional text.`;
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama2:7b',
+          prompt: prompt,
+          stream: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get LLM response');
+      }
+
+      const data = await response.json();
+      const responseText = data.response;
+
+      try {
+        // Extract JSON from response
+        let jsonText = responseText;
+        const jsonStart = jsonText.indexOf('{');
+        const jsonEnd = jsonText.lastIndexOf('}');
+
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
+        }
+
+        jsonText = jsonText.trim();
+        const result = JSON.parse(jsonText);
+
+        if (result.estimatedAge && typeof result.estimatedAge === 'number') {
+          return result.estimatedAge;
+        }
+      } catch (parseError) {
+        console.error('Failed to parse LLM age estimation:', parseError);
+      }
+
+      return undefined;
+    } catch (error) {
+      console.error('LLM age estimation failed:', error);
+      return undefined;
     }
   }
 
@@ -558,7 +645,7 @@ export class MultiSourceReviewsService {
       occupation?: string;
     } = {};
 
-    // Gender estimation from Finnish names
+    // Enhanced gender estimation from Finnish names
     const femaleNames = [
       'Maria',
       'Anna',
@@ -570,6 +657,34 @@ export class MultiSourceReviewsService {
       'Tuula',
       'Arja',
       'Marja',
+      'Minna',
+      'Riitta',
+      'Katri',
+      'Hanna',
+      'Johanna',
+      'Kristiina',
+      'Anne',
+      'Eeva',
+      'Laura',
+      'Susanna',
+      'Helena',
+      'Mari',
+      'Sari',
+      'Tiina',
+      'Leena',
+      'Pirkko',
+      'Kaija',
+      'Maija',
+      'Aino',
+      'Ella',
+      'Sofia',
+      'Emma',
+      'Venla',
+      'Aada',
+      'Eevi',
+      'Sara',
+      'Milla',
+      'Noora',
     ];
     const maleNames = [
       'Jukka',
@@ -582,13 +697,71 @@ export class MultiSourceReviewsService {
       'Juha',
       'Markku',
       'Antti',
+      'Mikko',
+      'Janne',
+      'Jari',
+      'Heikki',
+      'Seppo',
+      'Ville',
+      'Joonas',
+      'Aleksi',
+      'Eero',
+      'Olli',
+      'Jani',
+      'Toni',
+      'Samu',
+      'Eetu',
+      'Veeti',
+      'Miro',
+      'Lauri',
+      'Riku',
+      'Topi',
+      'Aaro',
+      'Eeli',
+      'Eemeli',
+      'Eetu',
+      'Eino',
+      'Elias',
+      'Emil',
+      'Erik',
+      'Hugo',
+      'Iivo',
     ];
 
+    // Gender detection from author name
     const firstName = authorName.split(' ')[0];
-    if (femaleNames.some((name) => firstName.includes(name))) {
+    if (
+      femaleNames.some((name) =>
+        firstName.toLowerCase().includes(name.toLowerCase()),
+      )
+    ) {
       demographics.gender = 'female';
-    } else if (maleNames.some((name) => firstName.includes(name))) {
+    } else if (
+      maleNames.some((name) =>
+        firstName.toLowerCase().includes(name.toLowerCase()),
+      )
+    ) {
       demographics.gender = 'male';
+    }
+
+    // Gender detection from text content patterns
+    if (!demographics.gender) {
+      const femalePatterns =
+        /(naisena|tyttö|nainen|tytön|äiti|tytär|sisko|sisar|nais|tyttö)/gi;
+      const malePatterns =
+        /(miehenä|poika|mies|pojan|isä|poika|veli|veljen|mies|poika)/gi;
+
+      const femaleMatches = text.match(femalePatterns);
+      const maleMatches = text.match(malePatterns);
+
+      const femaleCount = femaleMatches ? femaleMatches.length : 0;
+      const maleCount = maleMatches ? maleMatches.length : 0;
+
+      if (femaleCount > maleCount) {
+        demographics.gender = 'female';
+      } else if (maleCount > femaleCount) {
+        demographics.gender = 'male';
+      }
     }
 
     // Location extraction from text
@@ -601,9 +774,11 @@ export class MultiSourceReviewsService {
 
     // Age estimation from text content complexity and topics
     const youthIndicators =
-      /opiskelija|yliopisto|koulu|bileiss|party|festari/gi;
-    const middleAgeIndicators = /perhe|lapsi|asunto|auto|työ|ura|laina/gi;
-    const seniorIndicators = /eläke|lapsenlapsi|terveyd|sairaus/gi;
+      /opiskelija|yliopisto|koulu|bileiss|party|festari|opiskel|nuori|nuorena/gi;
+    const middleAgeIndicators =
+      /perhe|lapsi|asunto|auto|työ|ura|laina|perhe|työelämä/gi;
+    const seniorIndicators =
+      /eläke|lapsenlapsi|terveyd|sairaus|eläkeläinen|seniori/gi;
 
     if (text.match(youthIndicators)) {
       demographics.age = 22 + Math.floor(Math.random() * 8); // 22-30
