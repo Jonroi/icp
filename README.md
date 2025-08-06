@@ -63,7 +63,7 @@ The application uses **Ollama** (local LLM) for generating Ideal Customer Profil
 ### Quick Ollama Setup
 
 1. **Install Ollama**: Download from [https://ollama.ai](https://ollama.ai)
-2. **Download Model**: Run `ollama pull llama2:7b`
+2. **Download Model**: Run `ollama pull llama3.2:3b`
 3. **Start Ollama**: It should start automatically, or run `ollama serve`
 
 For detailed setup instructions, see [OLLAMA_SETUP.md](OLLAMA_SETUP.md).
@@ -104,7 +104,7 @@ The ICP generation process uses **real customer data** from multiple sources to 
 
 ### LLM Processing & Analysis
 
-The **Ollama LLM (llama2:7b)** receives a comprehensive prompt containing:
+The **Ollama LLM (llama3.2:3b)** receives a comprehensive prompt containing:
 
 #### **Input Data Structure**
 
@@ -360,7 +360,7 @@ The application extracts **real demographic information** from review content:
 
 ### Project Structure
 
-```
+```text
 src/
 ├── components/          # React components
 │   ├── ui/             # Reusable UI components (shadcn/ui)

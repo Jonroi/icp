@@ -588,7 +588,7 @@ Respond with ONLY the JSON object, no additional text.`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama2:7b',
+          model: 'llama3.2:3b',
           prompt: prompt,
           stream: false,
         }),

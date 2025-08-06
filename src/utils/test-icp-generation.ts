@@ -97,7 +97,7 @@ export async function testICPGeneration() {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       message:
-        'Failed to generate ICPs. Make sure Ollama is running and llama2:7b model is installed.',
+        'Failed to generate ICPs. Make sure Ollama is running and llama3.2:3b model is installed.',
     };
   }
 }

@@ -369,7 +369,7 @@ export function useAppState() {
     } catch (error) {
       console.error('Error generating ICPs:', error);
       alert(
-        'Failed to generate ICPs. Please make sure Ollama is running and the llama2:7b model is installed. You can install it with: ollama pull llama2:7b',
+        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b',
       );
     }
   };
