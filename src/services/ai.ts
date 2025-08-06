@@ -164,8 +164,8 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
     "name": "Profile name",
     "description": "Profile description",
     "demographics": {
-      "age": "Age range",
-      "gender": "Gender",
+      "age": "Age range (e.g., 25-35, 35-45, 45-55, 55+)",
+      "gender": "Male, Female, or Mixed (based on review data patterns)",
       "location": "Location",
       "income": "Income level",
       "education": "Education level"
@@ -186,6 +186,22 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
     "preferredChannels": ["channel1", "channel2", "channel3"]
   }
 ]
+
+IMPORTANT AGE ANALYSIS INSTRUCTIONS:
+- Analyze the review data for age indicators (language complexity, cultural references, technology usage)
+- Consider writing style, formality, and life stage indicators
+- Look for student indicators (opiskelija, yliopisto, koulu) → 18-25 age range
+- Look for young professional indicators (työ, ura, asunto) → 25-35 age range
+- Look for family indicators (perhe, lapsi, asunto) → 30-50 age range
+- Look for senior indicators (eläke, terveys, lapsenlapsi) → 55+ age range
+- Use specific age ranges like "25-35", "35-45", "45-55", "55+" rather than vague descriptions
+
+IMPORTANT GENDER ANALYSIS INSTRUCTIONS:
+- Analyze the review data for gender indicators (names, pronouns, context)
+- If reviews show clear male patterns (male names, male-oriented language), use "Male"
+- If reviews show clear female patterns (female names, female-oriented language), use "Female"
+- If mixed or unclear patterns, use "Mixed"
+- Consider Finnish names and cultural context in the reviews
 
 IMPORTANT: For "preferredChannels", consider the ICP's demographics, industry, and behavior to suggest specific marketing channels. Include a mix of:
 - Digital channels (social media platforms, websites, email, etc.)
@@ -347,7 +363,7 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
             name: 'Default ICP Profile',
             description: 'Generated based on competitor analysis',
             demographics: {
-              age: '25-45',
+              age: '25-35',
               gender: 'Mixed',
               location: 'Urban areas',
               income: 'Middle income',
@@ -385,6 +401,102 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
               'Email marketing',
               'Google Ads',
               'Trade shows',
+            ],
+          },
+          {
+            name: 'Female Professional ICP',
+            description: 'Female professional customer profile',
+            demographics: {
+              age: '30-45',
+              gender: 'Female',
+              location: 'Urban areas',
+              income: 'Middle to High income',
+              education: 'Bachelor degree or higher',
+            },
+            psychographics: {
+              interests: ['Business', 'Technology', 'Professional development'],
+              values: ['Quality', 'Work-life balance', 'Growth'],
+              lifestyle: 'Professional women',
+              painPoints: [
+                'Time management',
+                'Work-life balance',
+                'Professional advancement',
+              ],
+            },
+            behavior: {
+              onlineHabits: [
+                'LinkedIn',
+                'Professional networks',
+                'Social media',
+              ],
+              purchasingBehavior: 'Research-driven, value-conscious',
+              brandPreferences: ['Established brands', 'Professional services'],
+            },
+            goals: [
+              'Career advancement',
+              'Work-life balance',
+              'Professional development',
+            ],
+            challenges: [
+              'Time constraints',
+              'Professional recognition',
+              'Work-life integration',
+            ],
+            preferredChannels: [
+              'LinkedIn',
+              'Professional women networks',
+              'Industry conferences',
+              'Email marketing',
+              'Women-focused publications',
+              'Professional workshops',
+            ],
+          },
+          {
+            name: 'Male Executive ICP',
+            description: 'Male executive customer profile',
+            demographics: {
+              age: '35-55',
+              gender: 'Male',
+              location: 'Urban areas',
+              income: 'High income',
+              education: 'Advanced degree',
+            },
+            psychographics: {
+              interests: ['Business', 'Technology', 'Leadership'],
+              values: ['Efficiency', 'Growth', 'Innovation'],
+              lifestyle: 'Busy executives',
+              painPoints: [
+                'Time efficiency',
+                'Complex decision making',
+                'High expectations',
+              ],
+            },
+            behavior: {
+              onlineHabits: [
+                'LinkedIn',
+                'Professional networks',
+                'Business news',
+              ],
+              purchasingBehavior: 'Decision-maker, ROI-focused',
+              brandPreferences: ['Premium brands', 'Innovative solutions'],
+            },
+            goals: [
+              'Business growth',
+              'Operational efficiency',
+              'Market leadership',
+            ],
+            challenges: [
+              'Complex solutions',
+              'Implementation time',
+              'ROI measurement',
+            ],
+            preferredChannels: [
+              'LinkedIn',
+              'Industry conferences',
+              'Executive networks',
+              'Business publications',
+              'Trade shows',
+              'Professional associations',
             ],
           },
         ];
@@ -474,10 +586,10 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
       'Business',
     ];
 
-    // Digital channels
+    // Digital channels based on gender and age
     if (
-      age.includes('25-45') &&
-      gender.includes('Male') &&
+      gender === 'Male' &&
+      (age.includes('25-35') || age.includes('35-45')) &&
       income.includes('High income')
     ) {
       channels.push('LinkedIn');
@@ -486,29 +598,41 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
       channels.push('Instagram');
       channels.push('TikTok');
     } else if (
-      age.includes('35-55') &&
-      gender.includes('Female') &&
+      gender === 'Female' &&
+      (age.includes('30-45') || age.includes('35-55')) &&
       income.includes('Middle income')
     ) {
       channels.push('Pinterest');
+      channels.push('Instagram');
+      channels.push('Facebook');
       channels.push('Snapchat');
+    } else if (gender === 'Mixed' || age.includes('25-35')) {
+      channels.push('LinkedIn');
+      channels.push('Facebook');
+      channels.push('Instagram');
+      channels.push('Twitter');
     }
 
-    // Traditional channels
+    // Traditional channels based on gender
     if (
-      age.includes('25-45') &&
-      gender.includes('Male') &&
+      gender === 'Male' &&
+      (age.includes('25-35') || age.includes('35-45')) &&
       income.includes('High income')
     ) {
       channels.push('Industry conferences');
       channels.push('Networking events');
+      channels.push('Trade shows');
     } else if (
-      age.includes('35-55') &&
-      gender.includes('Female') &&
+      gender === 'Female' &&
+      (age.includes('30-45') || age.includes('35-55')) &&
       income.includes('Middle income')
     ) {
       channels.push('Local workshops');
       channels.push('Meetups');
+      channels.push('Community events');
+    } else {
+      channels.push('Industry conferences');
+      channels.push('Networking events');
     }
 
     // Industry-specific channels
@@ -523,19 +647,25 @@ Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
       channels.push('Healthcare blogs');
     }
 
-    // Content channels
-    if (interests.includes('Reading') && income.includes('High income')) {
+    // Content channels based on gender preferences
+    if (gender === 'Male' && income.includes('High income')) {
       channels.push('Business magazines');
       channels.push('Financial news websites');
-    } else if (interests.includes('Travel') && income.includes('High income')) {
-      channels.push('Travel blogs');
-      channels.push('Luxury travel magazines');
+      channels.push('Tech blogs');
+    } else if (gender === 'Female' && income.includes('Middle income')) {
+      channels.push('Lifestyle blogs');
+      channels.push('Women-focused publications');
+      channels.push('Community newsletters');
+    } else {
+      channels.push('Industry publications');
+      channels.push('Blogs');
+      channels.push('Newsletters');
     }
 
-    // Mix of channels
-    if (channels.length < 3) {
+    // Ensure minimum channel diversity
+    if (channels.length < 4) {
       channels.push('Email marketing');
-      channels.push('Newsletters');
+      channels.push('Google Ads');
       channels.push('Direct mail');
     }
 
