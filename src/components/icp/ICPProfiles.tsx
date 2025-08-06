@@ -9,16 +9,28 @@ import { Bot } from 'lucide-react';
 
 interface ICP {
   name: string;
+  description: string;
   demographics: {
     age: string;
     gender: string;
     location: string;
+    income: string;
+    education: string;
   };
   psychographics: {
     interests: string[];
+    values: string[];
+    lifestyle: string;
     painPoints: string[];
   };
-  description: string;
+  behavior: {
+    onlineHabits: string[];
+    purchasingBehavior: string;
+    brandPreferences: string[];
+  };
+  goals: string[];
+  challenges: string[];
+  preferredChannels: string[];
 }
 
 interface ICPProfilesProps {
@@ -50,17 +62,27 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
                     <CardTitle className='flex items-center justify-between'>
                       {icp.name}
                       <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded'>
-                        Real ICP
+                        AI Generated
                       </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className='space-y-3'>
+                    <div>
+                      <h4 className='font-medium text-sm'>Description</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.description}
+                      </p>
+                    </div>
                     <div>
                       <h4 className='font-medium text-sm'>Demographics</h4>
                       <p className='text-xs text-muted-foreground'>
                         Age: {icp.demographics.age} | Gender:{' '}
                         {icp.demographics.gender} | Location:{' '}
                         {icp.demographics.location}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        Income: {icp.demographics.income} | Education:{' '}
+                        {icp.demographics.education}
                       </p>
                     </div>
                     <div>
@@ -70,12 +92,63 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
                       </p>
                     </div>
                     <div>
+                      <h4 className='font-medium text-sm'>Values</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.psychographics.values.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>Lifestyle</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.psychographics.lifestyle}
+                      </p>
+                    </div>
+                    <div>
                       <h4 className='font-medium text-sm'>Pain Points</h4>
                       <p className='text-xs text-muted-foreground'>
                         {icp.psychographics.painPoints.join(', ')}
                       </p>
                     </div>
-                    <p className='text-sm'>{icp.description}</p>
+                    <div>
+                      <h4 className='font-medium text-sm'>Online Habits</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.behavior.onlineHabits.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>
+                        Purchasing Behavior
+                      </h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.behavior.purchasingBehavior}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>Brand Preferences</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.behavior.brandPreferences.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>Goals</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.goals.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>Challenges</h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.challenges.join(', ')}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className='font-medium text-sm'>
+                        Preferred Channels
+                      </h4>
+                      <p className='text-xs text-muted-foreground'>
+                        {icp.preferredChannels.join(', ')}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

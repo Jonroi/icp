@@ -47,8 +47,7 @@ export function useAppState() {
   }>({});
 
   // AI hook
-  const { generateICPs, generateICPsWithAI, generatedICPs, isLoading, error } =
-    useAI();
+  const { generateICPsWithAI, generatedICPs, isLoading, error } = useAI();
 
   // Load saved projects and competitors list on mount
   useEffect(() => {
@@ -330,7 +329,7 @@ export function useAppState() {
     });
   };
 
-  const handleGenerateICPs = () => {
+  const handleGenerateICPs = async () => {
     // Convert competitor data to the format expected by AI service
     const competitorData = competitors
       .filter((c) => c.name && c.website)
@@ -348,11 +347,30 @@ export function useAppState() {
         source: c.name,
       }));
 
-    // Use real AI if we have data and API key
-    if (competitorData.length > 0) {
-      generateICPsWithAI(competitorData, reviewData, additionalContext);
-    } else {
-      generateICPs([], [], '');
+    // Check if we have enough data to generate ICPs
+    if (competitorData.length === 0) {
+      alert(
+        'Please add at least one competitor with name and website to generate ICPs.',
+      );
+      return;
+    }
+
+    try {
+      // Show loading state
+      console.log('Generating ICPs with competitor data:', competitorData);
+      console.log('Review data:', reviewData);
+      console.log('Additional context:', additionalContext);
+
+      // Use AI to generate ICPs
+      await generateICPsWithAI(competitorData, reviewData, additionalContext);
+
+      // The generatedICPs will be automatically updated by the useAI hook
+      console.log('ICPs generated successfully');
+    } catch (error) {
+      console.error('Error generating ICPs:', error);
+      alert(
+        'Failed to generate ICPs. Please make sure Ollama is running and the llama2:7b model is installed. You can install it with: ollama pull llama2:7b',
+      );
     }
   };
 

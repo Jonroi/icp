@@ -13,11 +13,6 @@ export function useAI(apiKey?: string) {
       reviews: CustomerReview[],
       additionalContext: string = '',
     ) => {
-      if (!apiKey) {
-        setError('API key is required for ICP generation');
-        return;
-      }
-
       setIsLoading(true);
       setError(null);
 
@@ -46,11 +41,6 @@ export function useAI(apiKey?: string) {
       reviews: CustomerReview[],
       additionalContext: string = '',
     ) => {
-      if (!apiKey) {
-        setError('OpenAI API key is required');
-        return;
-      }
-
       setIsLoading(true);
       setError(null);
 

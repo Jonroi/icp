@@ -37,7 +37,7 @@ interface ICPGeneratorProps {
   onSaveCompetitor: (competitor: Competitor) => void;
   onLoadSavedCompetitor: (competitorName: string, index: number) => void;
   onToggleCompetitorDropdown: (index: number) => void;
-  onGenerateICPs: () => void;
+  onGenerateICPs: () => Promise<void>;
 }
 
 export function ICPGenerator({
@@ -131,7 +131,13 @@ export function ICPGenerator({
         <div className='flex flex-wrap gap-2'>
           <Button
             className='flex-1'
-            onClick={() => onGenerateICPs()}
+            onClick={async () => {
+              try {
+                await onGenerateICPs();
+              } catch (error) {
+                console.error('Error generating ICPs:', error);
+              }
+            }}
             disabled={isLoading}>
             <Sparkles className='mr-2 h-4 w-4' />
             {isLoading ? 'Generating...' : 'Generate Ideal Customer Personas'}
