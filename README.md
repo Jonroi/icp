@@ -356,30 +356,46 @@ The application extracts **real demographic information** from review content:
   'suunnittelija';
 ```
 
-## 🛠️ Development
-
 ### Project Structure
 
 ```text
 src/
 ├── components/          # React components
 │   ├── ui/             # Reusable UI components (shadcn/ui)
-│   ├── layout/         # Layout components (Header)
-│   ├── dialogs/        # Dialog components (Save/Load/ICP Popup)
+│   │   ├── button.tsx          # Button component
+│   │   ├── card.tsx            # Card component
+│   │   ├── card-toolbar.tsx    # Card toolbar component
+│   │   ├── input.tsx           # Input component
+│   │   ├── label.tsx           # Label component
+│   │   ├── select.tsx          # Select component
+│   │   ├── tabs.tsx            # Tabs component
+│   │   └── textarea.tsx        # Textarea component
+│   ├── layout/         # Layout components
+│   │   └── Header.tsx          # Application header
+│   ├── dialogs/        # Dialog components
+│   │   ├── ICPPopup.tsx        # ICP details popup
+│   │   ├── LoadProjectDialog.tsx # Project loading dialog
+│   │   └── SaveProjectDialog.tsx # Project saving dialog
 │   ├── icp/            # ICP-related components
-│   │   ├── ICPGenerator.tsx     # Main ICP generation interface
-│   │   ├── ICPProfiles.tsx      # Display generated ICP profiles
-│   │   └── CompetitorForm.tsx   # Competitor data input form
+│   │   ├── ICPGenerator.tsx    # Main ICP generation interface
+│   │   ├── ICPProfiles.tsx     # Display generated ICP profiles
+│   │   └── CompetitorForm.tsx  # Competitor data input form
 │   ├── campaign/       # Campaign components
 │   │   ├── CampaignDesigner.tsx # Campaign generation interface
 │   │   └── CampaignLibrary.tsx  # Campaign idea library
-│   ├── GoogleReviewsCollector.tsx  # Multi-source reviews collector
-│   ├── DemographicsAnalyzer.tsx    # Real demographics analyzer
-│   ├── CompetitorAnalyzer.tsx      # Competitor analysis
-│   └── TestICPGeneration.tsx       # ICP generation testing component
+│   └── TestICPGeneration.tsx   # ICP generation testing component
 ├── services/           # Business logic and API services
-│   ├── ai.ts                    # AI service (Ollama LLM)
-│   ├── multi-source-reviews.ts  # Multi-source review collection
+│   ├── ai/             # Modularized AI services
+│   │   ├── types.ts              # TypeScript interfaces
+│   │   ├── ollama-client.ts      # Ollama API client
+│   │   ├── website-scraper.ts    # Website content extraction
+│   │   ├── icp-generator.ts      # ICP generation logic
+│   │   ├── competitor-analyzer.ts # Competitor analysis
+│   │   ├── review-analyzer.ts    # Review analysis
+│   │   ├── ai-service.ts         # Main AI service orchestrator
+│   │   ├── index.ts             # AI services exports
+│   │   └── README.md            # AI services documentation
+│   ├── ai.ts                    # AI service re-export
 │   ├── company-search-service.ts # Company information search
 │   ├── project-service.ts        # Project data persistence
 │   ├── reviews-service.ts        # Review processing service
@@ -389,4 +405,5 @@ src/
 ├── utils/              # Utility functions
 │   └── test-icp-generation.ts   # ICP generation testing utilities
 └── lib/                # Shared utilities
+    └── utils.ts        # Utility functions
 ```
