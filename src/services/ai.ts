@@ -103,7 +103,7 @@ ${text}
 Anna vastaus suomeksi ja ole ytimekäs.`;
 
       const response = await axios.post(this.ollamaUrl, {
-        model: 'llama2:7b',
+        model: 'llama3.2:3b',
         prompt: prompt,
         stream: false,
       });
@@ -111,7 +111,7 @@ Anna vastaus suomeksi ja ole ytimekäs.`;
       return response.data.response || 'Analyysi epäonnistui';
     } catch (error) {
       console.error('Ollama error:', error);
-      return 'Paikallinen LLM ei ole saatavilla. Asenna Ollama: https://ollama.ai ja lataa malli: ollama pull llama2:7b';
+      return 'Paikallinen LLM ei ole saatavilla. Asenna Ollama: https://ollama.ai ja lataa malli: ollama pull llama3.2:3b';
     }
   }
 
@@ -224,7 +224,7 @@ Choose channels that match the ICP's age, industry, online habits, and purchasin
 Respond with ONLY the JSON array, no additional text or explanations.`;
 
       const response = await axios.post(this.ollamaUrl, {
-        model: 'llama2:7b',
+        model: 'llama3.2:3b',
         prompt: prompt,
         stream: false,
       });
@@ -556,7 +556,7 @@ Luo analyysi JSON-muodossa suomeksi sisältäen:
 Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
 
       const response = await axios.post(this.ollamaUrl, {
-        model: 'llama2:7b',
+        model: 'llama3.2:3b',
         prompt: prompt,
         stream: false,
       });

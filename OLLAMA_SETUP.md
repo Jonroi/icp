@@ -7,7 +7,7 @@ This application uses Ollama (local LLM) for generating Ideal Customer Profiles 
 ## Prerequisites
 
 1. **Install Ollama**: Download and install from [https://ollama.ai](https://ollama.ai)
-2. **Download the required model**: The application uses `llama2:7b` model
+2. **Download the required model**: The application uses `llama3.2:3b` model
 
 ## Setup Steps
 
@@ -24,10 +24,10 @@ Visit [https://ollama.ai](https://ollama.ai) and download the installer for your
 After installing Ollama, open a terminal/command prompt and run:
 
 ```bash
-ollama pull llama2:7b
+ollama pull llama3.2:3b
 ```
 
-This will download the Llama 2 7B model (approximately 4GB).
+This will download the Llama 3.2 3B model (approximately 2GB).
 
 ### 3. Start Ollama
 
@@ -42,7 +42,7 @@ ollama serve
 Test that Ollama is working:
 
 ```bash
-ollama run llama2:7b "Hello, how are you?"
+ollama run llama3.2:3b "Hello, how are you?"
 ```
 
 You should get a response from the model.
@@ -82,17 +82,19 @@ If you get connection errors:
    ```
 
 3. **Check the model is installed**:
+
    ```bash
    ollama list
    ```
-   You should see `llama2:7b` in the list.
+
+   You should see `llama3.2:3b` in the list.
 
 ### Model Not Found
 
 If the model isn't installed:
 
 ```bash
-ollama pull llama2:7b
+ollama pull llama3.2:3b
 ```
 
 ### Performance Issues
@@ -100,17 +102,19 @@ ollama pull llama2:7b
 - The first generation might be slow as the model loads
 - Subsequent generations will be faster
 - Consider using a smaller model for faster responses:
+
   ```bash
   ollama pull llama2:3b
   ```
-  Then update the model name in `src/services/ai.ts` from `llama2:7b` to `llama2:3b`
+
+  Then update the model name in `src/services/ai.ts` from `llama3.2:3b` to `llama2:3b`
 
 ## Configuration
 
 The application is configured to use:
 
 - **URL**: `http://localhost:11434/api/generate`
-- **Model**: `llama2:7b`
+- **Model**: `llama3.2:3b`
 - **Stream**: `false` (for better response handling)
 
 ## Benefits of Using Ollama
