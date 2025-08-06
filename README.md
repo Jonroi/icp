@@ -53,6 +53,18 @@ FACEBOOK_ACCESS_TOKEN=your_facebook_access_token_here
 
 **Note**: All APIs are free tier and optional. The application works without API keys but with limited functionality.
 
+## 🤖 AI Setup (Required for ICP Generation)
+
+The application uses **Ollama** (local LLM) for generating Ideal Customer Profiles. No external API keys or costs required!
+
+### Quick Ollama Setup
+
+1. **Install Ollama**: Download from [https://ollama.ai](https://ollama.ai)
+2. **Download Model**: Run `ollama pull llama2:7b`
+3. **Start Ollama**: It should start automatically, or run `ollama serve`
+
+For detailed setup instructions, see [OLLAMA_SETUP.md](OLLAMA_SETUP.md).
+
 ## 📊 Usage
 
 ### 1. Multi-Source Reviews Collector
@@ -180,128 +192,3 @@ src/
 ├── hooks/             # Custom React hooks
 └── lib/               # Utilities
 ```
-
-### Available Scripts
-
-```bash
-# Development
-npm run dev
-
-# Build for production
-npm run build
-
-# Lint code
-npm run lint
-
-# Type check
-npm run type-check
-```
-
-## 🎯 Key Features
-
-### **✅ Real Data Only**
-
-- No mock data or generated reviews
-- All reviews come from actual customer experiences
-- Real demographic extraction from text content
-
-### **🆓 Free APIs**
-
-- Reddit API: No key required
-- Twitter/X API: Free tier (500k tweets/month)
-- Yelp API: Free tier (500 requests/day)
-- Facebook API: Free tier
-
-### **📊 Accurate Demographics**
-
-- Age estimation from text content analysis
-- Gender detection from Finnish names
-- Location extraction from city mentions
-- Occupation identification from professional terms
-
-### **🔒 Privacy Compliant**
-
-- No personal data collection
-- Only public review content
-- GDPR compliant data handling
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 License
-
-MIT License - see LICENSE file for details.
-
-## 🆘 Troubleshooting
-
-### API Issues
-
-**Reddit API not working:**
-
-- Reddit API is public and should work without issues
-- Check internet connection
-
-**Twitter/X API errors:**
-
-- Optional: Add `TWITTER_BEARER_TOKEN` to `.env`
-- Without token: Limited functionality
-
-**Yelp API errors:**
-
-- Optional: Add `YELP_API_KEY` to `.env`
-- Without key: Limited functionality
-
-**Facebook API errors:**
-
-- Optional: Add `FACEBOOK_ACCESS_TOKEN` to `.env`
-- Without token: Limited functionality
-
-### Build Issues
-
-**TypeScript errors:**
-
-```bash
-npm run type-check
-```
-
-**Lint errors:**
-
-```bash
-npm run lint
-```
-
-## 📈 Roadmap
-
-- [ ] Support for more review platforms
-- [ ] Enhanced demographic extraction algorithms
-- [ ] Real-time review monitoring
-- [ ] Advanced analytics dashboard
-- [ ] Integration with CRM systems
-- [ ] Multi-language support
-- [ ] Mobile app version
-
-## 🔍 Data Quality
-
-### **Real Reviews Only**
-
-- All reviews come from actual customer experiences
-- No AI-generated or mock review content
-- Authentic customer feedback and opinions
-
-### **Accurate Demographics**
-
-- Demographics extracted from real review content
-- Based on actual mentions and context
-- No random generation or assumptions
-
-### **Multiple Sources**
-
-- Reddit: Community discussions and recommendations
-- Twitter/X: Real-time customer feedback
-- Yelp: Professional review platform
-- Facebook Groups: Local community experiences

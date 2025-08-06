@@ -7,6 +7,7 @@ import { ICPProfiles } from '@/components/icp/ICPProfiles';
 import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
 import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
 import { ICPPopup } from '@/components/dialogs/ICPPopup';
+import { TestICPGeneration } from '@/components/TestICPGeneration';
 import { useAppState } from '@/hooks/useAppState';
 
 export default function App() {
@@ -20,15 +21,15 @@ export default function App() {
     reviewsStatus,
     generatedCampaign,
     showICPPopup,
-    generatedICPs,
-    isLoading,
-    error,
     projectName,
     savedProjects,
     showSaveDialog,
     showLoadDialog,
     savedCompetitors,
     showCompetitorDropdown,
+    generatedICPs,
+    isLoading,
+    error,
 
     // Actions
     setAdditionalContext,
@@ -112,6 +113,7 @@ export default function App() {
 
         <TabsContent value='demographics'>
           <ICPProfiles generatedICPs={generatedICPs} />
+          <TestICPGeneration />
         </TabsContent>
 
         <TabsContent value='campaign-designer'>
