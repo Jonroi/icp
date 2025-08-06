@@ -15,8 +15,8 @@ import {
   Cell,
 } from 'recharts';
 import { TrendingUp, Users, MapPin, Calendar, Download } from 'lucide-react';
-import type { GoogleReview } from '@/services/google-reviews';
-import { GoogleReviewsService } from '@/services/google-reviews';
+import type { GoogleReview } from '@/services/multi-source-reviews';
+import { MultiSourceReviewsService } from '@/services/multi-source-reviews';
 
 interface DemographicsAnalyzerProps {
   reviews: GoogleReview[];
@@ -57,33 +57,6 @@ export function DemographicsAnalyzer({
 }: DemographicsAnalyzerProps) {
   const [analysis, setAnalysis] = useState<DemographicData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const analyzeDemographics = useCallback(async () => {
-    if (reviews.length === 0) {
-      setAnalysis(null);
-      return;
-    }
-
-    setIsAnalyzing(true);
-
-    try {
-      // Real demographic analysis from review data
-      const realAnalysis = await analyzeReviewData(reviews);
-      setAnalysis(realAnalysis);
-      onAnalysisComplete(realAnalysis);
-    } catch (error) {
-      console.error('Failed to analyze demographics:', error);
-      setAnalysis(null);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [reviews, onAnalysisComplete, analyzeReviewData]);
-
-  useEffect(() => {
-    if (reviews.length > 0) {
-      analyzeDemographics();
-    }
-  }, [reviews, analyzeDemographics]);
 
   // Extract age distribution from reviews
   const extractAgeDistribution = useCallback((reviewData: GoogleReview[]) => {
@@ -178,26 +151,22 @@ export function DemographicsAnalyzer({
   // Extract sentiment distribution from reviews
   const extractSentimentDistribution = useCallback(
     (reviewData: GoogleReview[]) => {
-      const sentimentCounts = {
+      const sentimentCounts: Record<string, number> = {
         Positiivinen: 0,
         Neutraali: 0,
         Negatiivinen: 0,
       };
 
       reviewData.forEach((review) => {
-        if (review.rating >= 4) {
-          sentimentCounts['Positiivinen']++;
-        } else if (review.rating >= 3) {
-          sentimentCounts['Neutraali']++;
-        } else {
-          sentimentCounts['Negatiivinen']++;
-        }
+        const rating = review.rating;
+        if (rating >= 4) sentimentCounts['Positiivinen']++;
+        else if (rating >= 3) sentimentCounts['Neutraali']++;
+        else sentimentCounts['Negatiivinen']++;
       });
 
-      return Object.entries(sentimentCounts).map(([sentiment, count]) => ({
-        sentiment,
-        count,
-      }));
+      return Object.entries(sentimentCounts)
+        .filter(([, count]) => count > 0)
+        .map(([sentiment, count]) => ({ sentiment, count }));
     },
     [],
   );
@@ -205,37 +174,13 @@ export function DemographicsAnalyzer({
   // Extract top keywords from review text
   const extractTopKeywords = useCallback((reviewData: GoogleReview[]) => {
     const wordCounts: Record<string, number> = {};
-    const commonWords = new Set([
-      'ja',
-      'on',
-      'oli',
-      'en',
-      'ei',
-      'se',
-      'että',
-      'kun',
-      'kuin',
-      'tai',
-      'jos',
-      'niin',
-      'kuin',
-      'kanssa',
-      'mukaan',
-      'myös',
-      'vain',
-      'vielä',
-      'jo',
-      'nyt',
-      'sitten',
-      'niin',
-    ]);
 
     reviewData.forEach((review) => {
       const words = review.text
         .toLowerCase()
-        .replace(/[^äöåa-z\s]/g, '')
+        .replace(/[^\w\s]/g, '')
         .split(/\s+/)
-        .filter((word) => word.length > 2 && !commonWords.has(word));
+        .filter((word) => word.length > 3);
 
       words.forEach((word) => {
         wordCounts[word] = (wordCounts[word] || 0) + 1;
@@ -251,8 +196,8 @@ export function DemographicsAnalyzer({
   // Real analysis function using actual review data
   const analyzeReviewData = useCallback(
     async (reviewData: GoogleReview[]): Promise<DemographicData> => {
-      // Enhanced ICP analysis using GoogleReviewsService
-      const googleService = new GoogleReviewsService('');
+      // Enhanced ICP analysis using MultiSourceReviewsService
+      const googleService = new MultiSourceReviewsService();
       const icpAnalysis = googleService.analyzeReviewsForICP(reviewData);
 
       // Age analysis from demographics field or text patterns
@@ -304,6 +249,33 @@ export function DemographicsAnalyzer({
       extractTopKeywords,
     ],
   );
+
+  const analyzeDemographics = useCallback(async () => {
+    if (reviews.length === 0) {
+      setAnalysis(null);
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      // Real demographic analysis from review data
+      const realAnalysis = await analyzeReviewData(reviews);
+      setAnalysis(realAnalysis);
+      onAnalysisComplete(realAnalysis);
+    } catch (error) {
+      console.error('Failed to analyze demographics:', error);
+      setAnalysis(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [reviews, onAnalysisComplete, analyzeReviewData]);
+
+  useEffect(() => {
+    if (reviews.length > 0) {
+      analyzeDemographics();
+    }
+  }, [reviews, analyzeDemographics]);
 
   const exportAnalysis = () => {
     if (!analysis) return;

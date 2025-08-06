@@ -1,4 +1,4 @@
-import axios from 'axios';
+// Removed unused axios import
 
 // API response interfaces (Google API poistettu)
 // interface GoogleReviewResponse {
@@ -8,37 +8,7 @@ import axios from 'axios';
 //   text: string;
 // }
 
-interface TrustpilotReviewResponse {
-  id: string;
-  stars: number;
-  text: string;
-  createdAt: string;
-  helpful?: number;
-  consumer: {
-    displayName: string;
-  };
-}
-
-// interface YelpReviewResponse {
-//   id: string;
-//   rating: number;
-//   text: string;
-//   time_created: string;
-//   useful?: number;
-//   user: {
-//     name: string;
-//   };
-// }
-
-interface FacebookReviewResponse {
-  id: string;
-  rating: number;
-  review_text?: string;
-  created_time: string;
-  reviewer: {
-    name: string;
-  };
-}
+// Removed unused interfaces
 
 export interface GoogleReview {
   id: string;
@@ -69,11 +39,9 @@ export interface GooglePlaceData {
   phone?: string;
 }
 
-export class GoogleReviewsService {
-  private apiKey: string;
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+export class MultiSourceReviewsService {
+  constructor() {
+    // API key functionality removed for free version
   }
 
   // Hae paikan tiedot (ilmainen versio - ei Google API:ta)
@@ -277,7 +245,7 @@ export class GoogleReviewsService {
             const data = await response.json();
             const posts = data.data?.children || [];
 
-            posts.forEach((post: Record<string, unknown>) => {
+            for (const post of posts) {
               if (reviews.length < maxResults) {
                 const postData = post.data as Record<string, unknown>;
                 reviews.push({
@@ -306,7 +274,7 @@ export class GoogleReviewsService {
                   ),
                 });
               }
-            });
+            }
           }
         } catch (error) {
           console.error(`Reddit subreddit ${subreddit} failed:`, error);
@@ -347,21 +315,29 @@ export class GoogleReviewsService {
         const data = await response.json();
         const tweets = data.data || [];
 
-        tweets.forEach((tweet: any, index: number) => {
+        for (const [index, tweet] of tweets.entries()) {
           if (reviews.length < maxResults) {
+            const tweetData = tweet as {
+              id: string;
+              text: string;
+              created_at: string;
+            };
             reviews.push({
-              id: `twitter-${tweet.id}`,
+              id: `twitter-${tweetData.id}`,
               author: `Twitter User ${index + 1}`,
-              rating: this.extractRatingFromText(tweet.text),
-              text: tweet.text,
-              date: new Date(tweet.created_at).toISOString().split('T')[0],
+              rating: this.extractRatingFromText(tweetData.text),
+              text: tweetData.text,
+              date: new Date(tweetData.created_at).toISOString().split('T')[0],
               helpful: Math.floor(Math.random() * 10),
               language: 'fi',
               source: 'Twitter/X',
-              demographics: this.generateDemographics(),
+              demographics: this.extractDemographicsFromPatterns(
+                tweetData.text,
+                `Twitter User ${index + 1}`,
+              ),
             });
           }
-        });
+        }
       } else {
         console.log('Twitter API not available - no fallback data generated');
         // Ei generoida mock-dataa - vain todelliset tiedot
@@ -415,7 +391,7 @@ export class GoogleReviewsService {
               const reviewsData = await reviewsResponse.json();
               const businessReviews = reviewsData.reviews || [];
 
-              businessReviews.forEach((review: any) => {
+              for (const review of businessReviews) {
                 if (reviews.length < maxResults) {
                   reviews.push({
                     id: `yelp-${review.id}`,
@@ -426,10 +402,13 @@ export class GoogleReviewsService {
                     helpful: review.useful || 0,
                     language: 'en',
                     source: 'Yelp',
-                    demographics: this.generateDemographics(),
+                    demographics: await this.extractDemographics(
+                      review.text,
+                      review.user.name,
+                    ),
                   });
                 }
-              });
+              }
             }
           }
         }
@@ -471,21 +450,29 @@ export class GoogleReviewsService {
         const data = await response.json();
         const posts = data.data || [];
 
-        posts.forEach((post: any, index: number) => {
+        for (const [index, post] of posts.entries()) {
           if (reviews.length < maxResults) {
+            const postData = post as {
+              id: string;
+              message?: string;
+              created_time: string;
+            };
             reviews.push({
-              id: `facebook-${post.id}`,
+              id: `facebook-${postData.id}`,
               author: `Facebook User ${index + 1}`,
-              rating: this.extractRatingFromText(post.message || ''),
-              text: post.message || '',
-              date: new Date(post.created_time).toISOString().split('T')[0],
+              rating: this.extractRatingFromText(postData.message || ''),
+              text: postData.message || '',
+              date: new Date(postData.created_time).toISOString().split('T')[0],
               helpful: Math.floor(Math.random() * 5),
               language: 'fi',
               source: 'Facebook Groups',
-              demographics: this.generateDemographics(),
+              demographics: this.extractDemographicsFromPatterns(
+                postData.message || '',
+                `Facebook User ${index + 1}`,
+              ),
             });
           }
-        });
+        }
       } else {
         console.log('Facebook API not available - no fallback data generated');
         // Ei generoida mock-dataa - vain todelliset tiedot
@@ -532,190 +519,6 @@ export class GoogleReviewsService {
     )
       return 1;
     return Math.floor(Math.random() * 2) + 4; // Default 4-5 stars
-  }
-
-  // Helper: Generate Twitter-style review
-  private generateTwitterReview(businessName: string): string {
-    const templates = [
-      `Kokeilin ${businessName}:a ja oli tosi hyvä! 👍`,
-      `${businessName} suosittelen! Palvelu oli nopea ja ystävällinen.`,
-      `Ostin ${businessName}:sta ja olen tyytyväinen!`,
-      `${businessName} - loistava valinta! ⭐⭐⭐⭐⭐`,
-      `Kävin ${businessName}:ssa ja oli erinomainen kokemus!`,
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
-  }
-
-  // Helper: Generate Yelp-style review
-  private generateYelpReview(businessName: string): string {
-    const templates = [
-      `Great experience at ${businessName}! Highly recommend.`,
-      `${businessName} exceeded my expectations. Excellent service.`,
-      `Wonderful place, ${businessName} is definitely worth a visit.`,
-      `Amazing service at ${businessName}. Will come back!`,
-      `${businessName} provided excellent quality and friendly staff.`,
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
-  }
-
-  // Helper: Generate Facebook-style review
-  private generateFacebookReview(businessName: string): string {
-    const templates = [
-      `Kävin ${businessName}:ssa ja oli tosi hyvä! Suosittelen kaikille! 😊`,
-      `${businessName} - loistava palvelu ja ystävällinen henkilökunta! 👍`,
-      `Ostin ${businessName}:sta ja olen erittäin tyytyväinen! ⭐⭐⭐⭐⭐`,
-      `${businessName} suosittelen lämpimästi! Palvelu oli nopea ja laadukas.`,
-      `Kokeilin ${businessName}:a ja oli erinomainen kokemus! 😍`,
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
-  }
-
-  // Google Reviews API - POISTETTU (maksullinen)
-  private async fetchGoogleReviews(): Promise<GoogleReview[]> {
-    console.log('🚫 Google Reviews API disabled (paid service)');
-    return [];
-  }
-
-  // Trustpilot API - POISTETTU (maksullinen)
-  private async fetchTrustpilotReviews(): Promise<GoogleReview[]> {
-    console.log('🚫 Trustpilot API disabled (paid service)');
-    return [];
-  }
-
-  // Facebook Reviews API - POISTETTU (maksullinen)
-  private async fetchFacebookReviews(): Promise<GoogleReview[]> {
-    console.log('🚫 Facebook Reviews API disabled (paid service)');
-    return [];
-  }
-
-  // Generate mock reviews for testing when APIs fail
-  private async generateMockReviews(count: number): Promise<GoogleReview[]> {
-    const mockReviews = [
-      {
-        author: 'Maria Virtanen',
-        rating: 5,
-        text: 'Erinomainen palvelu! Henkilökunta oli erittäin ystävällistä ja asiantuntevaa. Suosittelen lämpimästi.',
-        demographics: {
-          age: 34,
-          gender: 'female' as const,
-          location: 'Helsinki',
-          occupation: 'Marketing Manager',
-        },
-      },
-      {
-        author: 'Jukka Mäkelä',
-        rating: 4,
-        text: 'Hyvä kokemus kaiken kaikkiaan. Ainoa miinus oli hieman pitkä odotusaika, mutta lopputulos oli hyvä.',
-        demographics: {
-          age: 45,
-          gender: 'male' as const,
-          location: 'Tampere',
-          occupation: 'Engineer',
-        },
-      },
-      {
-        author: 'Anna Korhonen',
-        rating: 5,
-        text: 'Erittäin tyytyväinen ostokseeni! Tuote vastasi täysin odotuksia ja toimitus oli nopea.',
-        demographics: {
-          age: 28,
-          gender: 'female' as const,
-          location: 'Turku',
-          occupation: 'Teacher',
-        },
-      },
-      {
-        author: 'Mikael Lindqvist',
-        rating: 3,
-        text: 'Keskiverto kokemus. Hinta-laatusuhde voisi olla parempi, mutta palvelu oli ok.',
-        demographics: {
-          age: 52,
-          gender: 'male' as const,
-          location: 'Helsinki',
-          occupation: 'Sales Director',
-        },
-      },
-      {
-        author: 'Liisa Hakkarainen',
-        rating: 5,
-        text: 'Loistava asiakaspalvelu! Henkilökunta osasi neuvoa hyvin ja ratkaisut olivat innovatiivisia.',
-        demographics: {
-          age: 38,
-          gender: 'female' as const,
-          location: 'Oulu',
-          occupation: 'IT Consultant',
-        },
-      },
-      {
-        author: 'Petri Saarinen',
-        rating: 4,
-        text: 'Hyvä yritys, ammattitaitoinen henkilökunta. Pienet parannukset toimitusaikaan olisivat plussaa.',
-        demographics: {
-          age: 41,
-          gender: 'male' as const,
-          location: 'Jyväskylä',
-          occupation: 'Project Manager',
-        },
-      },
-      {
-        author: 'Sanna Virtala',
-        rating: 5,
-        text: 'Ehdottomasti paras kokemus alalla! Suosittelen kaikille ystävilleni.',
-        demographics: {
-          age: 29,
-          gender: 'female' as const,
-          location: 'Espoo',
-          occupation: 'UX Designer',
-        },
-      },
-      {
-        author: 'Kari Nieminen',
-        rating: 2,
-        text: 'Valitettavasti kokemus ei vastannut odotuksia. Palvelussa oli puutteita.',
-        demographics: {
-          age: 35,
-          gender: 'male' as const,
-          location: 'Vantaa',
-          occupation: 'Operations Manager',
-        },
-      },
-      {
-        author: 'Elina Järvinen',
-        rating: 4,
-        text: 'Kiitettävä palvelu ja laatu. Hintaa voisi tarkistaa hieman alaspäin.',
-        demographics: {
-          age: 43,
-          gender: 'female' as const,
-          location: 'Lahti',
-          occupation: 'HR Manager',
-        },
-      },
-      {
-        author: 'Timo Heikkinen',
-        rating: 5,
-        text: 'Erinomainen! Henkilökohtainen palvelu ja nopea toimitus. Tilaan varmasti uudelleen.',
-        demographics: {
-          age: 36,
-          gender: 'male' as const,
-          location: 'Kuopio',
-          occupation: 'Business Analyst',
-        },
-      },
-    ];
-
-    return mockReviews.slice(0, count).map((review, index) => ({
-      id: `mock-${Date.now()}-${index}`,
-      author: review.author,
-      rating: review.rating,
-      text: review.text,
-      date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0],
-      helpful: Math.floor(Math.random() * 10),
-      language: 'fi',
-      source: 'Mock Data',
-      demographics: review.demographics,
-    }));
   }
 
   // Enhanced demographic extraction with pattern-based methods only

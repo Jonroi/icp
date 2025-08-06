@@ -12,20 +12,21 @@ import {
   Zap,
   TrendingUp,
 } from 'lucide-react';
-import { GoogleReviewsService } from '@/services/google-reviews';
-import type { GooglePlaceData, GoogleReview } from '@/services/google-reviews';
+import { MultiSourceReviewsService } from '@/services/multi-source-reviews';
+import type {
+  GooglePlaceData,
+  GoogleReview,
+} from '@/services/multi-source-reviews';
 
 interface GoogleReviewsCollectorProps {
   onReviewsCollected: (
     reviews: GoogleReview[],
     placeData: GooglePlaceData,
   ) => void;
-  apiKey?: string;
 }
 
 export function GoogleReviewsCollector({
   onReviewsCollected,
-  apiKey,
 }: GoogleReviewsCollectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<
@@ -38,7 +39,7 @@ export function GoogleReviewsCollector({
   const [isLoading, setIsLoading] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
 
-  const googleService = new GoogleReviewsService(apiKey || '');
+  const googleService = new MultiSourceReviewsService();
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
