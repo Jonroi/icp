@@ -1,151 +1,73 @@
-# Ollama Setup Guide for ICP Generation
+# Ollama Asennus ja ChatGPT-kompatiibiliteetti
 
-## Overview
+## 1. Asenna Ollama
 
-This application uses Ollama (local LLM) for generating Ideal Customer Profiles (ICPs). No external API keys are required!
+Lataa ja asenna Ollama: [https://ollama.ai](https://ollama.ai)
 
-## Prerequisites
+## 2. Asenna ChatGPT-kompatiibeli mallit
 
-1. **Install Ollama**: Download and install from [https://ollama.ai](https://ollama.ai)
-2. **Download the required model**: The application uses `llama3.2:3b` model
-
-## Setup Steps
-
-### 1. Install Ollama
-
-Visit [https://ollama.ai](https://ollama.ai) and download the installer for your operating system:
-
-- **Windows**: Download the Windows installer
-- **macOS**: Download the macOS installer
-- **Linux**: Follow the installation instructions
-
-### 2. Download the Required Model
-
-After installing Ollama, open a terminal/command prompt and run:
+### Suositellut mallit ChatGPT:n sijaan
 
 ```bash
-ollama pull llama3.2:3b
+# Pieni ja nopea malli (suositus)
+ollama pull llama3.2:3b-instruct-q4_K_M
+
+# Parempi suorituskyky, enemmän muistia
+ollama pull llama3.2:8b-instruct-q4_K_M
+
+# Koodaus-optimoitu malli
+ollama pull codellama:7b-instruct-q4_K_M
+
+# Mistral-malli (hyvä suorituskyky)
+ollama pull mistral:7b-instruct-q4_K_M
 ```
 
-This will download the Llama 3.2 3B model (approximately 2GB).
-
-### 3. Start Ollama
-
-Ollama should start automatically after installation. If not, you can start it manually:
+## 3. Testaa asennus
 
 ```bash
-ollama serve
+# Testaa että Ollama toimii
+ollama list
+
+# Testaa mallin toimintaa
+ollama run llama3.2:3b-instruct-q4_K_M "Hei, miten menee?"
 ```
 
-### 4. Verify Installation
+## 4. Käytä sovelluksessa
 
-Test that Ollama is working:
+Sovellus käyttää automaattisesti paikallista Ollamaa ChatGPT:n sijaan.
+Voit vaihtaa mallia muokkaamalla `src/services/ai/ollama-client.ts` tiedostoa.
 
-```bash
-ollama run llama3.2:3b "Hello, how are you?"
-```
+## 5. Suorituskyky
 
-You should get a response from the model.
+- **llama3.2:3b**: ~2GB RAM, nopea
+- **llama3.2:8b**: ~4GB RAM, parempi laatu
+- **codellama:7b**: ~4GB RAM, hyvä koodaukseen
+- **mistral:7b**: ~4GB RAM, hyvä yleiskäyttöön
 
-## Using the Application
+## 6. Ongelmatilanteet
 
-### Generate ICPs
+Jos sovellus ei löydä Ollamaa:
 
-1. **Add Competitors**: Enter competitor names and websites in the ICP Generator tab
-2. **Add Reviews** (optional): Add customer reviews for each competitor
-3. **Add Context** (optional): Provide additional information about your target market
-4. **Generate ICPs**: Click "Generate Ideal Customer Personas"
-5. **View Results**: Switch to the "ICP Profiles" tab to see the generated profiles
+1. Varmista että Ollama on asennettu
+2. Käynnistä Ollama: `ollama serve`
+3. Tarkista että malli on ladattu: `ollama list`
+4. Testaa manuaalisesti: `ollama run [mallin-nimi] "testi"`
 
-### Test the Functionality
+## 7. ChatGPT API -kompatiibiliteetti
 
-1. Go to the "ICP Profiles" tab
-2. Click "Test ICP Generation" to test with sample data
-3. Check the browser console for detailed logs
-
-## Troubleshooting
-
-### Ollama Connection Issues
-
-If you get connection errors:
-
-1. **Check if Ollama is running**:
-
-   ```bash
-   ollama list
-   ```
-
-2. **Restart Ollama**:
-
-   ```bash
-   ollama serve
-   ```
-
-3. **Check the model is installed**:
-
-   ```bash
-   ollama list
-   ```
-
-   You should see `llama3.2:3b` in the list.
-
-### Model Not Found
-
-If the model isn't installed:
-
-```bash
-ollama pull llama3.2:3b
-```
-
-### Performance Issues
-
-- The first generation might be slow as the model loads
-- Subsequent generations will be faster
-- Consider using a smaller model for faster responses:
-
-  ```bash
-  ollama pull llama2:3b
-  ```
-
-  Then update the model name in `src/services/ai.ts` from `llama3.2:3b` to `llama2:3b`
-
-## Configuration
-
-The application is configured to use:
-
-- **URL**: `http://localhost:11434/api/generate`
-- **Model**: `llama3.2:3b`
-- **Stream**: `false` (for better response handling)
-
-## Benefits of Using Ollama
-
-✅ **No API costs** - completely free to use  
-✅ **Privacy** - all data stays on your local machine  
-✅ **Offline** - works without internet connection  
-✅ **Customizable** - can use different models  
-✅ **Fast** - no network latency
-
-## Alternative Models
-
-You can experiment with other models:
-
-```bash
-# Smaller, faster model
-ollama pull llama2:3b
-
-# More capable model
-ollama pull llama2:13b
-
-# Code-focused model
-ollama pull codellama:7b
-```
-
-To use a different model, update the model name in `src/services/ai.ts`:
+Sovellus tukee nyt ChatGPT API:n kaltaista rajapintaa paikallisesti:
 
 ```typescript
-const response = await axios.post(this.ollamaUrl, {
-  model: 'llama2:3b', // Change this to your preferred model
-  prompt: prompt,
-  stream: false,
+import { ChatGPTClient } from './services/ai';
+
+const client = new ChatGPTClient();
+
+// Käytä kuten ChatGPT API:a
+const response = await client.createChatCompletion({
+  model: 'gpt-3.5-turbo',
+  messages: [
+    { role: 'system', content: 'Olet hyödyllinen assistentti.' },
+    { role: 'user', content: 'Kerro minulle jotain mielenkiintoista.' },
+  ],
 });
 ```
