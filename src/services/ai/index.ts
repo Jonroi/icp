@@ -8,3 +8,4 @@ export { CompetitorAnalyzer } from './competitor-analyzer';
 export { ReviewAnalyzer } from './review-analyzer';
 export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
+export { ChatGPTClient } from './chatgpt-client';

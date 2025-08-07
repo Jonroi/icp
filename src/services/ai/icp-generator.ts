@@ -13,22 +13,43 @@ export class ICPGenerator {
     reviews: CustomerReview[],
     additionalContext: string = '',
   ): Promise<ICP[]> {
+    console.log(`🎯 Aloitetaan ICP-generaatio:`);
+    console.log(`   🏢 Kilpailijoita: ${competitors.length}`);
+    console.log(`   📝 Arvosteluja: ${reviews.length}`);
+    console.log(`   📋 Lisäkonteksti: ${additionalContext ? 'Kyllä' : 'Ei'}`);
+
     try {
       const competitorInfo = competitors
         .map((c) => `${c.name} (${c.website})`)
         .join('\n');
       const reviewTexts = reviews.map((r) => r.text).join('\n');
 
+      console.log(`📝 Rakennetaan prompt...`);
       const prompt = this.buildICPPrompt(
         competitorInfo,
         reviewTexts,
         additionalContext,
       );
-      const responseText = await this.ollamaClient.generateResponse(prompt);
 
-      return this.parseICPResponse(responseText);
+      console.log(`📤 Lähetetään ICP-generaattoriin...`);
+      const startTime = Date.now();
+      const responseText = await this.ollamaClient.generateResponse(prompt);
+      const endTime = Date.now();
+
+      console.log(`✅ ICP-generaatio valmis:`);
+      console.log(`   ⏱️  Kesto: ${endTime - startTime}ms`);
+      console.log(`   📊 Vastauksen pituus: ${responseText.length} merkkiä`);
+
+      console.log(`🔍 Parsitaan ICP-vastaus...`);
+      const icps = this.parseICPResponse(responseText);
+
+      console.log(`✅ ICP-parsinta valmis:`);
+      console.log(`   👥 ICP-profiileja luotu: ${icps.length}`);
+
+      return icps;
     } catch (error) {
-      console.error('ICP generation error:', error);
+      console.error(`❌ ICP-generaatio epäonnistui:`);
+      console.error(`   🔍 Virhe:`, error);
       throw error;
     }
   }
@@ -117,6 +138,9 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
   }
 
   private parseICPResponse(responseText: string): ICP[] {
+    console.log(`🔍 Parsitaan LLM-vastaus...`);
+    console.log(`   📄 Vastauksen alku: ${responseText.substring(0, 200)}...`);
+
     try {
       // Try to extract JSON from the response
       let jsonText = responseText;
@@ -127,6 +151,9 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
 
       if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
         jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
+        console.log(`   📋 JSON löydetty indekseistä ${jsonStart}-${jsonEnd}`);
+      } else {
+        console.warn(`⚠️  JSON-arraya ei löytynyt, käytetään koko vastausta`);
       }
 
       // Clean up any extra characters
@@ -134,19 +161,24 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
 
       // Parse the JSON
       const icps = JSON.parse(jsonText);
+      console.log(`✅ JSON-parsinta onnistui`);
 
       // Ensure we have an array
       if (Array.isArray(icps)) {
+        console.log(`   📊 Array sisältää ${icps.length} ICP-objektia`);
         return icps.map((icp: Partial<ICP>) => this.fixICPFields(icp));
       } else if (icps && typeof icps === 'object') {
         // Single ICP object - wrap in array and fix
+        console.log(`   📊 Yksi ICP-objekti, muutetaan arrayksi`);
         return [this.fixICPFields(icps)];
       } else {
         throw new Error('Invalid response format');
       }
     } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      console.error('Response text:', responseText);
+      console.error(`❌ JSON-parsinta epäonnistui:`);
+      console.error(`   🔍 Virhe:`, parseError);
+      console.error(`   📄 Vastaus:`, responseText);
+      console.log(`🔄 Käytetään fallback-ICP:tä...`);
       return this.getFallbackICPs();
     }
   }
