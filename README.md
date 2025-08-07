@@ -383,27 +383,33 @@ src/
 │   ├── campaign/       # Campaign components
 │   │   ├── CampaignDesigner.tsx # Campaign generation interface
 │   │   └── CampaignLibrary.tsx  # Campaign idea library
-│   └── TestICPGeneration.tsx   # ICP generation testing component
+│   ├── TestICPGeneration.tsx   # ICP generation testing component
+│   ├── TestChatGPT.tsx         # ChatGPT testing component
+│   └── index.ts                # Component exports
 ├── services/           # Business logic and API services
 │   ├── ai/             # Modularized AI services
-│   │   ├── types.ts              # TypeScript interfaces
-│   │   ├── ollama-client.ts      # Ollama API client
-│   │   ├── website-scraper.ts    # Website content extraction
-│   │   ├── icp-generator.ts      # ICP generation logic
+│   │   ├── agents/             # AI agents
+│   │   ├── types.ts            # TypeScript interfaces
+│   │   ├── ollama-client.ts    # Ollama API client
+│   │   ├── chatgpt-client.ts   # ChatGPT API client
+│   │   ├── website-scraper.ts  # Website content extraction
+│   │   ├── icp-generator.ts    # ICP generation logic
 │   │   ├── competitor-analyzer.ts # Competitor analysis
-│   │   ├── review-analyzer.ts    # Review analysis
-│   │   ├── ai-service.ts         # Main AI service orchestrator
-│   │   ├── index.ts             # AI services exports
-│   │   └── README.md            # AI services documentation
-│   ├── ai.ts                    # AI service re-export
+│   │   ├── review-analyzer.ts  # Review analysis
+│   │   ├── ai-service.ts       # Main AI service orchestrator
+│   │   ├── index.ts            # AI services exports
+│   │   └── README.md           # AI services documentation
+│   ├── ai.ts                   # AI service re-export
 │   ├── company-search-service.ts # Company information search
-│   ├── project-service.ts        # Project data persistence
-│   ├── reviews-service.ts        # Review processing service
-│   └── index.ts                 # Service exports
+│   ├── project-service.ts       # Project data persistence
+│   ├── reviews-service.ts       # Review processing service
+│   └── index.ts                # Service exports
 ├── hooks/              # Custom React hooks
 │   └── useAppState.ts  # Centralized application state management
 ├── utils/              # Utility functions
 │   └── test-icp-generation.ts   # ICP generation testing utilities
-└── lib/                # Shared utilities
-    └── utils.ts        # Utility functions
+├── lib/                # Shared utilities
+│   └── utils.ts        # Utility functions
+├── App.tsx             # Main application component
+└── main.tsx            # Application entry point
 ```
