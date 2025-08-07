@@ -22,4 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-*.cursorrules
+
+# Cursor AI files
+.cursorrules
+cursor-tools.md
+src/utils/cursor-tools.ts
