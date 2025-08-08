@@ -1,7 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
-import { SaveProjectDialog } from '@/components/dialogs/SaveProjectDialog';
-import { LoadProjectDialog } from '@/components/dialogs/LoadProjectDialog';
 import { ICPGenerator } from '@/components/icp/ICPGenerator';
 import { ICPProfiles } from '@/components/icp/ICPProfiles';
 import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
@@ -23,8 +21,6 @@ export default function App() {
     showICPPopup,
     projectName,
     savedProjects,
-    showSaveDialog,
-    showLoadDialog,
     savedCompetitors,
     showCompetitorDropdown,
     generatedICPs,
@@ -34,8 +30,6 @@ export default function App() {
     // Actions
     setAdditionalContext,
     setProjectName,
-    setShowSaveDialog,
-    setShowLoadDialog,
     setShowICPPopup,
     handleCompetitorChange,
     addCompetitor,
@@ -53,28 +47,8 @@ export default function App() {
   } = useAppState();
 
   return (
-    <div className='space-y-6'>
-      <Header
-        savedProjectsCount={savedProjects.length}
-        onSaveProject={() => setShowSaveDialog(true)}
-        onLoadProject={() => setShowLoadDialog(true)}
-      />
-
-      <SaveProjectDialog
-        isOpen={showSaveDialog}
-        projectName={projectName}
-        onProjectNameChange={setProjectName}
-        onSave={saveProject}
-        onCancel={() => setShowSaveDialog(false)}
-      />
-
-      <LoadProjectDialog
-        isOpen={showLoadDialog}
-        savedProjects={savedProjects}
-        onLoadProject={loadProject}
-        onDeleteProject={deleteProject}
-        onCancel={() => setShowLoadDialog(false)}
-      />
+    <div className='space-y-6 pt-6 md:pt-8 lg:pt-10'>
+      <Header />
 
       <Tabs defaultValue='icp-generator'>
         <TabsList className='grid w-full grid-cols-4'>
