@@ -30,27 +30,27 @@ export class CompetitorAnalyzer {
     competitor: CompetitorData,
     websiteContent: string,
   ): string {
-    return `Analysoi seuraavan kilpailijan sivuston sisältö ja luo kattava analyysi:
+    return `Analyze the competitor's website content and produce a comprehensive analysis:
 
-Kilpailija: ${competitor.name}
-Sivusto: ${competitor.website}
-Sosiaalinen media: ${competitor.social}
+ Competitor: ${competitor.name}
+ Website: ${competitor.website}
+ Social: ${competitor.social}
 
-Sivuston sisältö:
-${websiteContent.substring(0, 2000)}
+ Website content:
+ ${websiteContent.substring(0, 2000)}
 
-Luo analyysi JSON-muodossa suomeksi sisältäen:
-- targetAudience: kohderyhmät
-- painPoints: asiakkaiden ongelmat
-- valueProposition: arvolupaus
-- pricingStrategy: hinnoittelustrategia
-- marketingChannels: markkinointikanavat
-- strengths: vahvuudet
-- weaknesses: heikkoudet
-- opportunities: mahdollisuudet
-- threats: uhat
+ Respond in JSON only with the following fields:
+ - targetAudience
+ - painPoints
+ - valueProposition
+ - pricingStrategy
+ - marketingChannels
+ - strengths
+ - weaknesses
+ - opportunities
+ - threats
 
-Vastaa vain JSON-muodossa ilman ylimääräisiä tekstejä.`;
+ Return JSON only without additional text.`;
   }
 
   private parseCompetitorAnalysisResponse(

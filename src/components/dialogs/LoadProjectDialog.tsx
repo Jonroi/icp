@@ -28,9 +28,9 @@ export function LoadProjectDialog({
   return (
     <Card className='border-2 border-primary'>
       <CardHeader>
-        <CardTitle>Lataa Projekti</CardTitle>
+        <CardTitle>Load Project</CardTitle>
         <CardDescription>
-          Valitse tallennettu projekti ladataksesi kaikki tiedot
+          Select a saved project to load all data
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-3'>
@@ -45,7 +45,7 @@ export function LoadProjectDialog({
                 size='sm'
                 onClick={() => onLoadProject(name)}>
                 <Upload className='h-4 w-4 mr-1' />
-                Lataa
+                Load
               </Button>
               <Button
                 variant='ghost'
@@ -57,7 +57,7 @@ export function LoadProjectDialog({
           </div>
         ))}
         <Button variant='outline' onClick={onCancel} className='w-full'>
-          Sulje
+          Close
         </Button>
       </CardContent>
     </Card>

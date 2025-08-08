@@ -87,7 +87,7 @@ export function useAppState() {
 
   const saveProject = () => {
     if (!projectName.trim()) {
-      alert('Anna projektille nimi!');
+      alert('Please provide a project name!');
       return;
     }
 
@@ -106,7 +106,7 @@ export function useAppState() {
     ProjectService.saveProject(projectData);
     loadSavedProjectsList();
     setShowSaveDialog(false);
-    alert(`Projekti "${projectName}" tallennettu onnistuneesti!`);
+    alert(`Project "${projectName}" saved successfully!`);
   };
 
   const loadProject = (name: string) => {
@@ -122,16 +122,16 @@ export function useAppState() {
       setGeneratedCampaign(parsed.generatedCampaign || null);
 
       setShowLoadDialog(false);
-      alert(`Projekti "${name}" ladattu onnistuneesti!`);
+      alert(`Project "${name}" loaded successfully!`);
     } else {
-      alert('Virhe ladattaessa projektia.');
+      alert('Error loading project.');
     }
   };
 
   const deleteProject = (name: string) => {
     ProjectService.deleteProject(name);
     loadSavedProjectsList();
-    alert(`Projekti "${name}" poistettu!`);
+    alert(`Project "${name}" deleted!`);
   };
 
   const loadSavedCompetitor = (competitorName: string, index: number) => {
@@ -150,9 +150,9 @@ export function useAppState() {
         ...showCompetitorDropdown,
         [index]: false,
       });
-      alert(`Kilpailijan "${competitorName}" tiedot ladattu!`);
+      alert(`Competitor "${competitorName}" loaded!`);
     } else {
-      alert('Virhe ladattaessa kilpailijaa.');
+      alert('Error loading competitor.');
     }
   };
 
@@ -322,7 +322,7 @@ export function useAppState() {
   const saveCompetitor = (competitor: Competitor) => {
     ProjectService.saveCompetitor(competitor);
     loadSavedCompetitorsList();
-    alert(`Kilpailijan perustiedot "${competitor.name}" tallennettu!`);
+    alert(`Competitor basics for "${competitor.name}" saved!`);
   };
 
   const toggleCompetitorDropdown = (index: number) => {

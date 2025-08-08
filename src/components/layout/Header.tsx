@@ -25,11 +25,11 @@ export function Header({
       <div className='flex gap-2'>
         <Button variant='outline' onClick={onSaveProject}>
           <Save className='h-4 w-4 mr-2' />
-          Tallenna Projekti
+          Save Project
         </Button>
         <Button variant='outline' onClick={onLoadProject}>
           <Upload className='h-4 w-4 mr-2' />
-          Lataa Projekti ({savedProjectsCount})
+          Load Project ({savedProjectsCount})
         </Button>
       </div>
     </div>

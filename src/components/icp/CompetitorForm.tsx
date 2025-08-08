@@ -71,7 +71,7 @@ export function CompetitorForm({
           size='icon'
           className='h-8 w-8'
           onClick={() => onRemoveCompetitor(index)}
-          title='Poista kilpailija'>
+          title='Remove competitor'>
           <Trash2 className='h-4 w-4' />
         </Button>
       </div>
@@ -81,7 +81,7 @@ export function CompetitorForm({
           <div className='flex gap-2 relative'>
             <Input
               id={`competitor-name-${index}`}
-              placeholder='Kirjoita yrityksen nimi tai valitse tallennettu'
+              placeholder='Type a company name or select a saved one'
               value={competitor.name}
               onChange={(e) =>
                 onCompetitorChange(index, 'name', e.target.value)
@@ -93,7 +93,7 @@ export function CompetitorForm({
                   variant='outline'
                   size='icon'
                   onClick={() => onToggleCompetitorDropdown(index)}
-                  title='Valitse tallennettu kilpailija'>
+                  title='Select saved competitor'>
                   <ChevronDown className='h-4 w-4' />
                 </Button>
 
@@ -128,7 +128,7 @@ export function CompetitorForm({
               disabled={
                 isFetchingCompanyInfo === index || !competitor.name.trim()
               }
-              title='Hae yrityksen tiedot'>
+              title='Fetch company info'>
               {isFetchingCompanyInfo === index ? (
                 <RefreshCw className='h-4 w-4 animate-spin' />
               ) : (
@@ -140,18 +140,18 @@ export function CompetitorForm({
               size='icon'
               onClick={() => {
                 if (!competitor.name.trim()) {
-                  alert('Kilpailijan nimi on pakollinen tallentamiseen!');
+                  alert('Competitor name is required to save!');
                   return;
                 }
                 onSaveCompetitor(competitor);
               }}
-              title='Tallenna kilpailijan tiedot'>
+              title='Save competitor details'>
               <Save className='h-4 w-4' />
             </Button>
           </div>
           {competitor.name && !competitor.website && (
             <p className='text-xs text-muted-foreground'>
-              💡 Kirjoita yrityksen nimi ja klikkaa hakunappia
+              💡 Enter a company name and click the search button
             </p>
           )}
           {companyInfoStatus[index] && (
@@ -183,7 +183,7 @@ export function CompetitorForm({
                 variant='outline'
                 size='icon'
                 onClick={() => window.open(competitor.website, '_blank')}
-                title='Avaa sivusto uudessa ikkunassa'>
+                title='Open website in a new tab'>
                 <ExternalLink className='h-4 w-4' />
               </Button>
             )}
@@ -205,7 +205,7 @@ export function CompetitorForm({
                 variant='outline'
                 size='icon'
                 onClick={() => window.open(competitor.social, '_blank')}
-                title='Avaa LinkedIn uudessa ikkunassa'>
+                title='Open LinkedIn in a new tab'>
                 <ExternalLink className='h-4 w-4' />
               </Button>
             )}
