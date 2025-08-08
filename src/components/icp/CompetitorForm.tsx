@@ -78,45 +78,54 @@ export function CompetitorForm({
       <div className='space-y-3'>
         <div className='space-y-2'>
           <Label htmlFor={`competitor-name-${index}`}>Name of Competitor</Label>
-          <div className='flex gap-2 relative'>
-            <Input
-              id={`competitor-name-${index}`}
-              placeholder='Type a company name or select a saved one'
-              value={competitor.name}
-              onChange={(e) =>
-                onCompetitorChange(index, 'name', e.target.value)
-              }
-            />
-            {savedCompetitors.length > 0 && (
-              <div className='relative'>
-                <Button
-                  variant='outline'
-                  size='icon'
-                  onClick={() => onToggleCompetitorDropdown(index)}
-                  title='Select saved competitor'>
-                  <ChevronDown className='h-4 w-4' />
-                </Button>
+          <div className='flex gap-2'>
+            <div className='relative flex-1'>
+              <Input
+                id={`competitor-name-${index}`}
+                placeholder='Type a company name or select a saved one'
+                value={competitor.name}
+                onChange={(e) =>
+                  onCompetitorChange(index, 'name', e.target.value)
+                }
+                className='pr-10'
+              />
+              {savedCompetitors.length > 0 && (
+                <>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon'
+                    className='absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7'
+                    onClick={() => onToggleCompetitorDropdown(index)}
+                    title='Select saved competitor'
+                    aria-haspopup='listbox'
+                    aria-expanded={!!showCompetitorDropdown[index]}>
+                    <ChevronDown className='h-4 w-4 opacity-70' />
+                  </Button>
 
-                {showCompetitorDropdown[index] && (
-                  <Card className='absolute top-12 right-0 z-10 w-64 max-h-48 overflow-y-auto'>
-                    <CardContent className='p-2'>
-                      <div className='space-y-1'>
-                        {savedCompetitors.map((name) => (
-                          <Button
-                            key={name}
-                            variant='ghost'
-                            size='sm'
-                            className='w-full justify-start text-left'
-                            onClick={() => onLoadSavedCompetitor(name, index)}>
-                            {name}
-                          </Button>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+                  {showCompetitorDropdown[index] && (
+                    <Card className='absolute top-10 right-0 z-10 w-64 max-h-48 overflow-y-auto'>
+                      <CardContent className='p-2'>
+                        <div className='space-y-1'>
+                          {savedCompetitors.map((name) => (
+                            <Button
+                              key={name}
+                              variant='ghost'
+                              size='sm'
+                              className='w-full justify-start text-left'
+                              onClick={() =>
+                                onLoadSavedCompetitor(name, index)
+                              }>
+                              {name}
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+            </div>
             <Button
               variant='outline'
               size='icon'
