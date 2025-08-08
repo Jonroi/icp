@@ -128,6 +128,25 @@ export class ProjectService {
     localStorage.removeItem(key);
   }
 
+  // Lightweight autosave for latest generated ICPs
+  static saveLastICPs(icps: GeneratedICP[]): void {
+    try {
+      localStorage.setItem('last-generated-icps', JSON.stringify(icps));
+    } catch (error) {
+      console.error('Failed to autosave ICPs:', error);
+    }
+  }
+
+  static loadLastICPs(): GeneratedICP[] {
+    try {
+      const raw = localStorage.getItem('last-generated-icps');
+      return raw ? (JSON.parse(raw) as GeneratedICP[]) : [];
+    } catch (error) {
+      console.error('Failed to load autosaved ICPs:', error);
+      return [];
+    }
+  }
+
   static saveCompetitor(competitor: Competitor): void {
     const competitorData = {
       name: competitor.name,
