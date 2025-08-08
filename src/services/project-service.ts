@@ -83,7 +83,6 @@ export interface Competitor {
   name: string;
   website: string;
   social: string;
-  reddit?: string;
   facebook?: string;
   twitter?: string;
   instagram?: string;

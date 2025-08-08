@@ -2,7 +2,6 @@ export interface CompanySearchResult {
   name: string;
   website: string;
   social: string;
-  reddit?: string;
   facebook?: string;
   twitter?: string;
   instagram?: string;
@@ -20,13 +19,44 @@ export class CompanySearchService {
     console.log(`🤖 LLM search for: ${companyName}`);
 
     try {
+      // Handle specific company mappings first
+      const knownCompanies: Record<
+        string,
+        { website: string; linkedin: string }
+      > = {
+        'db schenker': {
+          website: 'https://www.dbschenker.com',
+          linkedin: 'https://www.linkedin.com/company/db-schenker',
+        },
+        dbschenker: {
+          website: 'https://www.dbschenker.com',
+          linkedin: 'https://www.linkedin.com/company/db-schenker',
+        },
+        schenker: {
+          website: 'https://www.dbschenker.com',
+          linkedin: 'https://www.linkedin.com/company/db-schenker',
+        },
+      };
+
+      const normalizedName = companyName.toLowerCase().trim();
+      if (knownCompanies[normalizedName]) {
+        console.log(`Using known mapping for ${companyName}`);
+        const known = knownCompanies[normalizedName];
+        return {
+          website: known.website,
+          social: known.linkedin,
+          confidence: 'high' as const,
+          notes: 'Known company mapping',
+        };
+      }
+
       const prompt = `You are a business directory assistant. Find the official website and LinkedIn page for "${companyName}".
 
 INSTRUCTIONS:
 1. First check if you know this company from any industry or country
 2. If you know it, provide exact URLs
 3. If you don't know it exactly, make educated guesses based on the company name
-4. Companies often use patterns like: https://www.companyname.com or .fi (for Finnish companies)
+4. Prefer .com domains for international companies
 5. LinkedIn often uses: https://www.linkedin.com/company/companyname
 
 FORMAT (return exactly these two lines):
@@ -146,7 +176,6 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
         name: companyName,
         website: llmResults.website,
         social: llmResults.social,
-        reddit: '',
         facebook: '',
         twitter: '',
         instagram: '',
@@ -161,7 +190,6 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
         name: companyName,
         website: '',
         social: '',
-        reddit: '',
         facebook: '',
         twitter: '',
         instagram: '',

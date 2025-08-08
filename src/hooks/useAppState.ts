@@ -209,7 +209,6 @@ export function useAppState() {
           name: companyInfo.name || newCompetitors[index].name,
           website: companyInfo.website || newCompetitors[index].website,
           social: companyInfo.social || newCompetitors[index].social,
-          reddit: companyInfo.reddit || newCompetitors[index].reddit,
           facebook: companyInfo.facebook || newCompetitors[index].facebook,
           twitter: companyInfo.twitter || newCompetitors[index].twitter,
           instagram: companyInfo.instagram || newCompetitors[index].instagram,
@@ -276,6 +275,7 @@ export function useAppState() {
     try {
       const reviewsText = await ReviewsService.fetchCustomerReviews(
         companyName,
+        competitors[index]?.website,
       );
 
       // Count the number of reviews (lines)
@@ -294,7 +294,7 @@ export function useAppState() {
         ...reviewsStatus,
         [index]: {
           success: true,
-          message: `✅ Generated ${reviewCount} reviews for ${companyName}`,
+          message: `✅ Fetched ${reviewCount} lines of review data for ${companyName}, You can now generate ICPs`,
         },
       });
     } catch (error) {

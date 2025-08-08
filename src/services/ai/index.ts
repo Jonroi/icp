@@ -6,6 +6,7 @@ export { AIService } from './ai-service';
 export { ICPGenerator } from './icp-generator';
 export { CompetitorAnalyzer } from './competitor-analyzer';
 export { ReviewAnalyzer } from './review-analyzer';
+export { ReviewAgent } from './review-agent';
 export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
 export { ChatGPTClient } from './chatgpt-client';

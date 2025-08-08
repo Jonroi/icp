@@ -13,6 +13,7 @@ export {
 
 // Reviews service
 export { ReviewsService } from './reviews-service';
+export { WebTextFetcher } from './web-text-fetcher';
 
 // AI services
 export * from './ai';
