@@ -7,7 +7,7 @@ export class WebsiteScraper {
       const response = await axios.get(url);
       const $ = cheerio.load(response.data);
 
-      // Poista skriptit, tyylit ja muut ei-tekstisisältö
+      // Remove scripts, styles and non-text content
       $('script').remove();
       $('style').remove();
       $('nav').remove();

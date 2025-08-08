@@ -38,7 +38,7 @@ export class ChatGPTClient {
   private modelMapping: Record<string, string>;
 
   constructor() {
-    // Mappaa ChatGPT-mallit Ollama-malleihin
+    // Map ChatGPT models to Ollama models
     this.modelMapping = {
       'gpt-3.5-turbo': 'llama3.2:3b-instruct-q4_K_M',
       'gpt-4': 'llama3.2:3b-instruct-q4_K_M',
@@ -48,25 +48,25 @@ export class ChatGPTClient {
     };
 
     this.ollamaClient = new OllamaClient();
-    console.log(`🤖 ChatGPTClient alustettu:`);
-    console.log(`   📋 Käytettävät mallit:`, Object.keys(this.modelMapping));
+    console.log(`🤖 ChatGPTClient initialized:`);
+    console.log(`   📋 Available models:`, Object.keys(this.modelMapping));
   }
 
   async createChatCompletion(
     request: ChatCompletionRequest,
   ): Promise<ChatCompletionResponse> {
-    console.log(`💬 Aloitetaan ChatGPT-kompatiibeli pyyntö:`);
-    console.log(`   🤖 Pyydetty malli: ${request.model}`);
-    console.log(`   💭 Viestien määrä: ${request.messages.length}`);
+    console.log(`💬 Starting ChatGPT-compatible request:`);
+    console.log(`   🤖 Requested model: ${request.model}`);
+    console.log(`   💭 Messages: ${request.messages.length}`);
     console.log(`   🌡️  Temperature: ${request.temperature || 'default'}`);
     console.log(`   📏 Max tokens: ${request.max_tokens || 'default'}`);
 
     const ollamaModel =
       this.modelMapping[request.model] || this.modelMapping.default;
 
-    console.log(`   🔄 Mappattu malli: ${request.model} → ${ollamaModel}`);
+    console.log(`   🔄 Mapped model: ${request.model} → ${ollamaModel}`);
 
-    // Käytä viimeisintä käyttäjän viestiä
+    // Use the latest user message
     const userMessages = request.messages.filter((m) => m.role === 'user');
     const systemMessages = request.messages.filter((m) => m.role === 'system');
 
@@ -76,11 +76,11 @@ export class ChatGPTClient {
       systemMessages[systemMessages.length - 1]?.content || '';
 
     console.log(
-      `   👤 Käytetään viimeistä user-viestiä: ${lastUserMessage.length} merkkiä`,
+      `   👤 Using last user message: ${lastUserMessage.length} chars`,
     );
     console.log(
       `   ⚙️  System prompt: ${
-        systemPrompt ? systemPrompt.length + ' merkkiä' : 'Ei'
+        systemPrompt ? systemPrompt.length + ' chars' : 'None'
       }`,
     );
 
@@ -92,9 +92,9 @@ export class ChatGPTClient {
       );
       const endTime = Date.now();
 
-      console.log(`✅ ChatGPT-kompatiibeli vastaus valmis:`);
-      console.log(`   ⏱️  Kesto: ${endTime - startTime}ms`);
-      console.log(`   📊 Vastauksen pituus: ${response.length} merkkiä`);
+      console.log(`✅ ChatGPT-compatible response ready:`);
+      console.log(`   ⏱️  Duration: ${endTime - startTime}ms`);
+      console.log(`   📊 Response length: ${response.length} chars`);
 
       return {
         id: `chatcmpl-${Date.now()}`,
@@ -119,17 +119,17 @@ export class ChatGPTClient {
         },
       };
     } catch (error) {
-      console.error(`❌ ChatGPT-kompatiibeli pyyntö epäonnistui:`);
-      console.error(`   🔍 Virhe:`, error);
-      throw new Error(`ChatGPT-kompatiibeli palvelu epäonnistui: ${error}`);
+      console.error(`❌ ChatGPT-compatible request failed:`);
+      console.error(`   🔍 Error:`, error);
+      throw new Error(`ChatGPT-compatible service failed: ${error}`);
     }
   }
 
-  // Yksinkertainen metodi suorille viesteille
+  // Simple method for direct messages
   async sendMessage(message: string, systemPrompt?: string): Promise<string> {
-    console.log(`💬 Yksinkertainen viesti:`);
-    console.log(`   📝 Viestin pituus: ${message.length} merkkiä`);
-    console.log(`   ⚙️  System prompt: ${systemPrompt ? 'Kyllä' : 'Ei'}`);
+    console.log(`💬 Simple message:`);
+    console.log(`   📝 Message length: ${message.length} chars`);
+    console.log(`   ⚙️  System prompt: ${systemPrompt ? 'Yes' : 'No'}`);
 
     return this.ollamaClient.generateResponse(message, systemPrompt);
   }

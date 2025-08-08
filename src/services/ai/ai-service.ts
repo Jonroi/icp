@@ -22,17 +22,17 @@ export class AIService {
     this.websiteScraper = new WebsiteScraper();
   }
 
-  // Hae sivuston sisältö
+  // Fetch website content
   async scrapeWebsite(url: string): Promise<string> {
     return this.websiteScraper.scrapeWebsite(url);
   }
 
-  // Analysoi asiakasarvostelut
+  // Analyze customer reviews
   async analyzeReviews(reviews: CustomerReview[]): Promise<string> {
     return this.reviewAnalyzer.analyzeReviews(reviews);
   }
 
-  // Luo ICP-profiileja
+  // Generate ICP profiles
   async generateICPs(
     competitors: CompetitorData[],
     reviews: CustomerReview[],
@@ -45,7 +45,7 @@ export class AIService {
     );
   }
 
-  // Luo kilpailija-analyysi
+  // Generate competitor analysis
   async generateCompetitorAnalysis(
     competitor: CompetitorData,
     websiteContent: string,

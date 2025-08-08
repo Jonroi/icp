@@ -7,25 +7,25 @@ export class OllamaClient {
   constructor(model: string = 'llama3.2:3b-instruct-q4_K_M') {
     this.ollamaUrl = 'http://localhost:11434/api/generate';
     this.model = model;
-    console.log(`🤖 OllamaClient alustettu mallilla: ${this.model}`);
+    console.log(`🤖 OllamaClient initialized with model: ${this.model}`);
   }
 
   async generateResponse(
     prompt: string,
     systemPrompt?: string,
   ): Promise<string> {
-    console.log(`🚀 Aloitetaan LLM-generaatio:`);
-    console.log(`   📋 Malli: ${this.model}`);
+    console.log(`🚀 Starting LLM generation:`);
+    console.log(`   📋 Model: ${this.model}`);
     console.log(`   🔗 URL: ${this.ollamaUrl}`);
-    console.log(`   📝 Prompt pituus: ${prompt.length} merkkiä`);
-    console.log(`   ⚙️  System prompt: ${systemPrompt ? 'Kyllä' : 'Ei'}`);
+    console.log(`   📝 Prompt length: ${prompt.length} chars`);
+    console.log(`   ⚙️  System prompt: ${systemPrompt ? 'Yes' : 'No'}`);
 
     try {
       const fullPrompt = systemPrompt
         ? `<|system|>${systemPrompt}</s><|user|>${prompt}</s><|assistant|>`
         : `<|user|>${prompt}</s><|assistant|>`;
 
-      console.log(`📤 Lähetetään pyyntö Ollamalle...`);
+      console.log(`📤 Sending request to Ollama...`);
 
       const startTime = Date.now();
       const response = await axios.post(this.ollamaUrl, {
@@ -42,27 +42,25 @@ export class OllamaClient {
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      console.log(`✅ LLM-vastaus saatu:`);
-      console.log(`   ⏱️  Kesto: ${duration}ms`);
+      console.log(`✅ LLM response received:`);
+      console.log(`   ⏱️  Duration: ${duration}ms`);
       console.log(
-        `   📊 Vastauksen pituus: ${
-          response.data.response?.length || 0
-        } merkkiä`,
+        `   📊 Response length: ${response.data.response?.length || 0} chars`,
       );
       console.log(`   🎯 Status: ${response.status}`);
 
-      const result = response.data.response || 'Analyysi epäonnistui';
+      const result = response.data.response || 'Analysis failed';
 
-      if (result === 'Analyysi epäonnistui') {
-        console.warn(`⚠️  LLM palautti tyhjän vastauksen`);
+      if (result === 'Analysis failed') {
+        console.warn(`⚠️  LLM returned an empty response`);
       } else {
-        console.log(`✅ LLM-generaatio onnistui!`);
+        console.log(`✅ LLM generation succeeded!`);
       }
 
       return result;
     } catch (error) {
-      console.error(`❌ LLM-generaatio epäonnistui:`);
-      console.error(`   🔍 Virhe:`, error);
+      console.error(`❌ LLM generation failed:`);
+      console.error(`   🔍 Error:`, error);
 
       if (axios.isAxiosError(error)) {
         console.error(`   📡 HTTP Status: ${error.response?.status}`);
@@ -70,44 +68,44 @@ export class OllamaClient {
       }
 
       throw new Error(
-        `Paikallinen LLM ei ole saatavilla. Asenna Ollama: https://ollama.ai ja lataa malli: ollama pull ${this.model}`,
+        `Local LLM not available. Install Ollama: https://ollama.ai and pull model: ollama pull ${this.model}`,
       );
     }
   }
 
   async analyzeReviews(reviewTexts: string): Promise<string> {
-    console.log(`📊 Aloitetaan arvostelujen analyysi:`);
-    console.log(`   📝 Arvosteluja: ${reviewTexts.split('\n').length} kpl`);
-    console.log(`   📏 Kokonaispituus: ${reviewTexts.length} merkkiä`);
+    console.log(`📊 Starting review analysis:`);
+    console.log(`   📝 Reviews: ${reviewTexts.split('\n').length}`);
+    console.log(`   📏 Total length: ${reviewTexts.length} chars`);
 
-    const systemPrompt = `Olet asiakasarvostelujen analysoija. Anna ytimekkäitä ja hyödyllisiä vastauksia suomeksi.`;
+    const systemPrompt = `You are a customer review analyst. Provide concise and helpful responses in English.`;
 
-    const prompt = `Analysoi seuraavat asiakasarvostelut ja kerro:
-1. Yleisimmät positiiviset teemat
-2. Yleisimmät negatiiviset teemat  
-3. Parannusehdotukset
-4. Yhteenveto asiakkaiden kokemuksista
+    const prompt = `Analyze the following customer reviews and report:
+1. Most common positive themes
+2. Most common negative themes
+3. Suggestions for improvement
+4. Summary of customer experiences
 
-Arvostelut:
+Reviews:
 ${reviewTexts}`;
 
     return this.generateResponse(prompt, systemPrompt);
   }
 
-  // ChatGPT-kompatiibeli metodi
+  // ChatGPT-compatible method
   async chatCompletion(
     messages: Array<{ role: string; content: string }>,
   ): Promise<string> {
-    console.log(`💬 Aloitetaan ChatGPT-kompatiibeli keskustelu:`);
-    console.log(`   💭 Viestien määrä: ${messages.length}`);
+    console.log(`💬 Starting ChatGPT-compatible conversation:`);
+    console.log(`   💭 Messages: ${messages.length}`);
 
     const systemMessages = messages.filter((m) => m.role === 'system');
     const userMessages = messages.filter((m) => m.role === 'user');
     const assistantMessages = messages.filter((m) => m.role === 'assistant');
 
-    console.log(`   ⚙️  System viestejä: ${systemMessages.length}`);
-    console.log(`   👤 User viestejä: ${userMessages.length}`);
-    console.log(`   🤖 Assistant viestejä: ${assistantMessages.length}`);
+    console.log(`   ⚙️  System messages: ${systemMessages.length}`);
+    console.log(`   👤 User messages: ${userMessages.length}`);
+    console.log(`   🤖 Assistant messages: ${assistantMessages.length}`);
 
     const systemMessage =
       messages.find((m) => m.role === 'system')?.content || '';

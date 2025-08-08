@@ -30,17 +30,17 @@ export function SaveProjectDialog({
   return (
     <Card className='border-2 border-primary'>
       <CardHeader>
-        <CardTitle>Tallenna Projekti</CardTitle>
+        <CardTitle>Save Project</CardTitle>
         <CardDescription>
-          Anna projektille nimi tallentaaksesi kaikki täytetyt tiedot
+          Give the project a name to save all filled data
         </CardDescription>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div>
-          <Label htmlFor='project-name'>Projektin nimi</Label>
+          <Label htmlFor='project-name'>Project name</Label>
           <Input
             id='project-name'
-            placeholder='Esim. Asiakassegmentointi Q1 2024'
+            placeholder='e.g., Customer Segmentation Q1 2024'
             value={projectName}
             onChange={(e) => onProjectNameChange(e.target.value)}
           />
@@ -48,10 +48,10 @@ export function SaveProjectDialog({
         <div className='flex gap-2'>
           <Button onClick={onSave} className='flex-1'>
             <Save className='h-4 w-4 mr-2' />
-            Tallenna
+            Save
           </Button>
           <Button variant='outline' onClick={onCancel} className='flex-1'>
-            Peruuta
+            Cancel
           </Button>
         </div>
       </CardContent>

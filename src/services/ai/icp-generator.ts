@@ -13,10 +13,12 @@ export class ICPGenerator {
     reviews: CustomerReview[],
     additionalContext: string = '',
   ): Promise<ICP[]> {
-    console.log(`🎯 Aloitetaan ICP-generaatio:`);
-    console.log(`   🏢 Kilpailijoita: ${competitors.length}`);
-    console.log(`   📝 Arvosteluja: ${reviews.length}`);
-    console.log(`   📋 Lisäkonteksti: ${additionalContext ? 'Kyllä' : 'Ei'}`);
+    console.log(`🎯 Starting ICP generation:`);
+    console.log(`   🏢 Competitors: ${competitors.length}`);
+    console.log(`   📝 Reviews: ${reviews.length}`);
+    console.log(
+      `   📋 Additional context: ${additionalContext ? 'Yes' : 'No'}`,
+    );
 
     try {
       const competitorInfo = competitors
@@ -24,32 +26,32 @@ export class ICPGenerator {
         .join('\n');
       const reviewTexts = reviews.map((r) => r.text).join('\n');
 
-      console.log(`📝 Rakennetaan prompt...`);
+      console.log(`📝 Building prompt...`);
       const prompt = this.buildICPPrompt(
         competitorInfo,
         reviewTexts,
         additionalContext,
       );
 
-      console.log(`📤 Lähetetään ICP-generaattoriin...`);
+      console.log(`📤 Sending to ICP generator...`);
       const startTime = Date.now();
       const responseText = await this.ollamaClient.generateResponse(prompt);
       const endTime = Date.now();
 
-      console.log(`✅ ICP-generaatio valmis:`);
-      console.log(`   ⏱️  Kesto: ${endTime - startTime}ms`);
-      console.log(`   📊 Vastauksen pituus: ${responseText.length} merkkiä`);
+      console.log(`✅ ICP generation completed:`);
+      console.log(`   ⏱️  Duration: ${endTime - startTime}ms`);
+      console.log(`   📊 Response length: ${responseText.length} chars`);
 
-      console.log(`🔍 Parsitaan ICP-vastaus...`);
+      console.log(`🔍 Parsing ICP response...`);
       const icps = this.parseICPResponse(responseText);
 
-      console.log(`✅ ICP-parsinta valmis:`);
-      console.log(`   👥 ICP-profiileja luotu: ${icps.length}`);
+      console.log(`✅ ICP parsing finished:`);
+      console.log(`   👥 ICP profiles created: ${icps.length}`);
 
       return icps;
     } catch (error) {
-      console.error(`❌ ICP-generaatio epäonnistui:`);
-      console.error(`   🔍 Virhe:`, error);
+      console.error(`❌ ICP generation failed:`);
+      console.error(`   🔍 Error:`, error);
       throw error;
     }
   }
@@ -103,10 +105,10 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
 IMPORTANT AGE ANALYSIS INSTRUCTIONS:
 - Analyze the review data for age indicators (language complexity, cultural references, technology usage)
 - Consider writing style, formality, and life stage indicators
-- Look for student indicators (opiskelija, yliopisto, koulu) → 18-25 age range
-- Look for young professional indicators (työ, ura, asunto) → 25-35 age range
-- Look for family indicators (perhe, lapsi, asunto) → 30-50 age range
-- Look for senior indicators (eläke, terveys, lapsenlapsi) → 55+ age range
+- Look for student indicators (student, university, school) → 18-25 age range
+- Look for young professional indicators (work, career, apartment) → 25-35 age range
+- Look for family indicators (family, child, apartment) → 30-50 age range
+- Look for senior indicators (retirement, health, grandchildren) → 55+ age range
 - Use specific age ranges like "25-35", "35-45", "45-55", "55+" rather than vague descriptions
 
 IMPORTANT GENDER ANALYSIS INSTRUCTIONS:
@@ -138,8 +140,8 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
   }
 
   private parseICPResponse(responseText: string): ICP[] {
-    console.log(`🔍 Parsitaan LLM-vastaus...`);
-    console.log(`   📄 Vastauksen alku: ${responseText.substring(0, 200)}...`);
+    console.log(`🔍 Parsing LLM response...`);
+    console.log(`   📄 Response start: ${responseText.substring(0, 200)}...`);
 
     try {
       // Try to extract JSON from the response
@@ -151,9 +153,9 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
 
       if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
         jsonText = jsonText.substring(jsonStart, jsonEnd + 1);
-        console.log(`   📋 JSON löydetty indekseistä ${jsonStart}-${jsonEnd}`);
+        console.log(`   📋 JSON found at indexes ${jsonStart}-${jsonEnd}`);
       } else {
-        console.warn(`⚠️  JSON-arraya ei löytynyt, käytetään koko vastausta`);
+        console.warn(`⚠️  JSON array not found, using entire response`);
       }
 
       // Clean up any extra characters
@@ -161,24 +163,24 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
 
       // Parse the JSON
       const icps = JSON.parse(jsonText);
-      console.log(`✅ JSON-parsinta onnistui`);
+      console.log(`✅ JSON parse successful`);
 
       // Ensure we have an array
       if (Array.isArray(icps)) {
-        console.log(`   📊 Array sisältää ${icps.length} ICP-objektia`);
+        console.log(`   📊 Array contains ${icps.length} ICP objects`);
         return icps.map((icp: Partial<ICP>) => this.fixICPFields(icp));
       } else if (icps && typeof icps === 'object') {
         // Single ICP object - wrap in array and fix
-        console.log(`   📊 Yksi ICP-objekti, muutetaan arrayksi`);
+        console.log(`   📊 Single ICP object, converting to array`);
         return [this.fixICPFields(icps)];
       } else {
         throw new Error('Invalid response format');
       }
     } catch (parseError) {
-      console.error(`❌ JSON-parsinta epäonnistui:`);
-      console.error(`   🔍 Virhe:`, parseError);
-      console.error(`   📄 Vastaus:`, responseText);
-      console.log(`🔄 Käytetään fallback-ICP:tä...`);
+      console.error(`❌ JSON parse failed:`);
+      console.error(`   🔍 Error:`, parseError);
+      console.error(`   📄 Response:`, responseText);
+      console.log(`🔄 Using fallback ICPs...`);
       return this.getFallbackICPs();
     }
   }
