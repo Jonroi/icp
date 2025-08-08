@@ -370,6 +370,7 @@ src/
 │   │   ├── button.tsx          # Button component
 │   │   ├── card.tsx            # Card component
 │   │   ├── card-toolbar.tsx    # Card toolbar component
+│   │   ├── chat-panel.tsx      # In-app AI chat panel used by toolbar bot icon
 │   │   ├── input.tsx           # Input component
 │   │   ├── label.tsx           # Label component
 │   │   ├── select.tsx          # Select component

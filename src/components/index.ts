@@ -12,3 +12,6 @@ export { CompetitorForm } from './icp/CompetitorForm';
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
+
+// UI utilities
+export { ChatPanel } from './ui/chat-panel';
