@@ -61,7 +61,7 @@ export class ICPGenerator {
     reviewTexts: string,
     additionalContext: string,
   ): string {
-    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following data:
+    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following data. Write each ICP description as a concise 2–3 sentence paragraph (no bullet lists):
 
 Competitors:
 ${competitorInfo}
@@ -77,7 +77,7 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
 [
   {
     "name": "Profile name",
-    "description": "Profile description",
+    "description": "A short, marketing-friendly paragraph summarizing who they are, what they care about, and why they buy",
     "demographics": {
       "age": "Age range (e.g., 25-35, 35-45, 45-55, 55+)",
       "gender": "Male, Female, or Mixed (based on review data patterns)",
