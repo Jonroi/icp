@@ -8,10 +8,14 @@ import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
 import { ICPPopup } from '@/components/dialogs/ICPPopup';
 import { TestICPGeneration } from '@/components/TestICPGeneration';
 import { useAppState } from '@/hooks/useAppState';
+import { FloatingChat } from '@/components';
 
 export default function App() {
   const {
     // State
+    ownCompany,
+    ownCompanyStatus,
+    isFetchingOwnCompany,
     competitors,
     additionalContext,
     isFetchingCompanyInfo,
@@ -29,6 +33,13 @@ export default function App() {
     error,
 
     // Actions
+    onOwnCompanyChange,
+    saveOwnCompany,
+    onFetchOwnCompanyInfo,
+    hasSavedOwnCompany,
+    showOwnCompanyDropdown,
+    toggleOwnCompanyDropdown,
+    loadSavedOwnCompany,
     setAdditionalContext,
     setProjectName,
     setShowICPPopup,
@@ -66,6 +77,9 @@ export default function App() {
 
         <TabsContent value='icp-generator'>
           <ICPGenerator
+            ownCompany={ownCompany}
+            ownCompanyStatus={ownCompanyStatus}
+            isFetchingOwnCompany={isFetchingOwnCompany}
             competitors={competitors}
             additionalContext={additionalContext}
             savedCompetitors={savedCompetitors}
@@ -80,6 +94,13 @@ export default function App() {
             onAddCompetitor={addCompetitor}
             onRemoveCompetitor={removeCompetitor}
             onAdditionalContextChange={setAdditionalContext}
+            onOwnCompanyChange={onOwnCompanyChange}
+            onSaveOwnCompany={saveOwnCompany}
+            onFetchOwnCompanyInfo={onFetchOwnCompanyInfo}
+            hasSavedOwnCompany={hasSavedOwnCompany}
+            showOwnCompanyDropdown={showOwnCompanyDropdown}
+            onToggleOwnCompanyDropdown={toggleOwnCompanyDropdown}
+            onLoadSavedOwnCompany={loadSavedOwnCompany}
             onFetchCompanyInfo={fetchCompanyInfo}
             onFetchCustomerReviews={fetchCustomerReviews}
             onSaveCompetitor={saveCompetitor}
@@ -114,6 +135,7 @@ export default function App() {
       </Tabs>
 
       <ICPPopup isOpen={showICPPopup} onClose={() => setShowICPPopup(false)} />
+      <FloatingChat />
     </div>
   );
 }

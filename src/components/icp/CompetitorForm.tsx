@@ -188,9 +188,7 @@ export function CompetitorForm({
       </div>
       <div className='grid md:grid-cols-2 gap-3'>
         <div className='space-y-2'>
-          <Label htmlFor={`competitor-website-${index}`}>
-            Website URL (Optional)
-          </Label>
+          <Label htmlFor={`competitor-website-${index}`}>Website URL</Label>
           <div className='flex gap-2'>
             <Input
               id={`competitor-website-${index}`}
@@ -212,9 +210,7 @@ export function CompetitorForm({
           </div>
         </div>
         <div className='space-y-2'>
-          <Label htmlFor={`competitor-social-${index}`}>
-            LinkedIn (Optional)
-          </Label>
+          <Label htmlFor={`competitor-social-${index}`}>LinkedIn</Label>
           <div className='flex gap-2'>
             <Input
               id={`competitor-social-${index}`}
@@ -264,7 +260,7 @@ export function CompetitorForm({
         </div>
         <Textarea
           id={`competitor-reviews-${index}`}
-          placeholder='Click "Fetch Reviews" to collect customer reviews automatically...'
+          placeholder='Copy and paste reviews here, Click "Fetch Reviews" to collect customer reviews automatically or ask AI Assistant to generate reviews'
           value={competitor.reviews || ''}
           readOnly
           rows={6}
