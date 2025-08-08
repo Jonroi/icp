@@ -2,8 +2,6 @@
 export { Header } from './layout/Header';
 
 // Dialog components
-export { SaveProjectDialog } from './dialogs/SaveProjectDialog';
-export { LoadProjectDialog } from './dialogs/LoadProjectDialog';
 export { ICPPopup } from './dialogs/ICPPopup';
 
 // ICP components
