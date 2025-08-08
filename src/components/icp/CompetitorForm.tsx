@@ -77,12 +77,19 @@ export function CompetitorForm({
       </div>
       <div className='space-y-3'>
         <div className='space-y-2'>
-          <Label htmlFor={`competitor-name-${index}`}>Name of Competitor</Label>
+          <Label htmlFor={`competitor-name-${index}`}>
+            Competitor Name{' '}
+            <span className='text-red-600' aria-hidden='true'>
+              *
+            </span>
+          </Label>
           <div className='flex gap-2'>
             <div className='relative flex-1'>
               <Input
                 id={`competitor-name-${index}`}
-                placeholder='Type a company name or select a saved one'
+                placeholder='Enter competitor name (required)'
+                aria-required='true'
+                required
                 value={competitor.name}
                 onChange={(e) =>
                   onCompetitorChange(index, 'name', e.target.value)
@@ -158,9 +165,13 @@ export function CompetitorForm({
               <Save className='h-4 w-4' />
             </Button>
           </div>
+          <p className='text-xs text-muted-foreground'>
+            Only the competitor name is required. All other fields are optional.
+          </p>
           {competitor.name && !competitor.website && (
             <p className='text-xs text-muted-foreground'>
-              💡 Enter a company name and click the search button
+              💡 Enter the competitor name and use Search to auto-fill optional
+              details
             </p>
           )}
           {companyInfoStatus[index] && (
@@ -177,7 +188,9 @@ export function CompetitorForm({
       </div>
       <div className='grid md:grid-cols-2 gap-3'>
         <div className='space-y-2'>
-          <Label htmlFor={`competitor-website-${index}`}>Website URL</Label>
+          <Label htmlFor={`competitor-website-${index}`}>
+            Website URL (Optional)
+          </Label>
           <div className='flex gap-2'>
             <Input
               id={`competitor-website-${index}`}
@@ -199,7 +212,9 @@ export function CompetitorForm({
           </div>
         </div>
         <div className='space-y-2'>
-          <Label htmlFor={`competitor-social-${index}`}>LinkedIn</Label>
+          <Label htmlFor={`competitor-social-${index}`}>
+            LinkedIn (Optional)
+          </Label>
           <div className='flex gap-2'>
             <Input
               id={`competitor-social-${index}`}
@@ -227,30 +242,33 @@ export function CompetitorForm({
           <Label htmlFor={`competitor-reviews-${index}`}>
             Customer Reviews
           </Label>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              if (competitor.name.trim()) {
-                onFetchCustomerReviews(index, competitor.name);
-              }
-            }}
-            disabled={isFetchingReviews === index || !competitor.name.trim()}
-            title='Fetch customer reviews'>
-            {isFetchingReviews === index ? (
-              <RefreshCw className='h-4 w-4 animate-spin mr-2' />
-            ) : (
-              <Search className='h-4 w-4 mr-2' />
-            )}
-            {isFetchingReviews === index ? 'Fetching...' : 'Fetch Reviews'}
-          </Button>
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                if (competitor.name.trim()) {
+                  onFetchCustomerReviews(index, competitor.name);
+                }
+              }}
+              disabled={isFetchingReviews === index || !competitor.name.trim()}
+              title='Fetch customer reviews'>
+              {isFetchingReviews === index ? (
+                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
+              ) : (
+                <Search className='h-4 w-4 mr-2' />
+              )}
+              {isFetchingReviews === index ? 'Fetching...' : 'Fetch Reviews'}
+            </Button>
+          </div>
         </div>
         <Textarea
           id={`competitor-reviews-${index}`}
           placeholder='Click "Fetch Reviews" to collect customer reviews automatically...'
           value={competitor.reviews || ''}
-          onChange={(e) => onCompetitorChange(index, 'reviews', e.target.value)}
-          rows={3}
+          readOnly
+          rows={6}
+          className='max-h-48 overflow-y-auto'
         />
         {reviewsStatus[index] && (
           <div
@@ -258,14 +276,6 @@ export function CompetitorForm({
               reviewsStatus[index].success ? 'text-green-600' : 'text-red-600'
             }`}>
             {reviewsStatus[index].message}
-          </div>
-        )}
-        {competitor.reviews && (
-          <div className='text-xs text-muted-foreground'>
-            <p>💡 Reviews collected</p>
-            <div className='mt-1 p-2 bg-muted/50 rounded text-xs'>
-              <p className='line-clamp-3'>{competitor.reviews}</p>
-            </div>
           </div>
         )}
       </div>

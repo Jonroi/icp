@@ -6,7 +6,7 @@ A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powe
 
 - **ICP Generator**: Create detailed customer profiles based on competitor analysis and real customer data
 - **ICP Profiles**: View and analyze AI-generated customer profiles with comprehensive demographics
-- **Multi-Source Reviews Collector**: Gather real customer reviews from Reddit, Twitter/X, Yelp, and Facebook Groups
+- **Multi-Source Reviews Collector**: Gather real customer reviews from Reddit and Trustpilot out-of-the-box (with optional Twitter/Yelp/Facebook support)
 - **Demographics Analyzer**: Extract and visualize real customer demographics from review content using LLM and pattern analysis
 - **Competitor Analysis**: Analyze competitor websites and social media presence
 - **Campaign Designer**: Generate marketing campaigns based on ICPs
@@ -200,6 +200,12 @@ The LLM analyzes **actual customer data** from:
 - Authentic sentiment and pain points
 - Demographic indicators in user posts
 
+#### **🟩 Trustpilot Reviews**
+
+- Public business reviews pages
+- Text-only fetching via a CORS-safe proxy
+- Real customer feedback extraction
+
 #### **🐦 Twitter/X Feedback**
 
 - Live customer conversations
@@ -251,9 +257,8 @@ The LLM analyzes **actual customer data** from:
 - Search for businesses by name
 - Collect real customer reviews from:
   - **📱 Reddit**: r/Finland, r/Helsinki, r/Espoo, r/Vantaa
-  - **🐦 Twitter/X**: Real tweets about businesses
-  - **🍽️ Yelp**: Customer reviews and ratings
-  - **📘 Facebook Groups**: Local community discussions
+  - **🟩 Trustpilot**: Public company review pages
+  - Optional: **🐦 Twitter/X**, **🍽️ Yelp**, **📘 Facebook Groups** (with tokens)
 - Extract real demographic data from review content
 
 ### 4. Demographics Analyzer
