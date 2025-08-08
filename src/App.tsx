@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { ICPGenerator } from '@/components/icp/ICPGenerator';
@@ -46,11 +47,13 @@ export default function App() {
     deleteProject,
   } = useAppState();
 
+  const [activeTab, setActiveTab] = useState<string>('icp-generator');
+
   return (
     <div className='space-y-6 pt-6 md:pt-8 lg:pt-10'>
       <Header />
 
-      <Tabs defaultValue='icp-generator'>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className='grid w-full grid-cols-4'>
           <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
           <TabsTrigger value='demographics'>ICP Profiles</TabsTrigger>
@@ -81,7 +84,11 @@ export default function App() {
             onSaveCompetitor={saveCompetitor}
             onLoadSavedCompetitor={loadSavedCompetitor}
             onToggleCompetitorDropdown={toggleCompetitorDropdown}
-            onGenerateICPs={generateICPs}
+            onGenerateICPs={async () => {
+              await generateICPs();
+              alert('ICPs generated successfully!');
+              setActiveTab('demographics');
+            }}
           />
         </TabsContent>
 
