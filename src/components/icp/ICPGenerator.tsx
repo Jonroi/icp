@@ -12,8 +12,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Sparkles, Wand2 } from 'lucide-react';
 import { CompetitorForm } from './CompetitorForm';
 import type { Competitor } from './CompetitorForm';
+import { OwnCompanyForm, type OwnCompany } from './OwnCompanyForm';
 
 interface ICPGeneratorProps {
+  ownCompany?: OwnCompany;
+  ownCompanyStatus?: { success: boolean; message: string } | null;
+  isFetchingOwnCompany?: boolean;
   competitors: Competitor[];
   additionalContext: string;
   savedCompetitors: string[];
@@ -32,6 +36,14 @@ interface ICPGeneratorProps {
   onAddCompetitor: () => void;
   onRemoveCompetitor: (index: number) => void;
   onAdditionalContextChange: (context: string) => void;
+  onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
+  onSaveOwnCompany?: (company: OwnCompany) => void;
+  onFetchOwnCompanyInfo?: (companyName: string) => void;
+  // Own company dropdown
+  hasSavedOwnCompany?: () => boolean;
+  showOwnCompanyDropdown?: boolean;
+  onToggleOwnCompanyDropdown?: () => void;
+  onLoadSavedOwnCompany?: () => void;
   onFetchCompanyInfo: (index: number, companyName: string) => void;
   onFetchCustomerReviews: (index: number, companyName: string) => void;
   onSaveCompetitor: (competitor: Competitor) => void;
@@ -41,6 +53,9 @@ interface ICPGeneratorProps {
 }
 
 export function ICPGenerator({
+  ownCompany,
+  ownCompanyStatus,
+  isFetchingOwnCompany,
   competitors,
   additionalContext,
   savedCompetitors,
@@ -55,6 +70,13 @@ export function ICPGenerator({
   onAddCompetitor,
   onRemoveCompetitor,
   onAdditionalContextChange,
+  onOwnCompanyChange,
+  onSaveOwnCompany,
+  onFetchOwnCompanyInfo,
+  hasSavedOwnCompany,
+  showOwnCompanyDropdown,
+  onToggleOwnCompanyDropdown,
+  onLoadSavedOwnCompany,
   onFetchCompanyInfo,
   onFetchCustomerReviews,
   onSaveCompetitor,
@@ -84,6 +106,22 @@ export function ICPGenerator({
         />
       </CardHeader>
       <CardContent className='space-y-6'>
+        <div className='space-y-2'>
+          <OwnCompanyForm
+            company={ownCompany || { name: '', website: '', social: '' }}
+            isFetching={!!isFetchingOwnCompany}
+            status={ownCompanyStatus || null}
+            onChange={(field, value) => onOwnCompanyChange?.(field, value)}
+            onFetchInfo={(name) => onFetchOwnCompanyInfo?.(name)}
+            onSave={(company) => onSaveOwnCompany?.(company)}
+            hasSaved={hasSavedOwnCompany?.()}
+            showDropdown={!!showOwnCompanyDropdown}
+            savedName={ownCompany?.name}
+            onToggleDropdown={onToggleOwnCompanyDropdown}
+            onLoadSaved={onLoadSavedOwnCompany}
+          />
+        </div>
+
         <div className='space-y-4'>
           <Label>Competitors (1-6)</Label>
           {competitors.map((competitor, index) => (
@@ -117,9 +155,7 @@ export function ICPGenerator({
         </div>
 
         <div className='space-y-2'>
-          <Label htmlFor='additional-context'>
-            Additional Context (Optional)
-          </Label>
+          <Label htmlFor='additional-context'>Additional Context</Label>
           <Textarea
             id='additional-context'
             placeholder='Any additional information about your target market...'
