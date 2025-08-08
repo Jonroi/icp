@@ -33,6 +33,12 @@ export interface GeneratedCampaign {
   landingPageCopy: string;
 }
 
+export interface OwnCompany {
+  name: string;
+  website: string;
+  social: string;
+}
+
 export interface Review {
   id: string;
   author: string;
@@ -69,6 +75,7 @@ export interface CompetitorAnalysis {
 
 export interface ProjectData {
   projectName: string;
+  ownCompany?: OwnCompany;
   competitors: Competitor[];
   additionalContext: string;
   generatedICPs: GeneratedICP[];
@@ -175,5 +182,34 @@ export class ProjectService {
       }
     }
     return null;
+  }
+
+  // Own company persistence (single entry)
+  static saveOwnCompany(company: OwnCompany): void {
+    const key = 'own-company';
+    const payload = {
+      name: company.name,
+      website: company.website,
+      social: company.social,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+  }
+
+  static loadOwnCompany(): OwnCompany | null {
+    const key = 'own-company';
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        name: parsed.name || '',
+        website: parsed.website || '',
+        social: parsed.social || '',
+      };
+    } catch (error) {
+      console.error('Error loading own company:', error);
+      return null;
+    }
   }
 }

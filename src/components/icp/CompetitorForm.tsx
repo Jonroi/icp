@@ -11,17 +11,8 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
-export interface Competitor {
-  name: string;
-  website: string;
-  social: string;
-  reddit?: string;
-  facebook?: string;
-  twitter?: string;
-  instagram?: string;
-  reviews?: string;
-}
+import type { Competitor as ProjectCompetitor } from '@/services/project-service';
+export type Competitor = ProjectCompetitor;
 
 interface CompetitorFormProps {
   competitor: Competitor;

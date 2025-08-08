@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AIService, type ICP } from '@/services/ai';
-import { ProjectService } from '@/services/project-service';
+import { ProjectService, type OwnCompany } from '@/services/project-service';
 import type { Competitor, ProjectData } from '@/services/project-service';
 import { CompanySearchService } from '@/services/company-search-service';
 import { ReviewsService } from '@/services/reviews-service';
@@ -12,6 +12,17 @@ export function useAppState() {
     { name: '', website: '', social: '' },
   ]);
   const [additionalContext, setAdditionalContext] = useState<string>('');
+  const [ownCompany, setOwnCompany] = useState<OwnCompany>({
+    name: '',
+    website: '',
+    social: '',
+  });
+  const [ownCompanyStatus, setOwnCompanyStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [isFetchingOwnCompany, setIsFetchingOwnCompany] =
+    useState<boolean>(false);
   const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState<
     number | null
   >(null);
@@ -45,6 +56,8 @@ export function useAppState() {
   const [showCompetitorDropdown, setShowCompetitorDropdown] = useState<{
     [key: number]: boolean;
   }>({});
+  const [showOwnCompanyDropdown, setShowOwnCompanyDropdown] =
+    useState<boolean>(false);
 
   // AI service
   const aiService = new AIService();
@@ -58,6 +71,8 @@ export function useAppState() {
   useEffect(() => {
     loadSavedProjectsList();
     loadSavedCompetitorsList();
+    const savedOwn = ProjectService.loadOwnCompany();
+    if (savedOwn) setOwnCompany(savedOwn);
   }, []);
 
   // Close competitor dropdowns when clicking outside
@@ -81,6 +96,7 @@ export function useAppState() {
     const saved = ProjectService.loadSavedCompetitorsList();
     setSavedCompetitors(saved);
   };
+  const hasSavedOwnCompany = () => Boolean(ProjectService.loadOwnCompany());
 
   const loadSavedProjectsList = () => {
     const saved = ProjectService.loadSavedProjectsList();
@@ -95,6 +111,7 @@ export function useAppState() {
 
     const projectData: ProjectData = {
       projectName,
+      ownCompany,
       competitors,
       additionalContext,
       generatedICPs,
@@ -118,6 +135,9 @@ export function useAppState() {
       setProjectName(parsed.projectName || '');
       setCompetitors(parsed.competitors || []);
       setAdditionalContext(parsed.additionalContext || '');
+      if (parsed.ownCompany) {
+        setOwnCompany(parsed.ownCompany as OwnCompany);
+      }
       setReviews(parsed.reviews || []);
       setDemographicsAnalysis(parsed.demographicsAnalysis || null);
       setCompetitorAnalysis(parsed.competitorAnalysis || []);
@@ -177,6 +197,10 @@ export function useAppState() {
   const removeCompetitor = (index: number) => {
     const newCompetitors = competitors.filter((_, i) => i !== index);
     setCompetitors(newCompetitors);
+  };
+
+  const handleOwnCompanyChange = (field: keyof OwnCompany, value: string) => {
+    setOwnCompany((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleGenerateCampaign = () => {
@@ -321,10 +345,75 @@ export function useAppState() {
     }
   };
 
+  const fetchOwnCompanyInfo = async (companyName: string) => {
+    if (!companyName.trim()) return;
+    setIsFetchingOwnCompany(true);
+    try {
+      const info = await CompanySearchService.searchCompanyOnline(companyName);
+      if (info && info.name) {
+        setOwnCompany((prev) => ({
+          name: info.name || prev.name,
+          website: info.website || prev.website,
+          social: info.social || prev.social,
+        }));
+        const fields: string[] = [];
+        if (info.website) fields.push('Website');
+        if (info.social) fields.push('LinkedIn');
+        const emoji =
+          info.confidence === 'high'
+            ? '🎯'
+            : info.confidence === 'medium'
+            ? '⚡'
+            : '❓';
+        setOwnCompanyStatus({
+          success: true,
+          message: `${emoji} Found ${fields.length} fields (${info.confidence} confidence)`,
+        });
+      } else {
+        setOwnCompanyStatus({
+          success: false,
+          message: `No info found for ${companyName}`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch own company info:', error);
+      setOwnCompanyStatus({
+        success: false,
+        message: 'Failed to fetch company info',
+      });
+    } finally {
+      setIsFetchingOwnCompany(false);
+    }
+  };
+
   const saveCompetitor = (competitor: Competitor) => {
     ProjectService.saveCompetitor(competitor);
     loadSavedCompetitorsList();
     alert(`Competitor basics for "${competitor.name}" saved!`);
+  };
+
+  const saveOwnCompany = (company: OwnCompany) => {
+    if (!company.name.trim()) {
+      alert('Company name is required to save!');
+      return;
+    }
+    ProjectService.saveOwnCompany(company);
+    alert(`Your company "${company.name}" saved!`);
+  };
+
+  const toggleOwnCompanyDropdown = () => {
+    setShowOwnCompanyDropdown((v) => !v);
+  };
+
+  const loadSavedOwnCompany = () => {
+    const saved = ProjectService.loadOwnCompany();
+    if (saved) {
+      setOwnCompany(saved);
+      setShowOwnCompanyDropdown(false);
+      alert(`Loaded saved company: ${saved.name || 'Your Company'}`);
+    } else {
+      alert('No saved company found');
+    }
   };
 
   const toggleCompetitorDropdown = (index: number) => {
@@ -364,18 +453,34 @@ export function useAppState() {
       // Show loading state
       setIsLoading(true);
       setError(null);
+      // Merge own company info into additional context so ICP generation is aware of it
+      const ownCompanyContext =
+        ownCompany.name || ownCompany.website || ownCompany.social
+          ? `Own Company Information:\nName: ${
+              ownCompany.name || 'N/A'
+            }\nWebsite: ${ownCompany.website || 'N/A'}\nLinkedIn: ${
+              ownCompany.social || 'N/A'
+            }`
+          : '';
+      const combinedContext = [ownCompanyContext, additionalContext]
+        .filter((v) => Boolean(v && v.trim()))
+        .join('\n\n');
+
       console.log('Generating ICPs with competitor data:', competitorData);
       console.log('Review data:', reviewData);
-      console.log('Additional context:', additionalContext);
+      console.log(
+        'Additional context (merged with own company):',
+        combinedContext,
+      );
 
       // Use AI to generate ICPs
       const icps = await aiService.generateICPs(
         competitorData,
         reviewData,
-        additionalContext,
+        combinedContext,
       );
       setGeneratedICPs(icps);
-      ProjectService.saveLastICPs(icps as unknown as any);
+      ProjectService.saveLastICPs(icps as unknown as ICP[]);
 
       console.log('ICPs generated successfully');
     } catch (error) {
@@ -393,6 +498,10 @@ export function useAppState() {
 
   return {
     // State
+    ownCompany,
+    ownCompanyStatus,
+    isFetchingOwnCompany,
+    showOwnCompanyDropdown,
     competitors,
     additionalContext,
     isFetchingCompanyInfo,
@@ -410,11 +519,17 @@ export function useAppState() {
     showLoadDialog,
     savedCompetitors,
     showCompetitorDropdown,
+    hasSavedOwnCompany,
     generatedICPs,
     isLoading,
     error,
 
     // Actions
+    saveOwnCompany,
+    onOwnCompanyChange: handleOwnCompanyChange,
+    onFetchOwnCompanyInfo: fetchOwnCompanyInfo,
+    toggleOwnCompanyDropdown,
+    loadSavedOwnCompany,
     setAdditionalContext,
     setProjectName,
     setShowSaveDialog,
