@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ai": "^3.3.36",
     "@langchain/openai": "^0.6.3",
     "@mozilla/readability": "^0.6.0",
     "@radix-ui/react-label": "^2.1.7",
