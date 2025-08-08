@@ -48,7 +48,9 @@ export function useAppState() {
 
   // AI service
   const aiService = new AIService();
-  const [generatedICPs, setGeneratedICPs] = useState<ICP[]>([]);
+  const [generatedICPs, setGeneratedICPs] = useState<ICP[]>(
+    (ProjectService.loadLastICPs() as unknown as ICP[]) || [],
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -373,6 +375,7 @@ export function useAppState() {
         additionalContext,
       );
       setGeneratedICPs(icps);
+      ProjectService.saveLastICPs(icps as unknown as any);
 
       console.log('ICPs generated successfully');
     } catch (error) {
