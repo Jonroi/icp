@@ -24,8 +24,9 @@ export default function App() {
     reviewsStatus,
     generatedCampaign,
     showICPPopup,
-    projectName,
-    savedProjects,
+    // Unused in UI but available via dialogs
+    // projectName,
+    // savedProjects,
     savedCompetitors,
     showCompetitorDropdown,
     generatedICPs,
@@ -41,7 +42,7 @@ export default function App() {
     toggleOwnCompanyDropdown,
     loadSavedOwnCompany,
     setAdditionalContext,
-    setProjectName,
+    // setProjectName,
     setShowICPPopup,
     handleCompetitorChange,
     addCompetitor,
@@ -53,9 +54,9 @@ export default function App() {
     loadSavedCompetitor,
     toggleCompetitorDropdown,
     generateICPs,
-    saveProject,
-    loadProject,
-    deleteProject,
+    // saveProject,
+    // loadProject,
+    // deleteProject,
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<string>('icp-generator');

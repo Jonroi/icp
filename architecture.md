@@ -6,7 +6,7 @@ The ICP Builder is a React-based application that uses AI-powered analysis to ge
 
 ## 📁 Project Structure
 
-```
+```text
 src/
 ├── components/          # React components
 │   ├── ui/             # Reusable UI components (shadcn/ui)
@@ -47,21 +47,22 @@ src/
 
 ### User Input Flow
 
-```
+```text
 User Input → Components → useAppState → AI Services → Ollama LLM → Results
 ```
 
 ### Component Communication
 
-```
+```typescript
 App.tsx
 ├── Header (Project management)
 ├── Tabs
-│   ├── ICPGenerator (Main functionality)
+│   ├── ICPGenerator (Own Company + Competitors + Additional Context)
 │   ├── ICPProfiles (Results display + TestICPGeneration)
 │   ├── CampaignDesigner (Campaign generation)
 │   └── CampaignLibrary (Campaign storage)
-└── Dialogs (Save/Load projects)
+├── Dialogs (Save/Load projects)
+└── FloatingChat (persistent bottom-right chat assistant)
 ```
 
 ## 🧠 AI Service Architecture
@@ -105,7 +106,7 @@ App.tsx
 
 ### Service Dependencies
 
-```
+```text
 ai-service.ts (Orchestrator)
 ├── ollama-client.ts (LLM Communication)
 ├── chatgpt-client.ts (ChatGPT Communication)
@@ -121,25 +122,31 @@ ai-service.ts (Orchestrator)
 
 ```typescript
 interface AppState {
+  // Own Company
+  ownCompany: { name: string; website: string; social: string };
+  ownCompanyStatus: { success: boolean; message: string } | null;
+  isFetchingOwnCompany: boolean;
+  showOwnCompanyDropdown: boolean;
+
   // Competitor Management
   competitors: Competitor[];
-  savedCompetitors: Competitor[];
-  showCompetitorDropdown: boolean;
+  savedCompetitors: string[];
+  showCompetitorDropdown: Record<number, boolean>;
 
   // Context and Input
-  additionalContext: string;
+  additionalContext: string; // merged with own company info for generation
 
   // AI Processing State
   isLoading: boolean;
   error: string | null;
 
-  // Company Information
-  isFetchingCompanyInfo: boolean;
-  companyInfoStatus: string;
+  // Company Information (per-competitor)
+  isFetchingCompanyInfo: number | null;
+  companyInfoStatus: Record<number, { success: boolean; message: string }>;
 
   // Reviews Processing
-  isFetchingReviews: boolean;
-  reviewsStatus: string;
+  isFetchingReviews: number | null;
+  reviewsStatus: Record<number, { success: boolean; message: string }>;
 
   // Generated Results
   generatedICPs: ICP[];
@@ -147,7 +154,7 @@ interface AppState {
 
   // Project Management
   projectName: string;
-  savedProjects: Project[];
+  savedProjects: string[];
   showSaveDialog: boolean;
   showLoadDialog: boolean;
 
@@ -158,7 +165,7 @@ interface AppState {
 
 ### State Management Flow
 
-```
+```text
 Component Action → useAppState → State Update → Component Re-render
 ```
 
@@ -166,7 +173,7 @@ Component Action → useAppState → State Update → Component Re-render
 
 ### Component Hierarchy
 
-```
+```text
 App.tsx
 ├── Header
 ├── Tabs
@@ -179,7 +186,7 @@ App.tsx
 │   ├── SaveProjectDialog
 │   ├── LoadProjectDialog
 │   └── ICPPopup
-└── TestChatGPT (Standalone)
+└── FloatingChat (persistent)
 ```
 
 ### Communication Patterns
@@ -200,7 +207,7 @@ App.tsx
 
 ### Service Communication
 
-```
+```text
 Components → useAppState → Services → External APIs
 ```
 
@@ -208,8 +215,9 @@ Components → useAppState → Services → External APIs
 
 ### Local Storage Strategy
 
-- **Project Data**: Browser localStorage
-- **Competitor Data**: Browser localStorage
+- **Project Data**: Browser localStorage (includes `ownCompany`)
+- **Competitor Data**: Browser localStorage (per saved competitor)
+- **Own Company**: Browser localStorage key `own-company`
 - **Generated ICPs**: Application state (memory)
 
 ## 🔒 Security & Performance
@@ -239,7 +247,7 @@ Components → useAppState → Services → External APIs
 
 ### Build Process
 
-```
+```text
 Source Code → TypeScript Compilation → Vite Build → Static Assets
 ```
 

@@ -4,14 +4,14 @@ A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powe
 
 ## 🚀 Features
 
-- **ICP Generator**: Create detailed customer profiles based on competitor analysis and real customer data
+- **ICP Generator**: Create detailed customer profiles based on your company + competitor analysis and real customer data
 - **ICP Profiles**: View and analyze AI-generated customer profiles with comprehensive demographics
 - **Multi-Source Reviews Collector**: Gather real customer reviews from Reddit and Trustpilot out-of-the-box (with optional Twitter/Yelp/Facebook support)
 - **Demographics Analyzer**: Extract and visualize real customer demographics from review content using LLM and pattern analysis
 - **Competitor Analysis**: Analyze competitor websites and social media presence
 - **Campaign Designer**: Generate marketing campaigns based on ICPs
 - **Campaign Library**: Store and manage marketing campaigns
-- **Project Management**: Save and load projects with competitor data and generated ICPs
+- **Project Management**: Save and load projects with your company, competitors, and generated ICPs
 - **Test ICP Generation**: Built-in testing component for verifying AI generation functionality
 
 ## 🏃‍♂️ Quick Start
@@ -236,7 +236,8 @@ The LLM analyzes **actual customer data** from:
 
 ### 1. ICP Generator (Main Tab)
 
-- **Add Competitors**: Enter competitor names, websites, and social media profiles
+- **Your Company**: Enter your company name (required), website, and LinkedIn. Save it for reuse; load from the inline dropdown
+- **Add Competitors**: Enter competitor names (required), websites, and social media profiles; load from per-field dropdown
 - **Fetch Company Info**: Automatically scrape competitor websites for content analysis
 - **Collect Reviews**: Gather real customer reviews from multiple sources
 - **Generate ICPs**: Create 3 detailed customer profiles using AI analysis
@@ -369,8 +370,9 @@ src/
 │   ├── ui/             # Reusable UI components (shadcn/ui)
 │   │   ├── button.tsx          # Button component
 │   │   ├── card.tsx            # Card component
-│   │   ├── card-toolbar.tsx    # Card toolbar component
-│   │   ├── chat-panel.tsx      # In-app AI chat panel used by toolbar bot icon
+│   │   ├── card-toolbar.tsx    # Card toolbar (help icon)
+│   │   ├── chat-panel.tsx      # In-app AI chat panel
+│   │   ├── floating-chat.tsx   # Persistent bottom-right chat toggle
 │   │   ├── input.tsx           # Input component
 │   │   ├── label.tsx           # Label component
 │   │   ├── select.tsx          # Select component
@@ -383,9 +385,10 @@ src/
 │   │   ├── LoadProjectDialog.tsx # Project loading dialog
 │   │   └── SaveProjectDialog.tsx # Project saving dialog
 │   ├── icp/            # ICP-related components
-│   │   ├── ICPGenerator.tsx    # Main ICP generation interface
+│   │   ├── ICPGenerator.tsx    # Main ICP generation interface (OwnCompany + Competitors)
 │   │   ├── ICPProfiles.tsx     # Display generated ICP profiles
-│   │   └── CompetitorForm.tsx  # Competitor data input form
+│   │   ├── CompetitorForm.tsx  # Competitor data input form
+│   │   └── OwnCompanyForm.tsx  # Your company data input form
 │   ├── campaign/       # Campaign components
 │   │   ├── CampaignDesigner.tsx # Campaign generation interface
 │   │   └── CampaignLibrary.tsx  # Campaign idea library
