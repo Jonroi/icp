@@ -8,6 +8,7 @@ export { ICPPopup } from './dialogs/ICPPopup';
 export { ICPGenerator } from './icp/ICPGenerator';
 export { ICPProfiles } from './icp/ICPProfiles';
 export { CompetitorForm } from './icp/CompetitorForm';
+export { OwnCompanyForm } from './icp/OwnCompanyForm';
 
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
@@ -15,3 +16,4 @@ export { CampaignLibrary } from './campaign/CampaignLibrary';
 
 // UI utilities
 export { ChatPanel } from './ui/chat-panel';
+export { FloatingChat } from './ui/floating-chat';
