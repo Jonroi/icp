@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -5,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bot } from 'lucide-react';
+import { Bot, Sparkles, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
 
 interface ICP {
   name: string;
@@ -55,99 +56,35 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
             <h3 className='font-semibold'>
               Generated ICPs ({generatedICPs.length})
             </h3>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
               {generatedICPs.map((icp, index) => (
                 <Card key={index} className='bg-muted/30'>
-                  <CardHeader>
-                    <CardTitle className='flex items-center justify-between'>
-                      {icp.name}
-                      <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded'>
-                        AI Generated
-                      </span>
-                    </CardTitle>
+                  <CardHeader className='pb-3'>
+                    <CardTitle className='text-2xl'>ICP: {icp.name}</CardTitle>
                   </CardHeader>
-                  <CardContent className='space-y-3'>
-                    <div>
-                      <h4 className='font-medium text-sm'>Description</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.description}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Demographics</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        Age: {icp.demographics.age} | Gender:{' '}
-                        {icp.demographics.gender} | Location:{' '}
-                        {icp.demographics.location}
-                      </p>
-                      <p className='text-xs text-muted-foreground'>
-                        Income: {icp.demographics.income} | Education:{' '}
-                        {icp.demographics.education}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Interests</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.psychographics.interests.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Values</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.psychographics.values.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Lifestyle</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.psychographics.lifestyle}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Pain Points</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.psychographics.painPoints.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Online Habits</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.behavior.onlineHabits.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>
-                        Purchasing Behavior
-                      </h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.behavior.purchasingBehavior}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Brand Preferences</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.behavior.brandPreferences.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Goals</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.goals.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>Challenges</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.challenges.join(', ')}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className='font-medium text-sm'>
-                        Preferred Channels
-                      </h4>
-                      <p className='text-xs text-muted-foreground'>
-                        {icp.preferredChannels.join(', ')}
-                      </p>
+                  <CardContent className='space-y-4'>
+                    <p className='text-sm text-muted-foreground line-clamp-4'>
+                      {icp.description}
+                    </p>
+                    <div className='flex items-center gap-2'>
+                      <Button className='flex-1' variant='default'>
+                        <Sparkles className='mr-2 h-4 w-4' /> Use in Designer
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='icon'
+                        aria-label='Copy link'>
+                        <LinkIcon className='h-4 w-4' />
+                      </Button>
+                      <Button variant='outline' size='icon' aria-label='Edit'>
+                        <Pencil className='h-4 w-4' />
+                      </Button>
+                      <Button
+                        variant='destructive'
+                        size='icon'
+                        aria-label='Delete'>
+                        <Trash2 className='h-4 w-4' />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
