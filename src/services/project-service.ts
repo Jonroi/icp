@@ -94,6 +94,7 @@ export interface Competitor {
   twitter?: string;
   instagram?: string;
   reviews?: string;
+  location?: string; // New field for location selection
 }
 
 export class ProjectService {

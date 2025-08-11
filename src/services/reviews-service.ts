@@ -1,11 +1,14 @@
-import { SerpReviewsService } from './serp-reviews-service';
+import { ApifyReviewsService } from './apify-reviews-service';
 import { AIServiceErrorFactory, InputValidator } from './ai/error-types';
 
 export class ReviewsService {
-  // Public API used by UI - Now uses only SERP API
+  // Public API used by UI - Now uses only Apify Google Maps API
   static async fetchCustomerReviews(
     companyName: string,
     website?: string,
+    options?: {
+      location?: string;
+    },
   ): Promise<string> {
     // Validate input
     const companyValidation = InputValidator.validateCompanyName(companyName);
@@ -34,26 +37,26 @@ export class ReviewsService {
       }
     }
 
-    // Use SERP API for all review fetching
-    return SerpReviewsService.fetchCustomerReviews(companyName, {
+    // Use Apify Google Maps API for all review fetching
+    return ApifyReviewsService.fetchCustomerReviews(companyName, {
       website,
-      location: 'Finland',
+      location: options?.location || 'Global', // Use provided location or default to Global
       maxResults: 20,
       includeMarketData: true,
     });
   }
 
   /**
-   * Get SERP API configuration status
+   * Get Apify API configuration status
    */
   static getApiConfig() {
-    return SerpReviewsService.getApiConfig();
+    return ApifyReviewsService.getApiConfig();
   }
 
   /**
-   * Test SERP API connectivity
+   * Test Apify API connectivity
    */
   static async testConnection() {
-    return SerpReviewsService.testConnection();
+    return ApifyReviewsService.testConnection();
   }
 }
