@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AIService, type ICP } from '@/services/ai';
 import { ProjectService, type OwnCompany } from '@/services/project-service';
 import type { Competitor, ProjectData } from '@/services/project-service';
@@ -59,8 +59,8 @@ export function useAppState() {
   const [showOwnCompanyDropdown, setShowOwnCompanyDropdown] =
     useState<boolean>(false);
 
-  // AI service
-  const aiService = new AIService();
+  // AI service - use useMemo to prevent recreation on every render
+  const aiService = useMemo(() => new AIService(), []);
   const [generatedICPs, setGeneratedICPs] = useState<ICP[]>(
     (ProjectService.loadLastICPs() as unknown as ICP[]) || [],
   );
@@ -317,6 +317,9 @@ export function useAppState() {
       const reviewsText = await ReviewsService.fetchCustomerReviews(
         companyName,
         competitors[index]?.website,
+        {
+          location: competitors[index]?.location, // Pass the location from competitor data
+        },
       );
 
       // Count the number of reviews (lines)
