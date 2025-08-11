@@ -1,8 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_SERP_API_KEY: string;
-  readonly VITE_SERP_PROVIDER: string;
+  readonly VITE_APIFY_API_TOKEN: string;
 }
 
 interface ImportMeta {
