@@ -191,6 +191,54 @@ export class SerpApiClient {
   }
 
   /**
+   * Search specifically for Google Places reviews
+   */
+  async searchGooglePlacesReviews(
+    companyName: string,
+    options: {
+      location?: string;
+      maxResults?: number;
+    } = {},
+  ): Promise<SerpReviewResult[]> {
+    console.log(`🗺️ Searching Google Places reviews for: ${companyName}`);
+
+    const queries = [
+      `"${companyName}" site:google.com/maps/place`,
+      `"${companyName}" site:google.com/maps reviews`,
+      `"${companyName}" google maps reviews`,
+    ];
+
+    const allReviews: SerpReviewResult[] = [];
+
+    for (const query of queries) {
+      try {
+        const results = await this.performSearch(query, {
+          location: options.location || 'Finland',
+          maxResults: Math.ceil((options.maxResults || 10) / queries.length),
+        });
+
+        const reviews = this.extractReviewsFromResults(results, companyName);
+        allReviews.push(...reviews);
+
+        // Add delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.warn(`Failed to search for query "${query}":`, error);
+        continue;
+      }
+    }
+
+    // Remove duplicates and return top results
+    const uniqueReviews = this.deduplicateReviews(allReviews);
+    const topReviews = uniqueReviews.slice(0, options.maxResults || 10);
+
+    console.log(
+      `✅ Found ${topReviews.length} Google Places reviews for ${companyName}`,
+    );
+    return topReviews;
+  }
+
+  /**
    * Search for industry trends and market insights
    */
   async searchMarketInsights(
@@ -215,13 +263,23 @@ export class SerpApiClient {
 
   private buildReviewSearchQueries(companyName: string): string[] {
     return [
-      `"${companyName}" reviews customer feedback`,
-      `"${companyName}" customer experience testimonials`,
-      `"${companyName}" user reviews rating`,
-      `"${companyName}" service quality reviews`,
-      // Finnish specific queries
-      `"${companyName}" arvostelu kokemus`,
-      `"${companyName}" asiakaspalvelu arvio`,
+      // Google Places specific queries
+      `"${companyName}" site:google.com/maps reviews`,
+      `"${companyName}" site:google.com/maps/place`,
+      // Trustpilot specific queries
+      `"${companyName}" site:trustpilot.com reviews`,
+      // General review site queries
+      `"${companyName}" site:yelp.com reviews`,
+      `"${companyName}" site:tripadvisor.com reviews`,
+      // Finnish review sites
+      `"${companyName}" site:suomi24.fi arvostelu`,
+      `"${companyName}" site:plaza.fi arvio`,
+      // Reddit and social media
+      `"${companyName}" site:reddit.com reviews`,
+      `"${companyName}" site:facebook.com reviews`,
+      // Generic review queries (fallback)
+      `"${companyName}" customer reviews -site:${companyName.toLowerCase()}.fi`,
+      `"${companyName}" arvostelu kokemus -site:${companyName.toLowerCase()}.fi`,
     ];
   }
 
@@ -382,10 +440,55 @@ export class SerpApiClient {
     // Must mention the company
     if (!lowerSnippet.includes(lowerCompany)) return false;
 
+    // Skip company website content
+    const skipPhrases = [
+      'official website',
+      'visit website',
+      'contact us',
+      'about us',
+      'our services',
+      'company information',
+      'business profile',
+      'credit rating',
+      'financial data',
+      'market research',
+      'industry trends',
+      'customer experience trends',
+    ];
+
+    if (skipPhrases.some((phrase) => lowerSnippet.includes(phrase))) {
+      return false;
+    }
+
+    // Must have personal experience indicators
+    const personalExperienceIndicators = [
+      'i ordered',
+      'i used',
+      'i tried',
+      'i experienced',
+      'my delivery',
+      'my order',
+      'my experience',
+      'i was',
+      'i had',
+      'i received',
+      'tilasin',
+      'käytin',
+      'kokemus',
+      'toimitus',
+      'tilaus',
+    ];
+
+    const hasPersonalExperience = personalExperienceIndicators.some(
+      (indicator) => lowerSnippet.includes(indicator),
+    );
+
     // Must have review-like content
     const reviewIndicators = [
       'review',
       'rating',
+      'stars',
+      'star',
       'experience',
       'customer',
       'service',
@@ -398,17 +501,31 @@ export class SerpApiClient {
       'bad',
       'quality',
       'price',
+      'delivery',
+      'fast',
+      'slow',
+      'helpful',
+      'friendly',
+      'professional',
       // Finnish indicators
       'arvostelu',
       'arvio',
       'kokemus',
       'suosittele',
       'laatu',
+      'hinta',
+      'nopea',
+      'hidas',
+      'ystävällinen',
+      'ammattitaitoinen',
     ];
 
-    return reviewIndicators.some((indicator) =>
+    const hasReviewIndicators = reviewIndicators.some((indicator) =>
       lowerSnippet.includes(indicator),
     );
+
+    // Must have both personal experience AND review indicators
+    return hasPersonalExperience && hasReviewIndicators;
   }
 
   private detectPlatform(url: string): string {

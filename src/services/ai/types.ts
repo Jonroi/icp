@@ -52,7 +52,11 @@ export interface CustomerReview {
 
 // SERP API specific types
 export interface SerpDataSource {
-  type: 'serp_reviews' | 'serp_organic' | 'serp_market_data';
+  type:
+    | 'serp_reviews'
+    | 'serp_organic'
+    | 'serp_market_data'
+    | 'google_places_reviews';
   query: string;
   location?: string;
   resultCount: number;

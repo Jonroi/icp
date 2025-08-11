@@ -111,15 +111,27 @@ export class SerpReviewsService {
     const maxResults = options.maxResults || 25;
     const timestamp = new Date().toISOString();
 
-    // Step 1: Collect customer reviews
-    console.log(`📊 SERP: Searching customer reviews...`);
-    const serpReviews = await this.serpClient.searchCompanyReviews(
+    // Step 1: Collect Google Places reviews first (highest priority)
+    console.log(`🗺️ SERP: Searching Google Places reviews...`);
+    const googlePlacesReviews = await this.serpClient.searchGooglePlacesReviews(
       companyName,
       {
         location,
-        maxResults: Math.floor(maxResults * 0.7), // 70% for reviews
+        maxResults: Math.floor(maxResults * 0.4), // 40% for Google Places
       },
     );
+
+    // Step 2: Collect other customer reviews
+    console.log(`📊 SERP: Searching other customer reviews...`);
+    const otherReviews = await this.serpClient.searchCompanyReviews(
+      companyName,
+      {
+        location,
+        maxResults: Math.floor(maxResults * 0.3), // 30% for other reviews
+      },
+    );
+
+    const serpReviews = [...googlePlacesReviews, ...otherReviews];
 
     // Step 2: Collect competitor and market data if requested
     let competitorData: SerpReviewResult[] = [];
@@ -177,10 +189,17 @@ export class SerpReviewsService {
     // Create data source tracking
     const dataSources: SerpDataSource[] = [
       {
+        type: 'google_places_reviews',
+        query: `"${companyName}" site:google.com/maps/place`,
+        location,
+        resultCount: googlePlacesReviews.length,
+        timestamp,
+      },
+      {
         type: 'serp_reviews',
         query: `"${companyName}" customer reviews feedback`,
         location,
-        resultCount: serpReviews.length,
+        resultCount: otherReviews.length,
         timestamp,
       },
     ];
