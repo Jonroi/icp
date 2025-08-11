@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { LocationSelector } from '@/components/ui/location-selector';
 import {
   ExternalLink,
   RefreshCw,
@@ -67,15 +68,15 @@ export function CompetitorForm({
         </Button>
       </div>
       <div className='space-y-3'>
-        <div className='space-y-2'>
-          <Label htmlFor={`competitor-name-${index}`}>
-            Competitor Name{' '}
-            <span className='text-red-600' aria-hidden='true'>
-              *
-            </span>
-          </Label>
-          <div className='flex gap-2'>
-            <div className='relative flex-1'>
+        <div className='flex gap-2'>
+          <div className='flex-1 space-y-2'>
+            <Label htmlFor={`competitor-name-${index}`}>
+              Competitor Name{' '}
+              <span className='text-red-600' aria-hidden='true'>
+                *
+              </span>
+            </Label>
+            <div className='relative'>
               <Input
                 id={`competitor-name-${index}`}
                 placeholder='Enter competitor name (required)'
@@ -124,38 +125,60 @@ export function CompetitorForm({
                 </>
               )}
             </div>
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={() => {
-                if (competitor.name.trim()) {
-                  onFetchCompanyInfo(index, competitor.name);
-                }
-              }}
-              disabled={
-                isFetchingCompanyInfo === index || !competitor.name.trim()
-              }
-              title='Fetch company info'>
-              {isFetchingCompanyInfo === index ? (
-                <RefreshCw className='h-4 w-4 animate-spin' />
-              ) : (
-                <Search className='h-4 w-4' />
-              )}
-            </Button>
-            <Button
-              variant='default'
-              size='icon'
-              onClick={() => {
-                if (!competitor.name.trim()) {
-                  alert('Competitor name is required to save!');
-                  return;
-                }
-                onSaveCompetitor(competitor);
-              }}
-              title='Save competitor details'>
-              <Save className='h-4 w-4' />
-            </Button>
           </div>
+
+          <div className='w-48 space-y-2'>
+            <Label htmlFor={`competitor-location-${index}`}>Location </Label>
+            <LocationSelector
+              value={competitor.location || 'Global'}
+              onValueChange={(value) =>
+                onCompetitorChange(index, 'location', value)
+              }
+              className='w-full'
+            />
+          </div>
+
+          <div className='space-y-2'>
+            <div className='opacity-0 pointer-events-none'>
+              <Label>Placeholder</Label>
+            </div>
+            <div className='flex gap-2'>
+              <Button
+                variant='outline'
+                size='icon'
+                onClick={() => {
+                  if (competitor.name.trim()) {
+                    onFetchCompanyInfo(index, competitor.name);
+                  }
+                }}
+                disabled={
+                  isFetchingCompanyInfo === index || !competitor.name.trim()
+                }
+                title='Fetch company info'>
+                {isFetchingCompanyInfo === index ? (
+                  <RefreshCw className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Search className='h-4 w-4' />
+                )}
+              </Button>
+              <Button
+                variant='default'
+                size='icon'
+                onClick={() => {
+                  if (!competitor.name.trim()) {
+                    alert('Competitor name is required to save!');
+                    return;
+                  }
+                  onSaveCompetitor(competitor);
+                }}
+                title='Save competitor details'>
+                <Save className='h-4 w-4' />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className='space-y-2'>
           <p className='text-xs text-muted-foreground'>
             Only the competitor name is required. All other fields are optional.
           </p>
