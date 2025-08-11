@@ -27,7 +27,9 @@ export class SerpReviewsService {
       location?: string;
       maxResults?: number;
       includeMarketData?: boolean;
-    } = {},
+    } = {
+      includeMarketData: false, // Disable market data by default
+    },
   ): Promise<string> {
     console.log(`🔍 SERP: Fetching reviews for ${companyName}`);
 
@@ -91,7 +93,10 @@ export class SerpReviewsService {
       maxResults?: number;
       includeMarketData?: boolean;
       includeCompetitorData?: boolean;
-    } = {},
+    } = {
+      includeMarketData: false, // Disable market data by default
+      includeCompetitorData: false, // Disable competitor data by default
+    },
   ): Promise<SerpReviewsResult> {
     console.log(`🔍 SERP: Fetching structured reviews for ${companyName}`);
     return this.collectSerpReviews(companyName, options);
@@ -105,11 +110,17 @@ export class SerpReviewsService {
       maxResults?: number;
       includeMarketData?: boolean;
       includeCompetitorData?: boolean;
-    },
+    } = {},
   ): Promise<SerpReviewsResult> {
-    const location = options.location || 'Finland';
+    const location = options.location || 'United States'; // Global default
     const maxResults = options.maxResults || 25;
+    const includeMarketData = options.includeMarketData === true; // Explicitly check for true
+    const includeCompetitorData = options.includeCompetitorData === true; // Explicitly check for true
     const timestamp = new Date().toISOString();
+
+    console.log(
+      `🔧 Debug: includeMarketData=${includeMarketData}, includeCompetitorData=${includeCompetitorData}`,
+    );
 
     // Step 1: Collect Google Places reviews first (highest priority)
     console.log(`🗺️ SERP: Searching Google Places reviews...`);
@@ -134,45 +145,47 @@ export class SerpReviewsService {
     const serpReviews = [...googlePlacesReviews, ...otherReviews];
 
     // Step 2: Collect competitor and market data if requested
-    let competitorData: SerpReviewResult[] = [];
-    if (options.includeMarketData || options.includeCompetitorData) {
-      console.log(`🏢 SERP: Searching competitor information...`);
-      const competitorInfo = await this.serpClient.searchCompetitorInfo(
-        companyName,
-        {
-          includeReviews: true,
-          includePricing: options.includeMarketData,
-          includeFeatures: options.includeMarketData,
-          location,
-        },
-      );
+    const competitorData: SerpReviewResult[] = [];
+    // TEMPORARILY DISABLED: Competitor data collection is causing issues
+    // if (includeMarketData || includeCompetitorData) {
+    //   console.log(`🏢 SERP: Searching competitor information...`);
+    //   const competitorInfo = await this.serpClient.searchCompetitorInfo(
+    //     companyName,
+    //     {
+    //       includeReviews: true,
+    //       includePricing: includeMarketData,
+    //       includeFeatures: includeMarketData,
+    //       location,
+    //     },
+    //   );
 
-      competitorData = competitorInfo.reviews;
-    }
+    //   competitorData = competitorInfo.reviews;
+    // }
 
-    // Step 3: Collect market insights if requested
-    let marketInsights: SerpReviewResult[] = [];
-    if (options.includeMarketData) {
-      console.log(`📈 SERP: Searching market insights...`);
-      try {
-        // Extract industry from company name or use generic terms
-        const industry = this.extractIndustryFromCompany(companyName);
-        const insights = await this.serpClient.searchMarketInsights(
-          industry,
-          ['customer experience', 'reviews', 'trends'],
-          { location },
-        );
+    // Step 3: Collect market insights ONLY if explicitly requested (disabled by default)
+    const marketInsights: SerpReviewResult[] = [];
+    // TEMPORARILY DISABLED: Market insights collection is causing issues
+    // if (includeMarketData) { // Use the variable we created
+    //   console.log(`📈 SERP: Searching market insights...`);
+    //   try {
+    //     // Extract industry from company name or use generic terms
+    //     const industry = this.extractIndustryFromCompany(companyName);
+    //     const insights = await this.serpClient.searchMarketInsights(
+    //       industry,
+    //       ['customer experience', 'reviews', 'trends'],
+    //       { location },
+    //     );
 
-        // Convert search results to review-like format for LLM processing
-        marketInsights = insights.slice(0, 5).map((result) => ({
-          text: `${result.title}: ${result.snippet}`,
-          source: result.link,
-          platform: 'Market Research',
-        }));
-      } catch (error) {
-        console.warn('Market insights collection failed:', error);
-      }
-    }
+    //     // Convert search results to review-like format for LLM processing
+    //     marketInsights = insights.slice(0, 5).map((result) => ({
+    //       text: `${result.title}: ${result.snippet}`,
+    //       source: result.link,
+    //       platform: 'Market Research',
+    //     }));
+    //   } catch (error) {
+    //     console.warn('Market insights collection failed:', error);
+    //   }
+    // }
 
     // Step 4: Combine and process all data
     const allSerpData = [...serpReviews, ...competitorData, ...marketInsights];
@@ -204,25 +217,27 @@ export class SerpReviewsService {
       },
     ];
 
-    if (competitorData.length > 0) {
-      dataSources.push({
-        type: 'serp_organic',
-        query: `"${companyName}" competitor analysis`,
-        location,
-        resultCount: competitorData.length,
-        timestamp,
-      });
-    }
+    // Competitor data source tracking removed since competitor data is disabled
+    // if (competitorData.length > 0) {
+    //   dataSources.push({
+    //     type: 'serp_organic',
+    //     query: `"${companyName}" competitor analysis`,
+    //     location,
+    //     resultCount: competitorData.length,
+    //     timestamp,
+    //   });
+    // }
 
-    if (marketInsights.length > 0) {
-      dataSources.push({
-        type: 'serp_market_data',
-        query: `${this.extractIndustryFromCompany(companyName)} market trends`,
-        location,
-        resultCount: marketInsights.length,
-        timestamp,
-      });
-    }
+    // Market insights data source tracking removed since market insights are disabled
+    // if (marketInsights.length > 0) {
+    //   dataSources.push({
+    //     type: 'serp_market_data',
+    //     query: `${this.extractIndustryFromCompany(companyName)} market trends`,
+    //     location,
+    //     resultCount: marketInsights.length,
+    //     timestamp,
+    //   });
+    // }
 
     return {
       reviews: reviews.slice(0, maxResults), // Limit final results
@@ -262,7 +277,7 @@ export class SerpReviewsService {
       `Company: Research target`,
       `Total Reviews: ${result.reviews.length}`,
       `Data Sources: ${result.dataSources.length} SERP searches`,
-      `Location: ${result.metadata.location}`,
+      `Location: ${result.metadata.location} (Global search)`,
       `Collection Time: ${new Date(
         result.metadata.timestamp,
       ).toLocaleString()}`,
@@ -357,7 +372,7 @@ export class SerpReviewsService {
       const testResult = await this.serpClient.searchCompanyReviews(
         "McDonald's",
         {
-          location: 'Finland',
+          location: 'United States',
           maxResults: 1,
         },
       );

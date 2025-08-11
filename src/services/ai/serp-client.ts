@@ -263,23 +263,34 @@ export class SerpApiClient {
 
   private buildReviewSearchQueries(companyName: string): string[] {
     return [
-      // Google Places specific queries
-      `"${companyName}" site:google.com/maps reviews`,
-      `"${companyName}" site:google.com/maps/place`,
+      // Google Places specific queries - most important
+      `"${companyName}" site:google.com/maps/place "reviews" "rating" "stars"`,
+      `"${companyName}" site:google.com/maps "customer review" "my experience" "recommend"`,
+      `"${companyName}" site:google.com/maps "stars" "rating" "review"`,
+
       // Trustpilot specific queries
-      `"${companyName}" site:trustpilot.com reviews`,
-      // General review site queries
-      `"${companyName}" site:yelp.com reviews`,
-      `"${companyName}" site:tripadvisor.com reviews`,
-      // Finnish review sites
-      `"${companyName}" site:suomi24.fi arvostelu`,
-      `"${companyName}" site:plaza.fi arvio`,
-      // Reddit and social media
-      `"${companyName}" site:reddit.com reviews`,
-      `"${companyName}" site:facebook.com reviews`,
-      // Generic review queries (fallback)
-      `"${companyName}" customer reviews -site:${companyName.toLowerCase()}.fi`,
-      `"${companyName}" arvostelu kokemus -site:${companyName.toLowerCase()}.fi`,
+      `"${companyName}" site:trustpilot.com "customer review" "my experience" "stars"`,
+      `"${companyName}" site:trustpilot.com "rating" "review" "recommend"`,
+
+      // Reddit with specific review context
+      `"${companyName}" site:reddit.com "review" "experience" "customer" "recommend"`,
+      `"${companyName}" site:reddit.com "stars" "rating" "review" "my experience"`,
+      `"${companyName}" site:reddit.com "opinion" "thoughts" "experience"`,
+
+      // Facebook reviews
+      `"${companyName}" site:facebook.com "review" "rating" "stars" "recommend"`,
+
+      // Yelp reviews
+      `"${companyName}" site:yelp.com "review" "rating" "stars"`,
+
+      // General review sites
+      `"${companyName}" site:sitejabber.com "review" "rating"`,
+      `"${companyName}" site:bbb.org "review" "rating"`,
+
+      // Very specific customer review queries (exclude market research)
+      `"${companyName}" "customer review" "my experience" "stars" "rating" -"market research" -"industry trends" -"customer experience trends" -"cx trends"`,
+      `"${companyName}" "user review" "customer feedback" "experience" "recommend"`,
+      `"${companyName}" "reviews" "ratings" "customer opinions"`,
     ];
   }
 
@@ -364,28 +375,28 @@ export class SerpApiClient {
     // Provider-specific parameters
     if (this.config.provider === 'searchapi') {
       params.append('engine', 'google');
-      params.append('location', options.location || 'Finland');
+      params.append('location', options.location || 'United States'); // Global default
       params.append('hl', options.language || 'en');
-      params.append('gl', 'fi');
-      params.append('num', String(options.maxResults || 10));
+      params.append('gl', 'us'); // Global default
+      params.append('num', String(options.maxResults || 20)); // Increased results
       if (options.timeFrame) {
         params.append('tbs', this.getTimeFrameFilter(options.timeFrame));
       }
     } else if (this.config.provider === 'serpapi') {
-      params.append('location', options.location || 'Finland');
+      params.append('location', options.location || 'United States'); // Global default
       params.append('hl', options.language || 'en');
-      params.append('gl', 'fi');
-      params.append('num', String(options.maxResults || 10));
+      params.append('gl', 'us'); // Global default
+      params.append('num', String(options.maxResults || 20)); // Increased results
       params.append('engine', 'google');
       if (options.timeFrame) {
         params.append('tbs', this.getTimeFrameFilter(options.timeFrame));
       }
     } else {
       // Default parameters for other providers
-      params.append('location', options.location || 'Finland');
+      params.append('location', options.location || 'United States'); // Global default
       params.append('hl', options.language || 'en');
-      params.append('gl', 'fi');
-      params.append('num', String(options.maxResults || 10));
+      params.append('gl', 'us'); // Global default
+      params.append('num', String(options.maxResults || 20)); // Increased results
     }
 
     return params.toString();
@@ -440,7 +451,7 @@ export class SerpApiClient {
     // Must mention the company
     if (!lowerSnippet.includes(lowerCompany)) return false;
 
-    // Skip company website content
+    // Skip company website content and market research
     const skipPhrases = [
       'official website',
       'visit website',
@@ -454,34 +465,38 @@ export class SerpApiClient {
       'market research',
       'industry trends',
       'customer experience trends',
+      'customer experience (cx)',
+      'cx trends',
+      'customer service trends',
+      'emerging trends',
+      'transformative trends',
+      'ai-driven personalization',
+      'sentiment analytics',
+      'support leaders',
+      'generative ai',
+      'customer interactions',
+      'seamless',
+      'harbingers',
+      'future',
+      'predictions',
+      'q4 2024',
+      'retail & consumer',
+      'third-party relationships',
+      'high-quality customer experience',
+      'fostering',
+      'empowering',
+      'personalized and efficient',
+      'harnessing',
+      'sales growth',
+      'markkinatutkimus',
+      'alan trendit',
+      'asiakaskokemus',
+      'trendit',
     ];
 
     if (skipPhrases.some((phrase) => lowerSnippet.includes(phrase))) {
       return false;
     }
-
-    // Must have personal experience indicators
-    const personalExperienceIndicators = [
-      'i ordered',
-      'i used',
-      'i tried',
-      'i experienced',
-      'my delivery',
-      'my order',
-      'my experience',
-      'i was',
-      'i had',
-      'i received',
-      'tilasin',
-      'käytin',
-      'kokemus',
-      'toimitus',
-      'tilaus',
-    ];
-
-    const hasPersonalExperience = personalExperienceIndicators.some(
-      (indicator) => lowerSnippet.includes(indicator),
-    );
 
     // Must have review-like content
     const reviewIndicators = [
@@ -524,8 +539,13 @@ export class SerpApiClient {
       lowerSnippet.includes(indicator),
     );
 
-    // Must have both personal experience AND review indicators
-    return hasPersonalExperience && hasReviewIndicators;
+    // Much less strict filtering - just need to mention the company and have some review-like content
+    return (
+      hasReviewIndicators ||
+      lowerSnippet.includes('review') ||
+      lowerSnippet.includes('rating') ||
+      lowerSnippet.includes('stars')
+    );
   }
 
   private detectPlatform(url: string): string {
