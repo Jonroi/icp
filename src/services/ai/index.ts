@@ -10,3 +10,14 @@ export { ReviewAgent } from './review-agent';
 export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
 export { ChatGPTClient } from './chatgpt-client';
+
+// Export error handling
+export {
+  AIServiceErrorFactory,
+  InputValidator,
+  type AIServiceError,
+  type ValidationResult,
+  type ICPGenerationError,
+  type ReviewCollectionError,
+  type CompanySearchError,
+} from './error-types';

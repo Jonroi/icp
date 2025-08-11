@@ -1,5 +1,11 @@
 import type { ICP, CompetitorData, CustomerReview } from './types';
 import { OllamaClient } from './ollama-client';
+import {
+  AIServiceErrorFactory,
+  InputValidator,
+  type ICPGenerationError,
+  type ValidationResult,
+} from './error-types';
 
 export class ICPGenerator {
   private ollamaClient: OllamaClient;
@@ -19,6 +25,33 @@ export class ICPGenerator {
     console.log(
       `   📋 Additional context: ${additionalContext ? 'Yes' : 'No'}`,
     );
+
+    // Validate input data
+    const validation = InputValidator.validateICPGenerationInput(
+      competitors,
+      additionalContext,
+    );
+
+    if (!validation.isValid) {
+      const error = AIServiceErrorFactory.createICPGenerationError(
+        'INVALID_INPUT_DATA',
+        `Input validation failed: ${validation.errors
+          .map((e) => e.message)
+          .join(', ')}`,
+        {
+          competitorCount: competitors.length,
+          reviewCount: reviews.length,
+          hasAdditionalContext: additionalContext.length > 0,
+          validationErrors: validation.errors,
+        },
+      );
+      throw error;
+    }
+
+    // Log warnings if any
+    if (validation.warnings.length > 0) {
+      console.warn(`⚠️ Input validation warnings:`, validation.warnings);
+    }
 
     try {
       const competitorInfo = competitors
@@ -42,17 +75,52 @@ export class ICPGenerator {
       console.log(`   ⏱️  Duration: ${endTime - startTime}ms`);
       console.log(`   📊 Response length: ${responseText.length} chars`);
 
+      if (!responseText || responseText.trim().length === 0) {
+        throw AIServiceErrorFactory.createICPGenerationError(
+          'LLM_UNAVAILABLE',
+          'LLM returned empty response. Please check that Ollama is running and the model is available.',
+          { prompt: prompt.substring(0, 200) + '...' },
+        );
+      }
+
       console.log(`🔍 Parsing ICP response...`);
       const icps = this.parseICPResponse(responseText);
 
       console.log(`✅ ICP parsing finished:`);
       console.log(`   👥 ICP profiles created: ${icps.length}`);
 
+      if (icps.length === 0) {
+        throw AIServiceErrorFactory.createICPGenerationError(
+          'PARSING_FAILED',
+          'Failed to parse any valid ICPs from LLM response',
+          {
+            responseLength: responseText.length,
+            responsePreview: responseText.substring(0, 500) + '...',
+          },
+        );
+      }
+
       return icps;
     } catch (error) {
+      if (error instanceof Error && 'code' in error) {
+        // Re-throw our custom errors
+        throw error;
+      }
+
       console.error(`❌ ICP generation failed:`);
       console.error(`   🔍 Error:`, error);
-      throw error;
+      throw AIServiceErrorFactory.createICPGenerationError(
+        'ICP_GENERATION_FAILED',
+        `ICP generation failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+        {
+          competitorCount: competitors.length,
+          reviewCount: reviews.length,
+          hasAdditionalContext: additionalContext.length > 0,
+        },
+        error instanceof Error ? error : undefined,
+      );
     }
   }
 
@@ -180,8 +248,24 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
       console.error(`❌ JSON parse failed:`);
       console.error(`   🔍 Error:`, parseError);
       console.error(`   📄 Response:`, responseText);
-      console.log(`🔄 Using fallback ICPs...`);
-      return this.getFallbackICPs();
+
+      throw AIServiceErrorFactory.createICPGenerationError(
+        'PARSING_FAILED',
+        `Failed to parse LLM response as valid JSON: ${
+          parseError instanceof Error
+            ? parseError.message
+            : 'Unknown parsing error'
+        }`,
+        {
+          responseLength: responseText.length,
+          responsePreview: responseText.substring(0, 500) + '...',
+          parseError:
+            parseError instanceof Error
+              ? parseError.message
+              : 'Unknown parsing error',
+        },
+        parseError instanceof Error ? parseError : undefined,
+      );
     }
   }
 
@@ -307,134 +391,5 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
     }
 
     return channels;
-  }
-
-  private getFallbackICPs(): ICP[] {
-    return [
-      {
-        name: 'Default ICP Profile',
-        description: 'Generated based on competitor analysis',
-        demographics: {
-          age: '25-35',
-          gender: 'Mixed',
-          location: 'Urban areas',
-          income: 'Middle income',
-          education: 'Bachelor degree or higher',
-        },
-        psychographics: {
-          interests: ['Technology', 'Business', 'Innovation'],
-          values: ['Quality', 'Efficiency', 'Growth'],
-          lifestyle: 'Busy professionals',
-          painPoints: ['Time constraints', 'Complex solutions', 'High costs'],
-        },
-        behavior: {
-          onlineHabits: ['Social media', 'Professional networks'],
-          purchasingBehavior: 'Research-driven decisions',
-          brandPreferences: ['Established brands', 'Innovative companies'],
-        },
-        goals: ['Business growth', 'Efficiency improvement', 'Cost reduction'],
-        challenges: [
-          'Finding the right solution',
-          'Implementation time',
-          'Budget constraints',
-        ],
-        preferredChannels: [
-          'LinkedIn',
-          'Professional websites',
-          'Industry events',
-          'Email marketing',
-          'Google Ads',
-          'Trade shows',
-        ],
-      },
-      {
-        name: 'Female Professional ICP',
-        description: 'Female professional customer profile',
-        demographics: {
-          age: '30-45',
-          gender: 'Female',
-          location: 'Urban areas',
-          income: 'Middle to High income',
-          education: 'Bachelor degree or higher',
-        },
-        psychographics: {
-          interests: ['Business', 'Technology', 'Professional development'],
-          values: ['Quality', 'Work-life balance', 'Growth'],
-          lifestyle: 'Professional women',
-          painPoints: [
-            'Time management',
-            'Work-life balance',
-            'Professional advancement',
-          ],
-        },
-        behavior: {
-          onlineHabits: ['LinkedIn', 'Professional networks', 'Social media'],
-          purchasingBehavior: 'Research-driven, value-conscious',
-          brandPreferences: ['Established brands', 'Professional services'],
-        },
-        goals: [
-          'Career advancement',
-          'Work-life balance',
-          'Professional development',
-        ],
-        challenges: [
-          'Time constraints',
-          'Professional recognition',
-          'Work-life integration',
-        ],
-        preferredChannels: [
-          'LinkedIn',
-          'Professional women networks',
-          'Industry conferences',
-          'Email marketing',
-          'Women-focused publications',
-          'Professional workshops',
-        ],
-      },
-      {
-        name: 'Male Executive ICP',
-        description: 'Male executive customer profile',
-        demographics: {
-          age: '35-55',
-          gender: 'Male',
-          location: 'Urban areas',
-          income: 'High income',
-          education: 'Advanced degree',
-        },
-        psychographics: {
-          interests: ['Business', 'Technology', 'Leadership'],
-          values: ['Efficiency', 'Growth', 'Innovation'],
-          lifestyle: 'Busy executives',
-          painPoints: [
-            'Time efficiency',
-            'Complex decision making',
-            'High expectations',
-          ],
-        },
-        behavior: {
-          onlineHabits: ['LinkedIn', 'Professional networks', 'Business news'],
-          purchasingBehavior: 'Decision-maker, ROI-focused',
-          brandPreferences: ['Premium brands', 'Innovative solutions'],
-        },
-        goals: [
-          'Business growth',
-          'Operational efficiency',
-          'Market leadership',
-        ],
-        challenges: [
-          'Complex solutions',
-          'Implementation time',
-          'ROI measurement',
-        ],
-        preferredChannels: [
-          'LinkedIn',
-          'Industry conferences',
-          'Executive networks',
-          'Business publications',
-          'Trade shows',
-          'Professional associations',
-        ],
-      },
-    ];
   }
 }

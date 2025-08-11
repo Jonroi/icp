@@ -271,7 +271,24 @@ export function useAppState() {
       console.error('Failed to fetch company info:', error);
       let errorMessage = `Failed to fetch info for ${companyName}`;
 
-      if (error instanceof Error) {
+      // Handle custom error types
+      if (error instanceof Error && 'code' in error) {
+        const customError = error as any;
+        switch (customError.code) {
+          case 'INVALID_COMPANY_NAME':
+            errorMessage = `Invalid company name: ${customError.message}`;
+            break;
+          case 'COMPANY_NOT_FOUND':
+            errorMessage = `No information found for "${companyName}". The company may not exist online.`;
+            break;
+          case 'LLM_SEARCH_FAILED':
+            errorMessage =
+              'AI search service is not available. Please check that Ollama is running.';
+            break;
+          default:
+            errorMessage = `Error: ${customError.message}`;
+        }
+      } else if (error instanceof Error) {
         if (error.name === 'AbortError') {
           errorMessage = `Research timeout for ${companyName} (30s limit)`;
         } else if (error.message?.includes('Failed to fetch')) {
@@ -325,7 +342,29 @@ export function useAppState() {
       console.error('Failed to fetch reviews:', error);
       let errorMessage = `Failed to fetch reviews for ${companyName}`;
 
-      if (error instanceof Error) {
+      // Handle custom error types
+      if (error instanceof Error && 'code' in error) {
+        const customError = error as any;
+        switch (customError.code) {
+          case 'INVALID_COMPANY_NAME':
+            errorMessage = `Invalid company name: ${customError.message}`;
+            break;
+          case 'INVALID_WEBSITE':
+            errorMessage = `Invalid website URL: ${customError.message}`;
+            break;
+          case 'NO_REVIEWS_FOUND':
+            errorMessage = `No reviews found for ${companyName}. The company may not have public reviews on supported platforms.`;
+            break;
+          case 'VALIDATION_FAILED':
+            errorMessage = `Found text but it doesn't appear to be customer reviews for ${companyName}`;
+            break;
+          case 'NETWORK_ERROR':
+            errorMessage = `Network error while fetching reviews for ${companyName}`;
+            break;
+          default:
+            errorMessage = `Error fetching reviews: ${customError.message}`;
+        }
+      } else if (error instanceof Error) {
         if (error.name === 'AbortError') {
           errorMessage = `Reviews timeout for ${companyName} (25s limit)`;
         } else if (error.message?.includes('Failed to fetch')) {
@@ -377,9 +416,30 @@ export function useAppState() {
       }
     } catch (error) {
       console.error('Failed to fetch own company info:', error);
+      let errorMessage = 'Failed to fetch company info';
+
+      // Handle custom error types
+      if (error instanceof Error && 'code' in error) {
+        const customError = error as any;
+        switch (customError.code) {
+          case 'INVALID_COMPANY_NAME':
+            errorMessage = `Invalid company name: ${customError.message}`;
+            break;
+          case 'COMPANY_NOT_FOUND':
+            errorMessage = `No information found for "${companyName}". The company may not exist online.`;
+            break;
+          case 'LLM_SEARCH_FAILED':
+            errorMessage =
+              'AI search service is not available. Please check that Ollama is running.';
+            break;
+          default:
+            errorMessage = `Error: ${customError.message}`;
+        }
+      }
+
       setOwnCompanyStatus({
         success: false,
-        message: 'Failed to fetch company info',
+        message: errorMessage,
       });
     } finally {
       setIsFetchingOwnCompany(false);
@@ -485,12 +545,35 @@ export function useAppState() {
       console.log('ICPs generated successfully');
     } catch (error) {
       console.error('Error generating ICPs:', error);
-      setError(
-        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b',
-      );
-      alert(
-        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b',
-      );
+
+      // Handle custom error types
+      let errorMessage =
+        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b';
+
+      if (error instanceof Error && 'code' in error) {
+        const customError = error as any;
+        switch (customError.code) {
+          case 'INVALID_INPUT_DATA':
+            errorMessage = `Input validation failed: ${customError.message}`;
+            break;
+          case 'LLM_UNAVAILABLE':
+            errorMessage =
+              'Ollama LLM is not available. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b';
+            break;
+          case 'PARSING_FAILED':
+            errorMessage =
+              'Failed to parse AI response. The AI may have returned unexpected format. Please try again.';
+            break;
+          case 'ICP_GENERATION_FAILED':
+            errorMessage = `ICP generation failed: ${customError.message}`;
+            break;
+          default:
+            errorMessage = `Error: ${customError.message}`;
+        }
+      }
+
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }

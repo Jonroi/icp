@@ -1,3 +1,9 @@
+import {
+  AIServiceErrorFactory,
+  InputValidator,
+  type CompanySearchError,
+} from './ai/error-types';
+
 export interface CompanySearchResult {
   name: string;
   website: string;
@@ -16,6 +22,18 @@ export class CompanySearchService {
     confidence: 'high' | 'medium' | 'low';
     notes: string;
   }> {
+    // Validate input
+    const validation = InputValidator.validateCompanyName(companyName);
+    if (!validation.isValid) {
+      throw AIServiceErrorFactory.createCompanySearchError(
+        'INVALID_COMPANY_NAME',
+        `Invalid company name: ${validation.errors
+          .map((e) => e.message)
+          .join(', ')}`,
+        [companyName],
+      );
+    }
+
     console.log(`🤖 LLM search for: ${companyName}`);
 
     try {
@@ -118,28 +136,13 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
         }
       }
 
-      // Fallback: Generate likely URLs if LLM didn't find anything
+      // If no valid URLs found, this is a search failure
       if (!website && !linkedin) {
-        console.log('🔄 LLM found nothing, generating fallback URLs...');
-        const cleanName = companyName.toLowerCase().replace(/[^a-z]/g, '');
-
-        // Generate likely website URLs (try common patterns)
-        const possibleWebsites = [
-          `https://www.${cleanName}.com`,
-          `https://www.${cleanName}.fi`,
-          `https://www.${cleanName}.net`,
-        ];
-        website = possibleWebsites[0]; // Use .com as primary
-
-        // Generate likely LinkedIn URL
-        linkedin = `https://www.linkedin.com/company/${cleanName}`;
-
-        return {
-          website: website,
-          social: linkedin,
-          confidence: 'medium',
-          notes: `LLM + fallback generation`,
-        };
+        throw AIServiceErrorFactory.createCompanySearchError(
+          'COMPANY_NOT_FOUND',
+          `No company information found for "${companyName}". The company may not exist online or LLM doesn't have information about it.`,
+          [companyName],
+        );
       }
 
       return {
@@ -150,13 +153,20 @@ FOR "${companyName}" - provide your best guess even if not 100% certain:`;
         notes: `LLM search completed`,
       };
     } catch (error) {
+      if (error instanceof Error && 'code' in error) {
+        // Re-throw our custom errors
+        throw error;
+      }
+
       console.error('LLM search failed:', error);
-      return {
-        website: '',
-        social: '',
-        confidence: 'low',
-        notes: 'LLM search failed',
-      };
+      throw AIServiceErrorFactory.createCompanySearchError(
+        'LLM_SEARCH_FAILED',
+        `Company search failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+        [companyName],
+        error instanceof Error ? error : undefined,
+      );
     }
   }
 
