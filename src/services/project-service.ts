@@ -37,6 +37,7 @@ export interface OwnCompany {
   name: string;
   website: string;
   social: string;
+  location?: string; // Location preference for the company
 }
 
 export interface Review {
@@ -159,6 +160,7 @@ export class ProjectService {
       name: competitor.name,
       website: competitor.website,
       social: competitor.social,
+      location: competitor.location,
       savedAt: new Date().toISOString(),
     };
     const key = `competitor-${competitor.name}`;
@@ -176,6 +178,7 @@ export class ProjectService {
           name: parsed.name || '',
           website: parsed.website || '',
           social: parsed.social || '',
+          location: parsed.location || '',
         };
       } catch (error) {
         console.error('Error loading competitor:', error);
@@ -192,6 +195,7 @@ export class ProjectService {
       name: company.name,
       website: company.website,
       social: company.social,
+      location: company.location,
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(key, JSON.stringify(payload));
@@ -207,6 +211,7 @@ export class ProjectService {
         name: parsed.name || '',
         website: parsed.website || '',
         social: parsed.social || '',
+        location: parsed.location || '',
       };
     } catch (error) {
       console.error('Error loading own company:', error);

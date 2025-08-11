@@ -7,15 +7,16 @@ import { ReviewsService } from '@/services/reviews-service';
 
 export function useAppState() {
   const [competitors, setCompetitors] = useState<Competitor[]>([
-    { name: '', website: '', social: '' },
-    { name: '', website: '', social: '' },
-    { name: '', website: '', social: '' },
+    { name: '', website: '', social: '', location: '' },
+    { name: '', website: '', social: '', location: '' },
+    { name: '', website: '', social: '', location: '' },
   ]);
   const [additionalContext, setAdditionalContext] = useState<string>('');
   const [ownCompany, setOwnCompany] = useState<OwnCompany>({
     name: '',
     website: '',
     social: '',
+    location: '',
   });
   const [ownCompanyStatus, setOwnCompanyStatus] = useState<{
     success: boolean;
@@ -165,6 +166,7 @@ export function useAppState() {
         name: parsed.name || '',
         website: parsed.website || '',
         social: parsed.social || '',
+        location: parsed.location || '',
       };
       setCompetitors(newCompetitors);
 
@@ -180,7 +182,10 @@ export function useAppState() {
 
   const addCompetitor = () => {
     if (competitors.length < 6) {
-      setCompetitors([...competitors, { name: '', website: '', social: '' }]);
+      setCompetitors([
+        ...competitors,
+        { name: '', website: '', social: '', location: '' },
+      ]);
     }
   };
 

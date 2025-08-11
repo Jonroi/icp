@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { LocationSelector } from '@/components/ui/location-selector';
+import type { OwnCompany } from '@/services/project-service';
 import {
   ExternalLink,
   RefreshCw,
@@ -9,12 +11,6 @@ import {
   Save,
   ChevronDown,
 } from 'lucide-react';
-
-export interface OwnCompany {
-  name: string;
-  website: string;
-  social: string;
-}
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
@@ -171,6 +167,17 @@ export function OwnCompanyForm({
               )}
             </div>
           </div>
+        </div>
+
+        <div className='space-y-2'>
+          <Label>Primary Location</Label>
+          <LocationSelector
+            value={company.location || 'Global'}
+            onValueChange={(value) => onChange('location', value)}
+            placeholder='Select your primary market location'
+            className='w-full'
+            showLabel={false}
+          />
         </div>
       </div>
       <CardContent className='p-0' />
