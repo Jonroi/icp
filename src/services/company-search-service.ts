@@ -1,7 +1,4 @@
-import {
-  AIServiceErrorFactory,
-  InputValidator,
-} from './ai/error-types';
+import { AIServiceErrorFactory, InputValidator } from './ai/error-types';
 
 export interface CompanySearchResult {
   name: string;
@@ -36,37 +33,6 @@ export class CompanySearchService {
     console.log(`🤖 LLM search for: ${companyName}`);
 
     try {
-      // Handle specific company mappings first
-      const knownCompanies: Record<
-        string,
-        { website: string; linkedin: string }
-      > = {
-        'db schenker': {
-          website: 'https://www.dbschenker.com',
-          linkedin: 'https://www.linkedin.com/company/db-schenker',
-        },
-        dbschenker: {
-          website: 'https://www.dbschenker.com',
-          linkedin: 'https://www.linkedin.com/company/db-schenker',
-        },
-        schenker: {
-          website: 'https://www.dbschenker.com',
-          linkedin: 'https://www.linkedin.com/company/db-schenker',
-        },
-      };
-
-      const normalizedName = companyName.toLowerCase().trim();
-      if (knownCompanies[normalizedName]) {
-        console.log(`Using known mapping for ${companyName}`);
-        const known = knownCompanies[normalizedName];
-        return {
-          website: known.website,
-          social: known.linkedin,
-          confidence: 'high' as const,
-          notes: 'Known company mapping',
-        };
-      }
-
       const prompt = `You are a business directory assistant. Find the official website and LinkedIn page for "${companyName}".
 
 INSTRUCTIONS:

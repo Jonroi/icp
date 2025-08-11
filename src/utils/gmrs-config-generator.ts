@@ -51,7 +51,7 @@ export function generateGMRSConfig(options: GMRSConfigOptions): GMRSConfig {
     language = 'en',
     includeBusinessInfo = true,
     includePhotos = false,
-    personalData = false,
+    personalData = true,
     maxRequestRetries = 5,
     requestTimeoutSecs = 180,
   } = options;

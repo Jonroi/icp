@@ -1044,16 +1044,17 @@ export class ApifyClient {
         };
       }
 
-      // Test with a simple search
-      const testResult = await this.searchCompanyReviews("McDonald's", {
-        location: 'United States',
-        maxResults: 1,
-        country: 'United States',
-      });
+      // Test connectivity by checking API endpoint access
+      const testEndpoint = `${this.config.baseUrl}/acts?token=${this.config.apiToken}&limit=1`;
+      const response = await fetch(testEndpoint);
+
+      if (!response.ok) {
+        throw new Error(`API test failed with status: ${response.status}`);
+      }
 
       return {
         success: true,
-        message: `Apify test successful. Found ${testResult.length} test results.`,
+        message: 'Apify API connection test successful.',
         details: {
           actorId: this.config.actorId,
           hasApiToken: true,
