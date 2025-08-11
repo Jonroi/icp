@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChatGPTClient } from '../services/ai';
+import { OllamaClient } from '../services/ai';
 
-export const TestChatGPT: React.FC = () => {
+export const TestOllama: React.FC = () => {
   const [message, setMessage] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,25 +16,16 @@ export const TestChatGPT: React.FC = () => {
     setResponse('');
 
     try {
-      const client = new ChatGPTClient();
+      const client = new OllamaClient();
 
-      // Test ChatGPT-compatible local API
-      const result = await client.createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful assistant. Respond in English and be concise.',
-          },
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
-      });
+      const prompt = `You are a helpful assistant. Respond in English and be concise.
 
-      setResponse(result.choices[0].message.content);
+User: ${message}
+
+Please provide a helpful response:`;
+
+      const result = await client.generateResponse(prompt);
+      setResponse(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -44,7 +35,7 @@ export const TestChatGPT: React.FC = () => {
 
   return (
     <div className='max-w-2xl mx-auto p-6'>
-      <h2 className='text-2xl font-bold mb-4'>Test ChatGPT Compatibility</h2>
+      <h2 className='text-2xl font-bold mb-4'>Test Ollama AI</h2>
 
       <form onSubmit={handleSubmit} className='mb-6'>
         <div className='mb-4'>
@@ -57,7 +48,7 @@ export const TestChatGPT: React.FC = () => {
             onChange={(e) => setMessage(e.target.value)}
             className='w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent'
             rows={4}
-            placeholder='Type a message to test the local ChatGPT-compatible API...'
+            placeholder='Type a message to test the local Ollama AI...'
             disabled={loading}
           />
         </div>
@@ -86,7 +77,7 @@ export const TestChatGPT: React.FC = () => {
       <div className='mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md'>
         <h3 className='font-semibold mb-2'>Info:</h3>
         <ul className='text-sm space-y-1'>
-          <li>• This tests your local Ollama instead of ChatGPT</li>
+          <li>• This tests your local Ollama AI</li>
           <li>• Ensure Ollama is installed and running</li>
           <li>
             • Pull model: <code>ollama pull llama3.2:3b-instruct-q4_K_M</code>

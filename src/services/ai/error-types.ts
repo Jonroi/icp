@@ -34,7 +34,10 @@ export interface ReviewCollectionError extends AIServiceError {
     | 'NO_REVIEWS_FOUND'
     | 'INVALID_WEBSITE'
     | 'NETWORK_ERROR'
-    | 'VALIDATION_FAILED';
+    | 'VALIDATION_FAILED'
+    | 'INVALID_COMPANY_NAME'
+    | 'NO_API_KEY'
+    | 'SERP_API_ERROR';
   source?: string;
   attemptedUrls?: string[];
 }

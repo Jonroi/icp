@@ -58,7 +58,7 @@ export async function testReviewFetching() {
       let suspiciousCount = 0;
 
       for (const review of reviewBlocks) {
-        const lower = review.toLowerCase();
+        review.toLowerCase();
 
         // Check for navigation/metadata patterns
         if (

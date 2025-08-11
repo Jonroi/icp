@@ -64,7 +64,7 @@ Return JSON array only: [{"isValid": boolean, "reason": "short explanation"}, ..
       console.warn('Failed to parse LLM validation response:', parseError);
       // Enhanced fallback with better heuristics
       return blocks.map((b) => {
-        const lower = b.toLowerCase();
+        b.toLowerCase();
 
         // Strong indicators this is NOT a review
         const negativeIndicators = [

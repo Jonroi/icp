@@ -1,11 +1,12 @@
-import type { ICP, CompetitorData, CustomerReview } from './types';
+import type {
+  ICP,
+  CompetitorData,
+  CustomerReview,
+  SerpBasedICP,
+  SerpDataSource,
+} from './types';
 import { OllamaClient } from './ollama-client';
-import {
-  AIServiceErrorFactory,
-  InputValidator,
-  type ICPGenerationError,
-  type ValidationResult,
-} from './error-types';
+import { AIServiceErrorFactory, InputValidator } from './error-types';
 
 export class ICPGenerator {
   private ollamaClient: OllamaClient;
@@ -19,9 +20,22 @@ export class ICPGenerator {
     reviews: CustomerReview[],
     additionalContext: string = '',
   ): Promise<ICP[]> {
-    console.log(`🎯 Starting ICP generation:`);
+    return this.generateSerpBasedICPs(competitors, reviews, additionalContext);
+  }
+
+  /**
+   * Enhanced ICP generation that returns SERP-based ICPs with data source tracking
+   */
+  async generateSerpBasedICPs(
+    competitors: CompetitorData[],
+    reviews: CustomerReview[],
+    additionalContext: string = '',
+    dataSources?: SerpDataSource[],
+  ): Promise<SerpBasedICP[]> {
+    console.log(`🎯 Starting SERP-based ICP generation:`);
     console.log(`   🏢 Competitors: ${competitors.length}`);
     console.log(`   📝 Reviews: ${reviews.length}`);
+    console.log(`   📊 SERP Data Sources: ${dataSources?.length || 0}`);
     console.log(
       `   📋 Additional context: ${additionalContext ? 'Yes' : 'No'}`,
     );
@@ -60,10 +74,11 @@ export class ICPGenerator {
       const reviewTexts = reviews.map((r) => r.text).join('\n');
 
       console.log(`📝 Building prompt...`);
-      const prompt = this.buildICPPrompt(
+      const prompt = this.buildSerpEnhancedICPPrompt(
         competitorInfo,
         reviewTexts,
         additionalContext,
+        dataSources,
       );
 
       console.log(`📤 Sending to ICP generator...`);
@@ -100,7 +115,15 @@ export class ICPGenerator {
         );
       }
 
-      return icps;
+      // Convert to SerpBasedICP format with data source tracking
+      const serpBasedICPs: SerpBasedICP[] = icps.map((icp) => ({
+        ...icp,
+        dataSources: dataSources || [],
+        confidence: this.calculateConfidence(reviews, dataSources),
+        marketInsights: this.extractMarketInsights(reviews, dataSources),
+      }));
+
+      return serpBasedICPs;
     } catch (error) {
       if (error instanceof Error && 'code' in error) {
         // Re-throw our custom errors
@@ -124,21 +147,30 @@ export class ICPGenerator {
     }
   }
 
-  private buildICPPrompt(
+  private buildSerpEnhancedICPPrompt(
     competitorInfo: string,
     reviewTexts: string,
     additionalContext: string,
+    dataSources?: SerpDataSource[],
   ): string {
-    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following data. Write each ICP description as a concise 2–3 sentence paragraph (no bullet lists):
+    const dataSourceInfo = dataSources?.length
+      ? this.formatDataSourceInfo(dataSources)
+      : '';
+
+    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following SERP API collected data. This data comes from structured search engine results, providing high-quality customer insights.
+
+${dataSourceInfo}
 
 Competitors:
 ${competitorInfo}
 
-Customer Reviews:
+Customer Reviews & Market Data (from SERP API):
 ${reviewTexts}
 
 Additional Context:
 ${additionalContext}
+
+IMPORTANT: This data was collected via SERP API, ensuring accuracy and relevance. Use this structured data to create precise customer profiles.
 
 Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP must have this exact structure:
 
@@ -169,6 +201,13 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
     "preferredChannels": ["channel1", "channel2", "channel3"]
   }
 ]
+
+SERP-Enhanced Analysis Instructions:
+- Leverage the structured SERP data to identify authentic customer patterns
+- Use platform-specific insights (Google Reviews, Trustpilot, etc.) to understand channel preferences
+- Extract demographic signals from review language and context
+- Identify pain points from actual customer complaints and feedback
+- Use market research data to validate trends and opportunities
 
 IMPORTANT AGE ANALYSIS INSTRUCTIONS:
 - Analyze the review data for age indicators (language complexity, cultural references, technology usage)
@@ -206,6 +245,8 @@ Choose channels that match the ICP's age, industry, online habits, and purchasin
 
 Respond with ONLY the JSON array, no additional text or explanations.`;
   }
+
+
 
   private parseICPResponse(responseText: string): ICP[] {
     console.log(`🔍 Parsing LLM response...`);
@@ -391,5 +432,112 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
     }
 
     return channels;
+  }
+
+  private formatDataSourceInfo(dataSources: SerpDataSource[]): string {
+    const sourceInfo = dataSources
+      .map((source) => {
+        const timestamp = new Date(source.timestamp).toLocaleString();
+        return `- ${source.type}: "${source.query}" (${
+          source.resultCount
+        } results, ${source.location || 'Global'}, ${timestamp})`;
+      })
+      .join('\n');
+
+    return `Data Sources (SERP API):
+${sourceInfo}
+`;
+  }
+
+  private calculateConfidence(
+    reviews: CustomerReview[],
+    dataSources?: SerpDataSource[],
+  ): 'high' | 'medium' | 'low' {
+    const reviewCount = reviews.length;
+    const sourceCount = dataSources?.length || 0;
+    const totalDataPoints =
+      dataSources?.reduce((sum, source) => sum + source.resultCount, 0) ||
+      reviewCount;
+
+    // High confidence: 15+ reviews from multiple sources
+    if (reviewCount >= 15 && sourceCount >= 2 && totalDataPoints >= 25) {
+      return 'high';
+    }
+
+    // Medium confidence: 8+ reviews with decent data
+    if (reviewCount >= 8 && totalDataPoints >= 12) {
+      return 'medium';
+    }
+
+    // Low confidence: limited data
+    return 'low';
+  }
+
+  private extractMarketInsights(
+    reviews: CustomerReview[],
+    dataSources?: SerpDataSource[],
+  ):
+    | { trends: string[]; opportunities: string[]; threats: string[] }
+    | undefined {
+    // Only provide market insights if we have market data sources
+    const hasMarketData = dataSources?.some(
+      (source) => source.type === 'serp_market_data',
+    );
+
+    if (!hasMarketData) {
+      return undefined;
+    }
+
+    // Extract basic insights from review patterns
+    const trends: string[] = [];
+    const opportunities: string[] = [];
+    const threats: string[] = [];
+
+    // Analyze review content for patterns
+    const allReviewText = reviews.map((r) => r.text.toLowerCase()).join(' ');
+
+    // Trend indicators
+    if (allReviewText.includes('digital') || allReviewText.includes('online')) {
+      trends.push('Digital transformation demand');
+    }
+    if (allReviewText.includes('mobile') || allReviewText.includes('app')) {
+      trends.push('Mobile-first expectations');
+    }
+    if (
+      allReviewText.includes('sustainable') ||
+      allReviewText.includes('environment')
+    ) {
+      trends.push('Sustainability focus');
+    }
+
+    // Opportunity indicators
+    if (allReviewText.includes('slow') || allReviewText.includes('delay')) {
+      opportunities.push('Speed optimization');
+    }
+    if (
+      allReviewText.includes('expensive') ||
+      allReviewText.includes('price')
+    ) {
+      opportunities.push('Competitive pricing');
+    }
+    if (
+      allReviewText.includes('customer service') ||
+      allReviewText.includes('support')
+    ) {
+      opportunities.push('Enhanced customer support');
+    }
+
+    // Threat indicators
+    if (
+      allReviewText.includes('competitor') ||
+      allReviewText.includes('alternative')
+    ) {
+      threats.push('Increased competition');
+    }
+    if (allReviewText.includes('outdated') || allReviewText.includes('old')) {
+      threats.push('Technology disruption');
+    }
+
+    return { trends, opportunities, threats };
   }
 }

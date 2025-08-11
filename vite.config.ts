@@ -10,4 +10,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    global: 'globalThis',
+    // Provide empty implementations for Node.js globals that might be used by dependencies
+    'process.env': '{}',
+    'process.platform': '"browser"',
+    'process.version': '"v16.0.0"',
+  },
+  server: {
+    host: true,
+    port: 5173,
+  },
+  optimizeDeps: {
+    exclude: ['dotenv', 'jsdom', 'express'],
+  },
 });

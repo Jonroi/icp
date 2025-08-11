@@ -1,7 +1,6 @@
 import {
   AIServiceErrorFactory,
   InputValidator,
-  type CompanySearchError,
 } from './ai/error-types';
 
 export interface CompanySearchResult {

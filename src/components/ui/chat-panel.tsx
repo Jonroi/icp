@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react';
 import { X, Send, Bot } from 'lucide-react';
-import { ChatGPTClient } from '@/services/ai';
+import { OllamaClient } from '@/services/ai';
 import { Button } from './button';
 
 interface ChatPanelProps {
@@ -42,16 +42,22 @@ export function ChatPanel({ onClose, suggestions }: ChatPanelProps) {
     setError(null);
 
     try {
-      const client = new ChatGPTClient();
-      const response = await client.createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: nextMessages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-      });
+      const client = new OllamaClient();
+      
+      // Build conversation context for Ollama
+      const conversationContext = nextMessages
+        .filter(m => m.role !== 'system')
+        .map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
+        .join('\n');
+      
+      const prompt = `You are a helpful AI assistant for ICP Builder. Be concise and actionable.
 
-      const assistantReply = response.choices[0]?.message?.content ?? '';
+Conversation:
+${conversationContext}
+
+Please provide a helpful response:`;
+
+      const assistantReply = await client.generateResponse(prompt);
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: assistantReply },
@@ -145,7 +151,7 @@ export function ChatPanel({ onClose, suggestions }: ChatPanelProps) {
           </Button>
         </div>
         <div className='mt-1 px-1 text-xs text-zinc-500'>
-          Powered by local Ollama via ChatGPT-compatible client
+          Powered by local Ollama AI
         </div>
       </div>
     </div>

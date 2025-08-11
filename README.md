@@ -68,11 +68,64 @@ The application uses **Ollama** (local LLM) for generating Ideal Customer Profil
 
 For detailed setup instructions, see [OLLAMA_SETUP.md](OLLAMA_SETUP.md).
 
+## 🔍 SERP API Setup (Recommended for Production)
+
+The application now supports **SERP API integration** for reliable data collection instead of web scraping:
+
+### Quick SERP API Setup
+
+1. **Choose Provider**: Sign up for [SerpAPI](https://serpapi.com/), [ScrapingBee](https://www.scrapingbee.com/), or [ValueSERP](https://www.valueserp.com/)
+2. **Get API Key**: Copy your API key from the provider dashboard
+3. **Configure Environment**: Add to your `.env` file:
+
+   ```env
+   SERP_API_KEY=your_api_key_here
+   SERP_PROVIDER=serpapi
+   ```
+
+**Benefits over web scraping:**
+
+- ✅ No rate limiting or CAPTCHA issues
+- ✅ Structured, reliable data
+- ✅ Better customer insights quality
+- ✅ Supports multiple search engines
+
+For detailed setup instructions, see [SERP_API_SETUP.md](SERP_API_SETUP.md).
+
 ## 🧠 How ICP Generation Works
 
-### Data Flow & Input Sources
+### SERP API Enhanced Data Flow
 
-The ICP generation process uses **real customer data** from multiple sources to create accurate customer profiles:
+The ICP generation process now uses **SERP API** to collect structured, reliable customer data for accurate profile creation:
+
+#### **New SERP API Data Collection**
+
+```typescript
+// SERP API collects structured data from:
+{
+  reviews: [
+    {
+      text: "Actual customer review...",
+      source: "https://trustpilot.com/...",
+      platform: "Trustpilot",
+      rating: 4.5,
+      date: "2024-01-15"
+    }
+  ],
+  dataSources: [
+    {
+      type: "serp_reviews",
+      query: "Nokia customer reviews feedback",
+      resultCount: 25,
+      location: "Finland"
+    }
+  ]
+}
+```
+
+### Legacy Data Flow & Input Sources
+
+The ICP generation process can also use **real customer data** from multiple sources via web scraping (legacy mode):
 
 #### **1. Competitor Data Input**
 
@@ -102,9 +155,9 @@ The ICP generation process uses **real customer data** from multiple sources to 
 'Industry: SaaS, Target market: B2B, Location: Finland';
 ```
 
-### LLM Processing & Analysis
+### Enhanced LLM Processing & Analysis
 
-The **Ollama LLM (llama3.2:3b)** receives a comprehensive prompt containing:
+The **Ollama LLM (llama3.2:3b)** receives enhanced data from SERP API or legacy sources:
 
 #### **Input Data Structure**
 
@@ -124,7 +177,15 @@ The **Ollama LLM (llama3.2:3b)** receives a comprehensive prompt containing:
 }
 ```
 
-#### **LLM Analysis Process**
+#### **Enhanced LLM Analysis Process (SERP API)**
+
+1. **Structured Data Processing**: LLM analyzes clean, structured SERP data
+2. **Multi-Source Correlation**: Combines reviews from multiple platforms (Trustpilot, Google, etc.)
+3. **Platform-Specific Insights**: Leverages platform metadata (ratings, dates, sources)
+4. **Market Intelligence**: Incorporates market research and competitor data
+5. **Confidence Scoring**: Provides confidence levels based on data quality and quantity
+
+#### **Legacy LLM Analysis Process**
 
 1. **Competitor Analysis**: LLM analyzes competitor websites and social media presence
 2. **Review Sentiment Analysis**: Processes real customer feedback and sentiment
@@ -190,9 +251,30 @@ The LLM generates **3 comprehensive ICP profiles** with the following structure:
 - Healthcare interests → Medical conferences, Healthcare blogs
 ```
 
-### Real-World Data Sources
+### Enhanced SERP API Data Sources
 
-The LLM analyzes **actual customer data** from:
+With SERP API integration, the LLM analyzes **structured, reliable data** from:
+
+#### **🔍 SERP API Sources**
+
+- **Google Search Results**: Comprehensive search result analysis
+- **Trustpilot Reviews**: Verified customer feedback via SERP
+- **Social Media Mentions**: Customer discussions and feedback
+- **News & Articles**: Market research and industry insights
+- **Forum Discussions**: Authentic customer conversations
+- **Review Aggregation Sites**: Multi-platform review collection
+
+**Benefits:**
+
+- ✅ **Reliability**: No rate limiting or blocking issues
+- ✅ **Structure**: Clean, parsed data with metadata
+- ✅ **Coverage**: Access to multiple platforms simultaneously
+- ✅ **Quality**: Verified, relevant content
+- ✅ **Speed**: Faster collection than web scraping
+
+### Legacy Real-World Data Sources
+
+The LLM can also analyze **actual customer data** from traditional web scraping:
 
 #### **📱 Reddit Reviews**
 
@@ -224,7 +306,17 @@ The LLM analyzes **actual customer data** from:
 - Local market insights
 - Peer-to-peer recommendations
 
-### Benefits of Real Data Analysis
+### Benefits of SERP API Enhanced Analysis
+
+1. **Superior Accuracy**: Structured data from verified sources
+2. **Real-Time Relevance**: Current market conditions and customer sentiment
+3. **Multi-Platform Coverage**: Comprehensive view across all major platforms
+4. **Metadata Enrichment**: Ratings, dates, and source context
+5. **Reliability**: No collection failures or incomplete data
+6. **Scalability**: Consistent performance regardless of volume
+7. **Actionability**: Precise, implementable customer insights
+
+### Benefits of Real Data Analysis (Legacy)
 
 1. **Accuracy**: Based on actual customer feedback, not assumptions
 2. **Relevance**: Reflects real market conditions and customer needs

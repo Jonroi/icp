@@ -45,4 +45,26 @@ export interface CompetitorAnalysis {
 export interface CustomerReview {
   text: string;
   source: string;
+  rating?: number;
+  date?: string;
+  platform?: string;
+}
+
+// SERP API specific types
+export interface SerpDataSource {
+  type: 'serp_reviews' | 'serp_organic' | 'serp_market_data';
+  query: string;
+  location?: string;
+  resultCount: number;
+  timestamp: string;
+}
+
+export interface SerpBasedICP extends ICP {
+  dataSources: SerpDataSource[];
+  confidence: 'high' | 'medium' | 'low';
+  marketInsights?: {
+    trends: string[];
+    opportunities: string[];
+    threats: string[];
+  };
 }
