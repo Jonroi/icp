@@ -226,13 +226,21 @@ export class ApifyReviewsService {
       ...marketInsights,
     ];
 
-    // Convert Apify results to CustomerReview format
+    // Convert Apify results to CustomerReview format with enhanced reviewer data
     const reviews: CustomerReview[] = allApifyData.map((apifyReview) => ({
       text: apifyReview.text,
       source: apifyReview.source,
       rating: apifyReview.rating,
       date: apifyReview.date,
       platform: apifyReview.platform,
+      // Enhanced reviewer data
+      reviewer: apifyReview.reviewer,
+      reviewId: apifyReview.reviewId,
+      reviewUrl: apifyReview.reviewUrl,
+      responseFromOwner: apifyReview.responseFromOwner,
+      images: apifyReview.images,
+      reviewContext: apifyReview.reviewContext,
+      detailedRating: apifyReview.detailedRating,
     }));
 
     // Create data source tracking (simplified)

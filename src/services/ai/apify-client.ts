@@ -20,6 +20,25 @@ export interface ApifyReviewResult {
   date?: string;
   source: string;
   platform: string;
+  // Enhanced reviewer data (available when personalData: true)
+  reviewer?: {
+    name?: string;
+    id?: string;
+    url?: string;
+    profilePicture?: string;
+    numberOfReviews?: number;
+    isLocalGuide?: boolean;
+    localGuideLevel?: number;
+  };
+  // Review metadata
+  reviewId?: string;
+  reviewUrl?: string;
+  responseFromOwner?: string;
+  images?: string[];
+  reviewContext?: string;
+  detailedRating?: {
+    [service: string]: number;
+  };
 }
 
 export interface ApifyApiResponse {
@@ -46,7 +65,7 @@ export interface ApifyRunInput {
   timeFrame?: string;
   customDataFunction?: string;
 
-  // Google Maps Reviews Scraper parameters (optimized)
+  // Google Maps Reviews Scraper parameters (enhanced)
   searchStringsArray?: string[];
   startUrls?: Array<{ url: string; method?: string }>;
   maxCrawledPlaces?: number;
@@ -56,7 +75,8 @@ export interface ApifyRunInput {
   reviewsSort?: string;
   includeBusinessInfo?: boolean;
   includePhotos?: boolean;
-  personalData?: boolean;
+  personalData?: boolean; // Enable for enhanced reviewer demographics
+  reviewsOrigin?: 'all' | 'google'; // Target Google-native reviews for better coverage
   headless?: boolean;
   maxConcurrency?: number;
   maxRequestRetries?: number;
@@ -340,12 +360,13 @@ export class ApifyClient {
         searchStringsArray: [searchString],
         maxCrawledPlaces: 1,
         includeReviews: true,
-        maxReviews: options.maxResults || 20,
+        maxReviews: options.maxResults || 50, // Increased for better demographic analysis
         reviewsLanguage: 'all',
         reviewsSort: 'newest',
+        reviewsOrigin: 'google', // Target Google-native reviews for better coverage
         includeBusinessInfo: true,
-        includePhotos: false,
-        personalData: false,
+        includePhotos: true, // Enable photos for additional context
+        personalData: true, // ✅ ENABLE Enhanced reviewer demographics
         headless: true,
         language: options.language || 'en',
         maxConcurrency: 1,
@@ -748,11 +769,11 @@ export class ApifyClient {
       // Debug: Log the actual result structure
       console.log('🔍 Raw result data:', JSON.stringify(result, null, 2));
 
-      // Extract reviews from the result
+      // Extract reviews from the result with enhanced reviewer data
       if (result.reviews && Array.isArray(result.reviews)) {
         for (const review of result.reviews) {
           if (review.text || review.reviewText || review.comment) {
-            reviews.push({
+            const enhancedReview: ApifyReviewResult = {
               text: review.text || review.reviewText || review.comment || '',
               rating:
                 review.rating ||
@@ -766,7 +787,30 @@ export class ApifyClient {
                 review.publishedAtDate,
               source: review.source || result.url || 'Google Maps',
               platform: 'Google Maps',
-            });
+              // Enhanced reviewer data (when personalData: true)
+              reviewer: {
+                name:
+                  review.reviewerName || review.authorName || review.userName,
+                id: review.reviewerId || review.authorId,
+                url: review.reviewerUrl || review.authorUrl,
+                profilePicture: review.reviewerPhotoUrl || review.authorPhoto,
+                numberOfReviews:
+                  review.reviewerNumberOfReviews || review.reviewsCount,
+                isLocalGuide:
+                  review.reviewerIsLocalGuide || review.isLocalGuide,
+                localGuideLevel: review.localGuideLevel,
+              },
+              // Review metadata
+              reviewId: review.reviewId || review.id,
+              reviewUrl: review.reviewUrl || review.url,
+              responseFromOwner:
+                review.responseFromOwner || review.ownerResponse,
+              images: review.reviewImages || review.images || [],
+              reviewContext: review.reviewContext,
+              detailedRating: review.detailedRating || review.subRatings,
+            };
+
+            reviews.push(enhancedReview);
           }
         }
       }

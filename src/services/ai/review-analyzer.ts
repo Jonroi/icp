@@ -25,6 +25,21 @@ export interface BatchReviewAnalysis {
   commonTopics: Array<{ topic: string; frequency: number }>;
   emotionalTrends: Array<{ emotion: string; frequency: number }>;
   recommendations: string[];
+  // Enhanced demographics from reviewer data
+  demographics?: {
+    genderDistribution: { male: number; female: number; unknown: number };
+    experienceLevels: Array<{
+      level: string;
+      count: number;
+      percentage: number;
+    }>;
+    localGuideDistribution: {
+      guides: number;
+      regular: number;
+      percentage: number;
+    };
+    activityPatterns: Array<{ pattern: string; count: number }>;
+  };
 }
 
 export class ReviewAnalyzer {
@@ -324,6 +339,9 @@ export class ReviewAnalyzer {
       topPainPoints,
     );
 
+    // Enhanced demographics analysis (if reviewer data is available)
+    const demographics = this.analyzeEnhancedDemographics(reviews);
+
     return {
       totalReviews: reviews.length,
       sentimentDistribution,
@@ -334,6 +352,7 @@ export class ReviewAnalyzer {
       commonTopics,
       emotionalTrends,
       recommendations,
+      demographics,
     };
   }
 
@@ -631,5 +650,132 @@ export class ReviewAnalyzer {
     }
 
     return behaviors;
+  }
+
+  /**
+   * Analyze enhanced demographics from reviewer data
+   */
+  static analyzeEnhancedDemographics(reviews: CustomerReview[]): {
+    genderDistribution: { male: number; female: number; unknown: number };
+    experienceLevels: Array<{
+      level: string;
+      count: number;
+      percentage: number;
+    }>;
+    localGuideDistribution: {
+      guides: number;
+      regular: number;
+      percentage: number;
+    };
+    activityPatterns: Array<{ pattern: string; count: number }>;
+  } {
+    const totalReviews = reviews.length;
+    const reviewsWithData = reviews.filter((r) => r.reviewer);
+
+    // Gender analysis from names
+    const genderDistribution = { male: 0, female: 0, unknown: 0 };
+
+    // Finnish name patterns for gender detection
+    const femaleNames = [
+      'maria',
+      'anna',
+      'liisa',
+      'sanna',
+      'elina',
+      'tarja',
+      'päivi',
+      'tuula',
+      'kaisa',
+      'tiina',
+    ];
+    const maleNames = [
+      'jukka',
+      'mikael',
+      'petri',
+      'kari',
+      'timo',
+      'matti',
+      'pekka',
+      'juha',
+      'antti',
+      'ville',
+    ];
+
+    reviewsWithData.forEach((review) => {
+      if (review.reviewer?.name) {
+        const name = review.reviewer.name.toLowerCase();
+        const isFemaleName = femaleNames.some((fn) => name.includes(fn));
+        const isMaleName = maleNames.some((mn) => name.includes(mn));
+
+        if (isFemaleName && !isMaleName) {
+          genderDistribution.female++;
+        } else if (isMaleName && !isFemaleName) {
+          genderDistribution.male++;
+        } else {
+          genderDistribution.unknown++;
+        }
+      } else {
+        genderDistribution.unknown++;
+      }
+    });
+
+    // Experience levels based on review count
+    const experienceLevels = [
+      { level: 'New Reviewer (1-5 reviews)', count: 0, percentage: 0 },
+      { level: 'Regular Reviewer (6-20 reviews)', count: 0, percentage: 0 },
+      { level: 'Active Reviewer (21-50 reviews)', count: 0, percentage: 0 },
+      { level: 'Super Reviewer (51+ reviews)', count: 0, percentage: 0 },
+    ];
+
+    reviewsWithData.forEach((review) => {
+      const reviewCount = review.reviewer?.numberOfReviews || 0;
+      if (reviewCount <= 5) {
+        experienceLevels[0].count++;
+      } else if (reviewCount <= 20) {
+        experienceLevels[1].count++;
+      } else if (reviewCount <= 50) {
+        experienceLevels[2].count++;
+      } else {
+        experienceLevels[3].count++;
+      }
+    });
+
+    // Calculate percentages
+    experienceLevels.forEach((level) => {
+      level.percentage =
+        totalReviews > 0 ? (level.count / totalReviews) * 100 : 0;
+    });
+
+    // Local Guide analysis
+    const localGuides = reviewsWithData.filter(
+      (r) => r.reviewer?.isLocalGuide,
+    ).length;
+    const regularUsers = reviewsWithData.length - localGuides;
+    const localGuideDistribution = {
+      guides: localGuides,
+      regular: regularUsers,
+      percentage: totalReviews > 0 ? (localGuides / totalReviews) * 100 : 0,
+    };
+
+    // Activity patterns
+    const activityPatterns = [
+      { pattern: 'High Activity (Local Guides)', count: localGuides },
+      { pattern: 'Medium Activity (Regular reviewers)', count: regularUsers },
+      {
+        pattern: 'Has Profile Pictures',
+        count: reviewsWithData.filter((r) => r.reviewer?.profilePicture).length,
+      },
+      {
+        pattern: 'Includes Photos in Reviews',
+        count: reviews.filter((r) => r.images && r.images.length > 0).length,
+      },
+    ];
+
+    return {
+      genderDistribution,
+      experienceLevels,
+      localGuideDistribution,
+      activityPatterns,
+    };
   }
 }

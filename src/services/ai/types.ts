@@ -48,6 +48,25 @@ export interface CustomerReview {
   rating?: number;
   date?: string;
   platform?: string;
+  // Enhanced reviewer data from Google Maps
+  reviewer?: {
+    name?: string;
+    id?: string;
+    url?: string;
+    profilePicture?: string;
+    numberOfReviews?: number;
+    isLocalGuide?: boolean;
+    localGuideLevel?: number;
+  };
+  // Additional review metadata
+  reviewId?: string;
+  reviewUrl?: string;
+  responseFromOwner?: string;
+  images?: string[];
+  reviewContext?: string;
+  detailedRating?: {
+    [service: string]: number;
+  };
 }
 
 // Apify Google Maps API specific types
