@@ -5,7 +5,7 @@ export class CompetitorAnalyzer {
   private ollamaClient: OllamaClient;
 
   constructor() {
-    this.ollamaClient = new OllamaClient();
+    this.ollamaClient = OllamaClient.getInstance();
   }
 
   async generateCompetitorAnalysis(

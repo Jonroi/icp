@@ -37,7 +37,7 @@ export interface ReviewCollectionError extends AIServiceError {
     | 'VALIDATION_FAILED'
     | 'INVALID_COMPANY_NAME'
     | 'NO_API_KEY'
-    | 'SERP_API_ERROR';
+    | 'APIFY_API_ERROR';
   source?: string;
   attemptedUrls?: string[];
 }

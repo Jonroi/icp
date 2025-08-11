@@ -2,17 +2,18 @@ import type {
   ICP,
   CompetitorData,
   CustomerReview,
-  SerpBasedICP,
-  SerpDataSource,
+  ApifyBasedICP,
+  ApifyDataSource,
 } from './types';
 import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
+import { ReviewAnalyzer } from './review-analyzer';
 
 export class ICPGenerator {
   private ollamaClient: OllamaClient;
 
   constructor() {
-    this.ollamaClient = new OllamaClient();
+    this.ollamaClient = OllamaClient.getInstance();
   }
 
   async generateICPs(
@@ -20,22 +21,22 @@ export class ICPGenerator {
     reviews: CustomerReview[],
     additionalContext: string = '',
   ): Promise<ICP[]> {
-    return this.generateSerpBasedICPs(competitors, reviews, additionalContext);
+    return this.generateApifyBasedICPs(competitors, reviews, additionalContext);
   }
 
   /**
-   * Enhanced ICP generation that returns SERP-based ICPs with data source tracking
+   * Enhanced ICP generation that returns Apify-based ICPs with data source tracking
    */
-  async generateSerpBasedICPs(
+  async generateApifyBasedICPs(
     competitors: CompetitorData[],
     reviews: CustomerReview[],
     additionalContext: string = '',
-    dataSources?: SerpDataSource[],
-  ): Promise<SerpBasedICP[]> {
-    console.log(`🎯 Starting SERP-based ICP generation:`);
+    dataSources?: ApifyDataSource[],
+  ): Promise<ApifyBasedICP[]> {
+    console.log(`🎯 Starting Apify-based ICP generation:`);
     console.log(`   🏢 Competitors: ${competitors.length}`);
     console.log(`   📝 Reviews: ${reviews.length}`);
-    console.log(`   📊 SERP Data Sources: ${dataSources?.length || 0}`);
+    console.log(`   📊 Apify Data Sources: ${dataSources?.length || 0}`);
     console.log(
       `   📋 Additional context: ${additionalContext ? 'Yes' : 'No'}`,
     );
@@ -73,12 +74,36 @@ export class ICPGenerator {
         .join('\n');
       const reviewTexts = reviews.map((r) => r.text).join('\n');
 
-      console.log(`📝 Building prompt...`);
-      const prompt = this.buildSerpEnhancedICPPrompt(
+      // Enhanced review analysis using ReviewAnalyzer
+      console.log(`🔍 Analyzing reviews for ICP insights...`);
+      const reviewAnalysis = ReviewAnalyzer.analyzeBatch(reviews);
+      const icpInsights = ReviewAnalyzer.extractICPInsights(reviews);
+
+      console.log(`📊 Review analysis completed:`);
+      console.log(
+        `   📈 Sentiment: ${reviewAnalysis.sentimentDistribution.positive} positive, ${reviewAnalysis.sentimentDistribution.negative} negative`,
+      );
+      console.log(
+        `   🎯 Top pain points: ${reviewAnalysis.topPainPoints
+          .slice(0, 3)
+          .map((p) => p.point)
+          .join(', ')}`,
+      );
+      console.log(
+        `   👥 Customer segments: ${reviewAnalysis.customerSegments
+          .slice(0, 3)
+          .map((s) => s.segment)
+          .join(', ')}`,
+      );
+
+      console.log(`📝 Building enhanced prompt...`);
+      const prompt = this.buildApifyEnhancedICPPrompt(
         competitorInfo,
         reviewTexts,
         additionalContext,
         dataSources,
+        reviewAnalysis,
+        icpInsights,
       );
 
       console.log(`📤 Sending to ICP generator...`);
@@ -115,15 +140,15 @@ export class ICPGenerator {
         );
       }
 
-      // Convert to SerpBasedICP format with data source tracking
-      const serpBasedICPs: SerpBasedICP[] = icps.map((icp) => ({
+      // Convert to ApifyBasedICP format with data source tracking
+      const apifyBasedICPs: ApifyBasedICP[] = icps.map((icp) => ({
         ...icp,
         dataSources: dataSources || [],
         confidence: this.calculateConfidence(reviews, dataSources),
         marketInsights: this.extractMarketInsights(reviews, dataSources),
       }));
 
-      return serpBasedICPs;
+      return apifyBasedICPs;
     } catch (error) {
       if (error instanceof Error && 'code' in error) {
         // Re-throw our custom errors
@@ -147,30 +172,76 @@ export class ICPGenerator {
     }
   }
 
-  private buildSerpEnhancedICPPrompt(
+  private buildApifyEnhancedICPPrompt(
     competitorInfo: string,
     reviewTexts: string,
     additionalContext: string,
-    dataSources?: SerpDataSource[],
+    dataSources?: ApifyDataSource[],
+    reviewAnalysis?: any,
+    icpInsights?: any,
   ): string {
     const dataSourceInfo = dataSources?.length
       ? this.formatDataSourceInfo(dataSources)
       : '';
 
-    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following SERP API collected data. This data comes from structured search engine results, providing high-quality customer insights.
+    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following Apify Google Maps collected data. This data comes from structured Google Maps reviews, providing high-quality customer insights.
 
 ${dataSourceInfo}
 
 Competitors:
 ${competitorInfo}
 
-Customer Reviews & Market Data (from SERP API):
+Customer Reviews & Market Data (from Apify Google Maps):
 ${reviewTexts}
+
+${
+  reviewAnalysis
+    ? `
+ENHANCED REVIEW ANALYSIS:
+Sentiment Distribution: ${
+        reviewAnalysis.sentimentDistribution.positive
+      } positive, ${reviewAnalysis.sentimentDistribution.negative} negative, ${
+        reviewAnalysis.sentimentDistribution.neutral
+      } neutral
+Average Rating: ${reviewAnalysis.averageRating.toFixed(1)}/5
+Top Pain Points: ${reviewAnalysis.topPainPoints
+        .slice(0, 5)
+        .map((p) => p.point)
+        .join(', ')}
+Customer Segments: ${reviewAnalysis.customerSegments
+        .slice(0, 5)
+        .map((s) => s.segment)
+        .join(', ')}
+Common Topics: ${reviewAnalysis.commonTopics
+        .slice(0, 5)
+        .map((t) => t.topic)
+        .join(', ')}
+Emotional Trends: ${reviewAnalysis.emotionalTrends
+        .slice(0, 3)
+        .map((e) => e.emotion)
+        .join(', ')}
+`
+    : ''
+}
+
+${
+  icpInsights
+    ? `
+ICP-RELEVANT INSIGHTS:
+Demographics: ${icpInsights.demographics.join(', ')}
+Psychographics: ${icpInsights.psychographics.join(', ')}
+Pain Points: ${icpInsights.painPoints.slice(0, 5).join(', ')}
+Goals: ${icpInsights.goals.join(', ')}
+Preferred Channels: ${icpInsights.preferredChannels.join(', ')}
+Purchasing Behavior: ${icpInsights.purchasingBehavior.join(', ')}
+`
+    : ''
+}
 
 Additional Context:
 ${additionalContext}
 
-IMPORTANT: This data was collected via SERP API, ensuring accuracy and relevance. Use this structured data to create precise customer profiles.
+IMPORTANT: This data was collected via Apify Google Maps API, ensuring accuracy and relevance. Use this structured data to create precise customer profiles.
 
 Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP must have this exact structure:
 
@@ -202,12 +273,12 @@ Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP mu
   }
 ]
 
-SERP-Enhanced Analysis Instructions:
-- Leverage the structured SERP data to identify authentic customer patterns
-- Use platform-specific insights (Google Reviews, Trustpilot, etc.) to understand channel preferences
+Apify Google Maps-Enhanced Analysis Instructions:
+- Leverage the structured Google Maps data to identify authentic customer patterns
+- Use platform-specific insights (Google Maps reviews) to understand channel preferences
 - Extract demographic signals from review language and context
 - Identify pain points from actual customer complaints and feedback
-- Use market research data to validate trends and opportunities
+- Use Google Maps data to validate trends and opportunities
 
 IMPORTANT AGE ANALYSIS INSTRUCTIONS:
 - Analyze the review data for age indicators (language complexity, cultural references, technology usage)
@@ -245,8 +316,6 @@ Choose channels that match the ICP's age, industry, online habits, and purchasin
 
 Respond with ONLY the JSON array, no additional text or explanations.`;
   }
-
-
 
   private parseICPResponse(responseText: string): ICP[] {
     console.log(`🔍 Parsing LLM response...`);
@@ -434,7 +503,7 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
     return channels;
   }
 
-  private formatDataSourceInfo(dataSources: SerpDataSource[]): string {
+  private formatDataSourceInfo(dataSources: ApifyDataSource[]): string {
     const sourceInfo = dataSources
       .map((source) => {
         const timestamp = new Date(source.timestamp).toLocaleString();
@@ -444,14 +513,14 @@ Respond with ONLY the JSON array, no additional text or explanations.`;
       })
       .join('\n');
 
-    return `Data Sources (SERP API):
+    return `Data Sources (Apify Google Maps API):
 ${sourceInfo}
 `;
   }
 
   private calculateConfidence(
     reviews: CustomerReview[],
-    dataSources?: SerpDataSource[],
+    dataSources?: ApifyDataSource[],
   ): 'high' | 'medium' | 'low' {
     const reviewCount = reviews.length;
     const sourceCount = dataSources?.length || 0;
@@ -475,13 +544,13 @@ ${sourceInfo}
 
   private extractMarketInsights(
     reviews: CustomerReview[],
-    dataSources?: SerpDataSource[],
+    dataSources?: ApifyDataSource[],
   ):
     | { trends: string[]; opportunities: string[]; threats: string[] }
     | undefined {
     // Only provide market insights if we have market data sources
     const hasMarketData = dataSources?.some(
-      (source) => source.type === 'serp_market_data',
+      (source) => source.type === 'apify_market_data',
     );
 
     if (!hasMarketData) {

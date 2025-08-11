@@ -1,8 +1,8 @@
 /**
- * Debug utility for SERP API review fetching - shows detailed step-by-step process
+ * Debug utility for Apify Google Maps API review fetching - shows detailed step-by-step process
  */
 
-import { SerpReviewsService } from '../services/serp-reviews-service';
+import { ApifyReviewsService } from '../services/apify-reviews-service';
 
 export interface DebugStep {
   step: string;
@@ -18,75 +18,78 @@ export async function debugReviewFetching(
 ): Promise<DebugStep[]> {
   const steps: DebugStep[] = [];
 
-  // Step 1: Check SERP API configuration
+  // Step 1: Check Apify API configuration
   steps.push({
-    step: '1. Checking SERP API configuration',
+    step: '1. Checking Apify API configuration',
     success: true,
   });
 
-  const apiConfig = SerpReviewsService.getApiConfig();
+  const apiConfig = ApifyReviewsService.getApiConfig();
   steps.push({
-    step: '2. SERP API configuration',
+    step: '2. Apify API configuration',
     success: apiConfig.isConfigured,
     data: apiConfig,
   });
 
   if (!apiConfig.isConfigured) {
     steps.push({
-      step: '3. SERP API not configured',
+      step: '3. Apify API not configured',
       success: false,
       error:
-        'SERP API key not found. Please set VITE_SERP_API_KEY environment variable.',
+        'Apify API token not found. Please set VITE_APIFY_API_TOKEN environment variable.',
     });
     return steps;
   }
 
-  // Step 3: Test SERP API connection
+  // Step 3: Test Apify API connection
   steps.push({
-    step: '3. Testing SERP API connection',
+    step: '3. Testing Apify API connection',
     success: true,
   });
 
   try {
-    const testResult = await SerpReviewsService.testConnection();
+    const testResult = await ApifyReviewsService.testConnection();
     steps.push({
-      step: '4. SERP API connection test',
+      step: '4. Apify API connection test',
       success: testResult.success,
       data: testResult,
     });
   } catch (error) {
     steps.push({
-      step: '4. SERP API connection test failed',
+      step: '4. Apify API connection test failed',
       success: false,
       error: String(error),
     });
     return steps;
   }
 
-  // Step 5: Fetch reviews using SERP API
+  // Step 5: Fetch reviews using Apify Google Maps API
   steps.push({
-    step: '5. Fetching reviews using SERP API',
+    step: '5. Fetching reviews using Apify Google Maps API',
     success: true,
     data: { companyName, website },
   });
 
   try {
-    const reviews = await SerpReviewsService.fetchCustomerReviews(companyName, {
-      website,
-      location: 'Finland',
-      maxResults: 10,
-      includeMarketData: true,
-    });
+    const reviews = await ApifyReviewsService.fetchCustomerReviews(
+      companyName,
+      {
+        website,
+        location: 'Finland',
+        maxResults: 10,
+        includeMarketData: true,
+      },
+    );
 
     steps.push({
-      step: '6. SERP API review fetch completed',
+      step: '6. Apify Google Maps API review fetch completed',
       success: true,
       count: reviews.length,
       data: reviews.substring(0, 500) + '...',
     });
   } catch (error) {
     steps.push({
-      step: '6. SERP API review fetch failed',
+      step: '6. Apify Google Maps API review fetch failed',
       success: false,
       error: String(error),
     });
@@ -96,7 +99,7 @@ export async function debugReviewFetching(
 }
 
 export function formatDebugResults(steps: DebugStep[]): string {
-  let output = '🔍 SERP API Review Fetching Debug Results\n';
+  let output = '🔍 Apify Google Maps API Review Fetching Debug Results\n';
   output += '='.repeat(50) + '\n\n';
 
   for (const step of steps) {

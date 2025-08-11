@@ -9,7 +9,7 @@ export class ReviewAgent {
   private ollamaClient: OllamaClient;
 
   constructor() {
-    this.ollamaClient = new OllamaClient();
+    this.ollamaClient = OllamaClient.getInstance();
   }
 
   async validateReviewBlocks(blocks: string[]): Promise<ValidationResult[]> {

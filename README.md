@@ -1,18 +1,22 @@
 # ICP Builder - Ideal Customer Profile Generator
 
-A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powered analysis of real customer reviews from multiple free sources.
+A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powered analysis of real customer reviews from Google Maps and other sources.
 
 ## 🚀 Features
 
 - **ICP Generator**: Create detailed customer profiles based on your company + competitor analysis and real customer data
 - **ICP Profiles**: View and analyze AI-generated customer profiles with comprehensive demographics
-- **Multi-Source Reviews Collector**: Gather real customer reviews from Reddit and Trustpilot out-of-the-box (with optional Twitter/Yelp/Facebook support)
+- **Google Maps Reviews Collector**: Gather real customer reviews from Google Maps using Apify integration
+- **Location-Based Review Search**: Choose between Global, continents, or country-specific review collection (150+ countries supported)
+- **Enhanced Review Analysis**: Advanced sentiment analysis, pain point extraction, and customer segmentation
 - **Demographics Analyzer**: Extract and visualize real customer demographics from review content using LLM and pattern analysis
 - **Competitor Analysis**: Analyze competitor websites and social media presence
 - **Campaign Designer**: Generate marketing campaigns based on ICPs
 - **Campaign Library**: Store and manage marketing campaigns
 - **Project Management**: Save and load projects with your company, competitors, and generated ICPs
 - **Test ICP Generation**: Built-in testing component for verifying AI generation functionality
+- **Retry Logic**: Robust error handling with exponential backoff for reliable API calls
+- **Structured Data Processing**: Enhanced LLM formatting with sentiment analysis and key insights
 
 ## 🏃‍♂️ Quick Start
 
@@ -37,24 +41,18 @@ npm run dev
 
 ## 🔧 Configuration
 
-The application uses **free APIs only** and extracts real demographic data from review content.
+The application uses **Apify Google Maps API** for reliable customer review collection and extracts real demographic data from review content.
 
-### Environment Variables (Optional)
+### Environment Variables (Required for Review Collection)
 
-Create a `.env` file in the root directory for enhanced functionality:
+Create a `.env` file in the root directory for full functionality:
 
 ```env
-# Optional: Twitter/X API Bearer Token for Twitter reviews
-TWITTER_BEARER_TOKEN=your_twitter_bearer_token_here
-
-# Optional: Yelp API Key for Yelp reviews
-YELP_API_KEY=your_yelp_api_key_here
-
-# Optional: Facebook Access Token for Facebook Groups reviews
-FACEBOOK_ACCESS_TOKEN=your_facebook_access_token_here
+# Required: Apify API Token for Google Maps reviews
+VITE_APIFY_API_TOKEN=your_apify_token_here
 ```
 
-**Note**: All APIs are free tier and optional. The application works without API keys but with limited functionality.
+**Note**: The Apify API token is required for collecting customer reviews from Google Maps. The application will work without it but with limited functionality.
 
 ## 🤖 AI Setup (Required for ICP Generation)
 
@@ -68,53 +66,103 @@ The application uses **Ollama** (local LLM) for generating Ideal Customer Profil
 
 For detailed setup instructions, see [OLLAMA_SETUP.md](OLLAMA_SETUP.md).
 
-## 🔍 SERP API Setup (Recommended for Production)
+## 🔍 Data Collection API (Required for Production)
 
-The application now supports **SERP API integration** for reliable data collection instead of web scraping:
+The application uses **Apify Google Maps Reviews** for reliable customer review collection:
 
-### Quick SERP API Setup
+### Apify Google Maps Reviews
 
-1. **Choose Provider**: Sign up for [SerpAPI](https://serpapi.com/), [ScrapingBee](https://www.scrapingbee.com/), or [ValueSERP](https://www.valueserp.com/)
-2. **Get API Key**: Copy your API key from the provider dashboard
+**Apify Google Maps Reviews** for direct access to Google Maps customer reviews:
+
+1. **Sign up for Apify**: Create account at [https://console.apify.com](https://console.apify.com)
+2. **Get API Token**: Copy your API token from the Apify console
 3. **Configure Environment**: Add to your `.env` file:
 
    ```env
-   SERP_API_KEY=your_api_key_here
-   SERP_PROVIDER=serpapi
+   VITE_APIFY_API_TOKEN=your_apify_token_here
    ```
 
-**Benefits over web scraping:**
+**Benefits of Apify Google Maps:**
 
+- ✅ Direct access to Google Maps reviews
 - ✅ No rate limiting or CAPTCHA issues
-- ✅ Structured, reliable data
-- ✅ Better customer insights quality
-- ✅ Supports multiple search engines
+- ✅ High-quality, verified customer reviews
+- ✅ Real-time data from Google Maps
+- ✅ Structured review data with ratings and dates
+- ✅ Optimized settings for ICP analysis (50 reviews, sentiment analysis, pain point extraction)
+- ✅ Residential proxy support for better success rates
+- ✅ Enhanced data processing with customer segmentation
 
-For detailed setup instructions, see [SERP_API_SETUP.md](SERP_API_SETUP.md).
+### Optimized Apify Settings for ICP Analysis
+
+The application uses optimized Apify Google Maps Review Scraper settings for better ICP generation:
+
+```json
+{
+  "language": "en",
+  "maxReviews": 50,
+  "personalData": false,
+  "maxRequestRetries": 3,
+  "requestTimeoutSecs": 60,
+  "maxConcurrency": 1,
+  "headless": true,
+  "proxyConfiguration": {
+    "useApifyProxy": true,
+    "apifyProxyGroups": ["RESIDENTIAL"]
+  }
+}
+```
+
+**Key Optimizations:**
+
+- **50 reviews**: Optimal balance between data quality and processing speed
+- **No personal data**: Focuses on review content rather than personal details
+- **Residential proxies**: Better success rates and avoids IP blocking
+- **Retry logic**: Handles temporary failures gracefully
+- **Enhanced analysis**: Automatic sentiment analysis and pain point extraction
 
 ## 🧠 How ICP Generation Works
 
-### SERP API Enhanced Data Flow
+### Enhanced Review Analysis & ICP Generation
 
-The ICP generation process now uses **SERP API** to collect structured, reliable customer data for accurate profile creation:
+The ICP generation process now includes advanced review analysis with sentiment analysis, pain point extraction, and customer segmentation for more accurate profile creation:
 
-#### **New SERP API Data Collection**
+#### **Enhanced Review Analysis Features**
+
+- **Sentiment Analysis**: Automatically categorizes reviews as positive, negative, or neutral
+- **Pain Point Extraction**: Identifies common customer complaints and issues
+- **Customer Segmentation**: Categorizes customers by behavior patterns (price-conscious, quality-focused, etc.)
+- **Emotional Analysis**: Detects customer emotions (frustrated, satisfied, disappointed, etc.)
+- **Topic Extraction**: Identifies common themes in customer feedback
+- **ICP-Relevant Insights**: Extracts demographics, psychographics, goals, and preferred channels
+
+#### **Retry Logic & Error Handling**
+
+- **Exponential Backoff**: Automatic retry with increasing delays for failed API calls
+- **Graceful Degradation**: Continues operation even if some data sources fail
+- **Detailed Error Reporting**: Comprehensive error messages for debugging
+
+### Apify Google Maps Enhanced Data Flow
+
+The ICP generation process uses **Apify Google Maps API** to collect structured, reliable customer data for accurate profile creation:
+
+#### **Apify Google Maps Data Collection**
 
 ```typescript
-// SERP API collects structured data from:
+// Apify Google Maps API collects structured data from:
 {
   reviews: [
     {
       text: "Actual customer review...",
-      source: "https://trustpilot.com/...",
-      platform: "Trustpilot",
+      source: "https://maps.google.com/...",
+      platform: "Google Maps",
       rating: 4.5,
       date: "2024-01-15"
     }
   ],
   dataSources: [
     {
-      type: "serp_reviews",
+      type: "google_maps_reviews",
       query: "Nokia customer reviews feedback",
       resultCount: 25,
       location: "Finland"
@@ -123,9 +171,9 @@ The ICP generation process now uses **SERP API** to collect structured, reliable
 }
 ```
 
-### Legacy Data Flow & Input Sources
+### Data Flow & Input Sources
 
-The ICP generation process can also use **real customer data** from multiple sources via web scraping (legacy mode):
+The ICP generation process uses **real customer data** from Google Maps and other sources:
 
 #### **1. Competitor Data Input**
 
@@ -141,10 +189,10 @@ The ICP generation process can also use **real customer data** from multiple sou
 #### **2. Customer Reviews Data**
 
 ```typescript
-// Real reviews collected from multiple sources:
+// Real reviews collected from Google Maps:
 {
   text: "Actual customer review text...",
-  source: "Reddit/Twitter/Yelp/Facebook"
+  source: "Google Maps"
 }
 ```
 
@@ -157,7 +205,7 @@ The ICP generation process can also use **real customer data** from multiple sou
 
 ### Enhanced LLM Processing & Analysis
 
-The **Ollama LLM (llama3.2:3b)** receives enhanced data from SERP API or legacy sources:
+The **Ollama LLM (llama3.2:3b)** receives enhanced data from Apify Google Maps API:
 
 #### **Input Data Structure**
 
@@ -168,24 +216,23 @@ The **Ollama LLM (llama3.2:3b)** receives enhanced data from SERP API or legacy 
     "Competitor B (https://competitor-b.com)"
   ],
   "customer_reviews": [
-    "Real review text from Reddit...",
-    "Customer feedback from Twitter...",
-    "Yelp review content...",
-    "Facebook group discussion..."
+    "Real review text from Google Maps...",
+    "Customer feedback from Google Maps...",
+    "Google Maps review content..."
   ],
   "additional_context": "Business context and industry info"
 }
 ```
 
-#### **Enhanced LLM Analysis Process (SERP API)**
+#### **Enhanced LLM Analysis Process (Apify Google Maps)**
 
-1. **Structured Data Processing**: LLM analyzes clean, structured SERP data
-2. **Multi-Source Correlation**: Combines reviews from multiple platforms (Trustpilot, Google, etc.)
+1. **Structured Data Processing**: LLM analyzes clean, structured Google Maps data
+2. **Multi-Source Correlation**: Combines reviews from Google Maps and other sources
 3. **Platform-Specific Insights**: Leverages platform metadata (ratings, dates, sources)
 4. **Market Intelligence**: Incorporates market research and competitor data
 5. **Confidence Scoring**: Provides confidence levels based on data quality and quantity
 
-#### **Legacy LLM Analysis Process**
+#### **LLM Analysis Process**
 
 1. **Competitor Analysis**: LLM analyzes competitor websites and social media presence
 2. **Review Sentiment Analysis**: Processes real customer feedback and sentiment
@@ -251,28 +298,27 @@ The LLM generates **3 comprehensive ICP profiles** with the following structure:
 - Healthcare interests → Medical conferences, Healthcare blogs
 ```
 
-### Enhanced SERP API Data Sources
+### Enhanced Apify Google Maps Data Sources
 
-With SERP API integration, the LLM analyzes **structured, reliable data** from:
+With Apify Google Maps integration, the LLM analyzes **structured, reliable data** from:
 
-#### **🔍 SERP API Sources**
+#### **🔍 Apify Google Maps Sources**
 
-- **Google Search Results**: Comprehensive search result analysis
-- **Trustpilot Reviews**: Verified customer feedback via SERP
-- **Social Media Mentions**: Customer discussions and feedback
-- **News & Articles**: Market research and industry insights
-- **Forum Discussions**: Authentic customer conversations
-- **Review Aggregation Sites**: Multi-platform review collection
+- **Google Maps Reviews**: Direct access to verified customer reviews
+- **Business Information**: Company details and contact information
+- **Rating Data**: Customer ratings and sentiment analysis
+- **Review Metadata**: Dates, ratings, and review content
+- **Location Data**: Geographic and local market insights
 
 **Benefits:**
 
 - ✅ **Reliability**: No rate limiting or blocking issues
 - ✅ **Structure**: Clean, parsed data with metadata
-- ✅ **Coverage**: Access to multiple platforms simultaneously
-- ✅ **Quality**: Verified, relevant content
+- ✅ **Coverage**: Direct access to Google Maps reviews
+- ✅ **Quality**: Verified, relevant content from Google Maps
 - ✅ **Speed**: Faster collection than web scraping
 
-### Legacy Real-World Data Sources
+### Real-World Data Sources
 
 The LLM can also analyze **actual customer data** from traditional web scraping:
 
@@ -306,7 +352,7 @@ The LLM can also analyze **actual customer data** from traditional web scraping:
 - Local market insights
 - Peer-to-peer recommendations
 
-### Benefits of SERP API Enhanced Analysis
+### Benefits of Apify Google Maps Enhanced Analysis
 
 1. **Superior Accuracy**: Structured data from verified sources
 2. **Real-Time Relevance**: Current market conditions and customer sentiment
@@ -368,6 +414,11 @@ The LLM can also analyze **actual customer data** from traditional web scraping:
 ### 5. Competitor Analysis
 
 - Add competitor websites and social media profiles
+- **Location-Based Review Search**: Choose between Global, continents, or country-specific review collection
+  - **Global Search**: Worldwide review collection for international companies
+  - **Continent Selection**: Target major regions (North America, Europe, Asia Pacific, Latin America, Africa, Middle East)
+  - **Country-Specific**: Target specific markets (150+ countries supported)
+  - **Real-time Location Selection**: Comprehensive dropdown with flags, organized by regions
 - Generate SWOT analysis and market positioning
 - Export competitor analysis reports
 

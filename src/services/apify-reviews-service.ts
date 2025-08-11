@@ -21,13 +21,6 @@ interface ApifyReviewsResult {
   };
 }
 
-interface ReviewAnalysis {
-  sentiment: 'positive' | 'negative' | 'neutral';
-  painPoints: string[];
-  keyInsights: string[];
-  rating: number;
-}
-
 export class ApifyReviewsService {
   private static apifyClient = new ApifyClient();
   private static readonly MAX_RETRIES = 3;
@@ -203,8 +196,6 @@ export class ApifyReviewsService {
   ): Promise<ApifyReviewsResult> {
     const location = options.location || 'Global'; // Default to Global instead of United States
     const maxResults = options.maxResults || 20; // Reduced to 20 for cost control
-    const includeMarketData = options.includeMarketData === true; // Explicitly check for true
-    const includeCompetitorData = options.includeCompetitorData === true; // Explicitly check for true
     const timestamp = new Date().toISOString();
 
     console.log(
@@ -473,110 +464,8 @@ export class ApifyReviewsService {
       return formattedReview;
     });
 
-    // Add metadata header for LLM context
-    const header = [
-      `=== CUSTOMER REVIEWS COLLECTED VIA APIFY ===`,
-      `Company: Research target`,
-      `Total Reviews: ${result.reviews.length}`,
-      `Location: ${result.metadata.location} (Global search)`,
-      `Collection Time: ${new Date(
-        result.metadata.timestamp,
-      ).toLocaleString()}`,
-      `Search Queries: ${result.metadata.searchQueries.join(', ')}`,
-    ];
-
-    // Add sentiment analysis if available
-    if (result.metadata.sentimentAnalysis) {
-      const sa = result.metadata.sentimentAnalysis;
-      header.push(
-        `Sentiment Analysis:`,
-        `  Positive: ${sa.positive} (${(
-          (sa.positive / result.reviews.length) *
-          100
-        ).toFixed(1)}%)`,
-        `  Negative: ${sa.negative} (${(
-          (sa.negative / result.reviews.length) *
-          100
-        ).toFixed(1)}%)`,
-        `  Neutral: ${sa.neutral} (${(
-          (sa.neutral / result.reviews.length) *
-          100
-        ).toFixed(1)}%)`,
-        `  Average Rating: ${sa.averageRating.toFixed(1)}/5`,
-      );
-    }
-
-    // Add pain points if available
-    if (result.metadata.painPoints && result.metadata.painPoints.length > 0) {
-      header.push(`Key Pain Points: ${result.metadata.painPoints.join(', ')}`);
-    }
-
-    // Add key insights if available
-    if (result.metadata.keyInsights && result.metadata.keyInsights.length > 0) {
-      header.push(
-        `Key Insights:`,
-        ...result.metadata.keyInsights
-          .slice(0, 3)
-          .map((insight) => `  - ${insight}`),
-      );
-    }
-
-    header.push(`=== REVIEWS START ===`, '');
-
-    const footer = `\n=== REVIEWS END ===\nTotal: ${reviewTexts.length} customer reviews collected via Apify`;
-
-    return header.join('\n') + reviewTexts.join('\n\n') + footer;
-  }
-
-  private static extractIndustryFromCompany(companyName: string): string {
-    const lowerName = companyName.toLowerCase();
-
-    // Simple industry detection based on company name patterns
-    if (
-      lowerName.includes('tech') ||
-      lowerName.includes('software') ||
-      lowerName.includes('app')
-    ) {
-      return 'technology';
-    }
-    if (
-      lowerName.includes('bank') ||
-      lowerName.includes('finance') ||
-      lowerName.includes('invest')
-    ) {
-      return 'finance';
-    }
-    if (
-      lowerName.includes('health') ||
-      lowerName.includes('medical') ||
-      lowerName.includes('pharma')
-    ) {
-      return 'healthcare';
-    }
-    if (
-      lowerName.includes('retail') ||
-      lowerName.includes('shop') ||
-      lowerName.includes('store')
-    ) {
-      return 'retail';
-    }
-    if (
-      lowerName.includes('transport') ||
-      lowerName.includes('logistics') ||
-      lowerName.includes('delivery')
-    ) {
-      return 'logistics';
-    }
-    if (
-      lowerName.includes('hotel') ||
-      lowerName.includes('travel') ||
-      lowerName.includes('tourism')
-    ) {
-      return 'travel';
-    }
-
-    // Default to business services
-    return 'business services';
+    // Return just the review texts without metadata headers
+    return reviewTexts.join('\n\n');
   }
 
   /**

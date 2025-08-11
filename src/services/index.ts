@@ -13,8 +13,7 @@ export {
 
 // Reviews service
 export { ReviewsService } from './reviews-service';
-export { SerpReviewsService } from './serp-reviews-service';
-// WebTextFetcher removed - using SERP API only
+export { ApifyReviewsService } from './apify-reviews-service';
 
 // AI services
 export * from './ai';

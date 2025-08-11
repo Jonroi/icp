@@ -3,11 +3,19 @@ import axios from 'axios';
 export class OllamaClient {
   private ollamaUrl: string;
   private model: string;
+  private static instance: OllamaClient | null = null;
 
-  constructor(model: string = 'llama3.2:3b-instruct-q4_K_M') {
+  private constructor(model: string = 'llama3.2:3b-instruct-q4_K_M') {
     this.ollamaUrl = 'http://localhost:11434/api/generate';
     this.model = model;
     console.log(`🤖 OllamaClient initialized with model: ${this.model}`);
+  }
+
+  public static getInstance(model?: string): OllamaClient {
+    if (!OllamaClient.instance) {
+      OllamaClient.instance = new OllamaClient(model);
+    }
+    return OllamaClient.instance;
   }
 
   async generateResponse(

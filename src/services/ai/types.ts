@@ -50,21 +50,21 @@ export interface CustomerReview {
   platform?: string;
 }
 
-// SERP API specific types
-export interface SerpDataSource {
+// Apify Google Maps API specific types
+export interface ApifyDataSource {
   type:
-    | 'serp_reviews'
-    | 'serp_organic'
-    | 'serp_market_data'
-    | 'google_places_reviews';
+    | 'apify_reviews'
+    | 'apify_organic'
+    | 'apify_market_data'
+    | 'google_maps_reviews';
   query: string;
   location?: string;
   resultCount: number;
   timestamp: string;
 }
 
-export interface SerpBasedICP extends ICP {
-  dataSources: SerpDataSource[];
+export interface ApifyBasedICP extends ICP {
+  dataSources: ApifyDataSource[];
   confidence: 'high' | 'medium' | 'low';
   marketInsights?: {
     trends: string[];

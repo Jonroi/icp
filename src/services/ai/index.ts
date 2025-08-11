@@ -10,7 +10,7 @@ export { ReviewAgent } from './review-agent';
 export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
 // ChatGPT client removed - using Ollama only
-export { SerpApiClient } from './serp-client';
+export { ApifyClient } from './apify-client';
 
 // Export error handling
 export {
