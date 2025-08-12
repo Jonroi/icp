@@ -39,6 +39,7 @@ export interface OwnCompany {
   social: string;
   location?: string; // Location preference for the company
   reviews?: string; // Customer reviews for the company
+  linkedInData?: string; // LinkedIn insights and data
 }
 
 export interface Review {
@@ -97,6 +98,7 @@ export interface Competitor {
   instagram?: string;
   reviews?: string;
   location?: string; // New field for location selection
+  linkedInData?: string; // LinkedIn insights and data
 }
 
 export class ProjectService {

@@ -115,11 +115,26 @@ The application uses optimized Apify Google Maps Review Scraper settings for bet
 
 **Key Optimizations:**
 
-- **50 reviews**: Optimal balance between data quality and processing speed
+- **15 reviews per company**: Reduced from 50 to save Apify credits while maintaining quality
+- **2 additional reviews for LinkedIn insights**: Minimal additional cost for enhanced analysis
 - **No personal data**: Focuses on review content rather than personal details
 - **Residential proxies**: Better success rates and avoids IP blocking
 - **Retry logic**: Handles temporary failures gracefully
 - **Enhanced analysis**: Automatic sentiment analysis and pain point extraction
+
+### ⚠️ Apify Credit Usage Warning
+
+**Current Credit Consumption:**
+- **Main reviews**: 15 reviews per company
+- **LinkedIn insights**: 2 additional reviews per company
+- **Total per company**: 17 reviews
+- **Estimated cost**: ~17 Apify credits per company
+
+**Credit Management Tips:**
+- Start with 1-2 companies to test functionality
+- Use the free tier (1000 credits) for initial testing
+- Consider upgrading to paid plan for larger projects
+- Monitor your Apify console for credit usage
 
 ## 🧠 How ICP Generation Works
 

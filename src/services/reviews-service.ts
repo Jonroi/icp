@@ -41,7 +41,7 @@ export class ReviewsService {
     return ApifyReviewsService.fetchCustomerReviews(companyName, {
       website,
       location: options?.location || 'Global', // Use provided location or default to Global
-      maxResults: 20,
+      maxResults: 15, // Reduced from 20 to save Apify credits
       includeMarketData: true,
     });
   }

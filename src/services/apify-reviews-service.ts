@@ -195,7 +195,7 @@ export class ApifyReviewsService {
     } = {},
   ): Promise<ApifyReviewsResult> {
     const location = options.location || 'Global'; // Default to Global instead of United States
-    const maxResults = options.maxResults || 20; // Reduced to 20 for cost control
+    const maxResults = options.maxResults || 15; // Reduced to 15 for cost control
     const timestamp = new Date().toISOString();
 
     console.log(

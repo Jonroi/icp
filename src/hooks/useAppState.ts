@@ -4,6 +4,7 @@ import { ProjectService, type OwnCompany } from '@/services/project-service';
 import type { Competitor, ProjectData } from '@/services/project-service';
 import { CompanySearchService } from '@/services/company-search-service';
 import { ReviewsService } from '@/services/reviews-service';
+import { LinkedInApifyService } from '@/services/linkedin-apify-service';
 
 export function useAppState() {
   const [competitors, setCompetitors] = useState<Competitor[]>([
@@ -267,6 +268,14 @@ export function useAppState() {
             message: `${confidenceEmoji} Found ${filledFields.length} fields (${companyInfo.confidence} confidence)`,
           },
         });
+
+        // Automatically fetch LinkedIn data in the background
+        console.log(
+          `🔗 [COMPETITOR ${index + 1}] Auto-fetching LinkedIn data for: ${
+            companyInfo.name || companyName
+          }`,
+        );
+        fetchCompetitorLinkedIn(index, companyInfo.name || companyName);
       } else {
         setCompanyInfoStatus({
           ...companyInfoStatus,
@@ -282,7 +291,7 @@ export function useAppState() {
 
       // Handle custom error types
       if (error instanceof Error && 'code' in error) {
-        const customError = error as any;
+        const customError = error as { code: string; message: string };
         switch (customError.code) {
           case 'INVALID_COMPANY_NAME':
             errorMessage = `Invalid company name: ${customError.message}`;
@@ -331,11 +340,6 @@ export function useAppState() {
         },
       );
 
-      // Count the number of reviews (lines)
-      const reviewCount = reviewsText
-        .split('\n')
-        .filter((line: string) => line.trim()).length;
-
       const newCompetitors = [...competitors];
       newCompetitors[index] = {
         ...newCompetitors[index],
@@ -347,16 +351,24 @@ export function useAppState() {
         ...reviewsStatus,
         [index]: {
           success: true,
-          message: `✅ Fetched ${reviewCount} lines of data for ${companyName}, You can now generate ICPs`,
+          message: `✅ Completed fetching data for ${companyName}`,
         },
       });
+
+      // Automatically fetch LinkedIn data in the background after reviews
+      console.log(
+        `🔗 [COMPETITOR ${
+          index + 1
+        }] Auto-fetching LinkedIn data after reviews for: ${companyName}`,
+      );
+      fetchCompetitorLinkedIn(index, companyName);
     } catch (error) {
       console.error('Failed to fetch data:', error);
       let errorMessage = `Failed to fetch data for ${companyName}`;
 
       // Handle custom error types
       if (error instanceof Error && 'code' in error) {
-        const customError = error as any;
+        const customError = error as { code: string; message: string };
         switch (customError.code) {
           case 'INVALID_COMPANY_NAME':
             errorMessage = `Invalid company name: ${customError.message}`;
@@ -420,6 +432,14 @@ export function useAppState() {
           success: true,
           message: `${emoji} Found ${fields.length} fields (${info.confidence} confidence)`,
         });
+
+        // Automatically fetch LinkedIn data in the background
+        console.log(
+          `🔗 [OWN COMPANY] Auto-fetching LinkedIn data for: ${
+            info.name || companyName
+          }`,
+        );
+        fetchOwnCompanyLinkedIn(info.name || companyName);
       } else {
         setOwnCompanyStatus({
           success: false,
@@ -432,7 +452,7 @@ export function useAppState() {
 
       // Handle custom error types
       if (error instanceof Error && 'code' in error) {
-        const customError = error as any;
+        const customError = error as { code: string; message: string };
         switch (customError.code) {
           case 'INVALID_COMPANY_NAME':
             errorMessage = `Invalid company name: ${customError.message}`;
@@ -472,11 +492,6 @@ export function useAppState() {
         },
       );
 
-      // Count the number of reviews (lines)
-      const reviewCount = reviewsText
-        .split('\n')
-        .filter((line: string) => line.trim()).length;
-
       setOwnCompany((prev) => ({
         ...prev,
         reviews: reviewsText,
@@ -484,15 +499,21 @@ export function useAppState() {
 
       setOwnCompanyReviewsStatus({
         success: true,
-        message: `✅ Fetched ${reviewCount} lines of data for ${companyName}, You can now generate ICPs`,
+        message: `✅ Completed fetching data for ${companyName}, You can now generate ICPs`,
       });
+
+      // Automatically fetch LinkedIn data in the background after reviews
+      console.log(
+        `🔗 [OWN COMPANY] Auto-fetching LinkedIn data after reviews for: ${companyName}`,
+      );
+      fetchOwnCompanyLinkedIn(companyName);
     } catch (error) {
       console.error('Failed to fetch own company data:', error);
       let errorMessage = `Failed to fetch data for ${companyName}`;
 
       // Handle custom error types
       if (error instanceof Error && 'code' in error) {
-        const customError = error as any;
+        const customError = error as { code: string; message: string };
         switch (customError.code) {
           case 'INVALID_COMPANY_NAME':
             errorMessage = `Invalid company name: ${customError.message}`;
@@ -526,6 +547,126 @@ export function useAppState() {
       });
     } finally {
       setIsFetchingOwnCompanyData(false);
+    }
+  };
+
+  const fetchOwnCompanyLinkedIn = async (companyName: string) => {
+    if (!companyName.trim()) return;
+
+    console.log(
+      `🔗 [OWN COMPANY] Starting LinkedIn data fetch for: ${companyName}`,
+    );
+
+    try {
+      const linkedInData =
+        await LinkedInApifyService.fetchLinkedInDataWithApify(companyName);
+
+      // Convert LinkedIn data to a comprehensive text format for LLM analysis
+      const linkedInText = `
+LinkedIn Insights for ${linkedInData.companyName}:
+
+Company Description: ${linkedInData.description}
+Industry: ${linkedInData.industry}
+Company Size: ${linkedInData.companySize}
+Founded: ${linkedInData.founded}
+Specialties: ${linkedInData.specialties.join(', ')}
+Followers: ${linkedInData.followers}
+
+Recent Posts:
+${linkedInData.posts
+  .map((post) => `- ${post.content} (${post.engagement} engagement)`)
+  .join('\n')}
+
+Key Employees:
+${linkedInData.employees
+  .map((emp) => `- ${emp.title} (${emp.department})`)
+  .join('\n')}
+
+Market Insights: ${linkedInData.insights}
+      `.trim();
+
+      setOwnCompany((prev) => ({
+        ...prev,
+        linkedInData: linkedInText,
+      }));
+
+      console.log(
+        '🔗 [OWN COMPANY] LinkedIn data fetched successfully:',
+        linkedInData,
+      );
+      console.log(
+        `🔗 [OWN COMPANY] Company: ${linkedInData.companyName}, Industry: ${linkedInData.industry}, Size: ${linkedInData.companySize}`,
+      );
+    } catch (error) {
+      console.error('❌ [OWN COMPANY] Failed to fetch LinkedIn data:', error);
+      // Don't show error to user since this is background data
+    }
+  };
+
+  const fetchCompetitorLinkedIn = async (
+    index: number,
+    companyName: string,
+  ) => {
+    if (!companyName.trim()) return;
+
+    console.log(
+      `🔗 [COMPETITOR ${
+        index + 1
+      }] Starting LinkedIn data fetch for: ${companyName}`,
+    );
+
+    try {
+      const linkedInData =
+        await LinkedInApifyService.fetchLinkedInDataWithApify(companyName);
+
+      // Convert LinkedIn data to a comprehensive text format for LLM analysis
+      const linkedInText = `
+LinkedIn Insights for ${linkedInData.companyName}:
+
+Company Description: ${linkedInData.description}
+Industry: ${linkedInData.industry}
+Company Size: ${linkedInData.companySize}
+Founded: ${linkedInData.founded}
+Specialties: ${linkedInData.specialties.join(', ')}
+Followers: ${linkedInData.followers}
+
+Recent Posts:
+${linkedInData.posts
+  .map((post) => `- ${post.content} (${post.engagement} engagement)`)
+  .join('\n')}
+
+Key Employees:
+${linkedInData.employees
+  .map((emp) => `- ${emp.title} (${emp.department})`)
+  .join('\n')}
+
+Market Insights: ${linkedInData.insights}
+      `.trim();
+
+      const newCompetitors = [...competitors];
+      newCompetitors[index] = {
+        ...newCompetitors[index],
+        linkedInData: linkedInText,
+      };
+      setCompetitors(newCompetitors);
+
+      console.log(
+        `🔗 [COMPETITOR ${index + 1}] LinkedIn data fetched successfully:`,
+        linkedInData,
+      );
+      console.log(
+        `🔗 [COMPETITOR ${index + 1}] Company: ${
+          linkedInData.companyName
+        }, Industry: ${linkedInData.industry}, Size: ${
+          linkedInData.companySize
+        }`,
+      );
+    } catch (error) {
+      console.error(
+        `❌ [COMPETITOR ${index + 1}] Failed to fetch LinkedIn data:`,
+        error,
+      );
+      // Don't show error to user since this is background data
     }
   };
 
@@ -584,6 +725,33 @@ export function useAppState() {
         source: c.name,
       }));
 
+    // Include LinkedIn data in the review data for enhanced analysis
+    const linkedInData = competitors
+      .filter((c) => c.linkedInData)
+      .map((c) => ({
+        text: c.linkedInData || '',
+        source: `${c.name} - LinkedIn Insights`,
+      }));
+
+    // Add own company LinkedIn data if available
+    if (ownCompany.linkedInData) {
+      linkedInData.push({
+        text: ownCompany.linkedInData,
+        source: `${ownCompany.name} - LinkedIn Insights`,
+      });
+    }
+
+    // Combine reviews and LinkedIn data
+    const combinedReviewData = [...reviewData, ...linkedInData];
+
+    // Log LinkedIn data usage
+    console.log(
+      `🔗 [ICP GENERATION] Using LinkedIn data from ${linkedInData.length} sources:`,
+    );
+    linkedInData.forEach((data, index) => {
+      console.log(`🔗 [ICP GENERATION] Source ${index + 1}: ${data.source}`);
+    });
+
     // Check if we have enough data to generate ICPs
     if (competitorData.length === 0) {
       alert(
@@ -611,6 +779,8 @@ export function useAppState() {
 
       console.log('Generating ICPs with competitor data:', competitorData);
       console.log('Review data:', reviewData);
+      console.log('LinkedIn data:', linkedInData);
+      console.log('Combined review data:', combinedReviewData);
       console.log(
         'Additional context (merged with own company):',
         combinedContext,
@@ -619,7 +789,7 @@ export function useAppState() {
       // Use AI to generate ICPs
       const icps = await aiService.generateICPs(
         competitorData,
-        reviewData,
+        combinedReviewData,
         combinedContext,
       );
       setGeneratedICPs(icps);
@@ -634,7 +804,7 @@ export function useAppState() {
         'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed. You can install it with: ollama pull llama3.2:3b';
 
       if (error instanceof Error && 'code' in error) {
-        const customError = error as any;
+        const customError = error as { code: string; message: string };
         switch (customError.code) {
           case 'INVALID_INPUT_DATA':
             errorMessage = `Input validation failed: ${customError.message}`;

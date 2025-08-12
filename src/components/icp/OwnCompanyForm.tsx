@@ -243,7 +243,7 @@ export function OwnCompanyForm({
         </div>
         <Textarea
           id='own-company-reviews'
-          placeholder='Copy and paste reviews here, Click "Fetch Data" to collect customer data automatically or ask AI Assistant to generate reviews'
+          placeholder='Click "Fetch Data" to collect real customer reviews from Google Maps via Apify'
           value={company.reviews || ''}
           readOnly
           rows={6}

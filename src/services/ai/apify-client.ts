@@ -1066,6 +1066,57 @@ export class ApifyClient {
   }
 
   /**
+   * Run LinkedIn Company Scraper to get real LinkedIn company data
+   */
+  async runLinkedInCompanyScraper(companyName: string): Promise<any> {
+    console.log(
+      `🔗 [LINKEDIN APIFY] Starting LinkedIn Company Scraper for: ${companyName}`,
+    );
+
+    const linkedInActorId = 'ipHw77V2NMJPy8sbS';
+
+    // LinkedIn Company Scraper input format
+    const runInput: ApifyRunInput = {
+      companyName: companyName,
+      // Add any other required parameters for the LinkedIn scraper
+    };
+
+    try {
+      console.log(
+        `🔗 [LINKEDIN APIFY] Starting Apify run for LinkedIn Company Scraper`,
+      );
+      const runResult = await this.startApifyRun(runInput, linkedInActorId);
+
+      console.log(
+        `🔗 [LINKEDIN APIFY] Waiting for LinkedIn scraper completion`,
+      );
+      const completedRun = await this.waitForRunCompletion(
+        runResult.id,
+        300000,
+        linkedInActorId,
+      );
+
+      console.log(
+        `🔗 [LINKEDIN APIFY] LinkedIn scraper completed, fetching results`,
+      );
+      const results = await this.getRunResults(completedRun.defaultDatasetId);
+
+      console.log(
+        `🔗 [LINKEDIN APIFY] Retrieved ${results.length} LinkedIn company records`,
+      );
+
+      // Return the first (and likely only) company record
+      return results.length > 0 ? results[0] : null;
+    } catch (error) {
+      console.error(
+        `❌ [LINKEDIN APIFY] LinkedIn Company Scraper failed:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Test Apify connectivity
    */
   async testConnection(): Promise<{

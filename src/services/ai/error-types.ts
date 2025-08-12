@@ -47,7 +47,8 @@ export interface CompanySearchError extends AIServiceError {
     | 'COMPANY_NOT_FOUND'
     | 'INVALID_COMPANY_NAME'
     | 'LLM_SEARCH_FAILED'
-    | 'VALIDATION_FAILED';
+    | 'VALIDATION_FAILED'
+    | 'LINKEDIN_FETCH_FAILED';
   searchTerms?: string[];
 }
 
