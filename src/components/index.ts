@@ -17,4 +17,7 @@ export { CampaignLibrary } from './campaign/CampaignLibrary';
 
 // UI utilities
 export { ChatPanel } from './ui/chat-panel';
+export { SpecializedChat } from './ui/specialized-chat';
+export { AIAssistantButton } from './ui/ai-assistant-button';
+export { AI_ASSISTANTS } from './ui/ai-assistants-config';
 export { FloatingChat } from './ui/floating-chat';

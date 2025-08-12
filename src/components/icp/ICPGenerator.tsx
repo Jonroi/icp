@@ -6,12 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CardToolbar } from '@/components/ui/card-toolbar';
+
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Wand2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project-service';
+import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
@@ -46,14 +47,12 @@ export function ICPGenerator({
             Input your company information to generate Ideal Customer Personas.
           </CardDescription>
         </div>
-        <CardToolbar
-          tooltip='Generate Ideal Customer Profiles (ICPs) based on your company information and target market context.'
-          questions={[
-            'What is an ICP?',
-            'How do I define my target market?',
-            'What information should I include?',
-          ]}
-        />
+        <AIAssistantButton
+          assistantType='icp-form-tool'
+          size='sm'
+          className='flex items-center gap-2'>
+          Fill with AI
+        </AIAssistantButton>
       </CardHeader>
       <CardContent className='space-y-6'>
         <div className='space-y-2'>

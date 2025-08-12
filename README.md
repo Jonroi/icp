@@ -6,9 +6,51 @@ A streamlined tool for generating Ideal Customer Profiles (ICPs) using AI analys
 
 - **AI-Powered ICP Generation**: Create detailed customer profiles based on your company information
 - **Smart Company Data Collection**: Comprehensive form with dropdown selectors and AI assistant
-- **Interactive AI Chatbot**: Get help filling out company information with intelligent suggestions
+- **Modular AI Assistant System**: Specialized AI helpers for different tasks with relevant prephrases
 - **ICP Profiles Display**: View and analyze AI-generated customer profiles
+- **Campaign Tools**: Create and research marketing campaigns based on ICPs
 - **Local AI Processing**: Uses Ollama (llama3.2:3b) - no external API costs!
+
+## 🤖 AI Assistant System
+
+The application includes a comprehensive AI assistant system with a general guide and specialized tools:
+
+### **General Guide** (Default ChatPanel)
+
+- **Purpose**: Explains ICPs and helps users get started
+- **Role**: General information, workflow guidance, and navigation help
+- **Access**: Available through the floating chat button
+- **Prephrases**: "What are Ideal Customer Profiles?", "How do I get started?", etc.
+
+### **4 Specialized Tools**
+
+#### **1. ICP Form Tool** (ICP Generator Tab)
+
+- **Purpose**: Helps fill out company information for ICP generation
+- **Focus**: Only relevant fields (no phone numbers, addresses, etc.)
+- **Access**: "Fill with AI" button in the company form
+- **Prephrases**: "Help me fill out my company information", "What industry should I select?", etc.
+
+#### **2. ICP Analysis Tool** (ICP Profiles Tab)
+
+- **Purpose**: Analyzes generated customer profiles and demographics
+- **Focus**: Interpreting ICP data and suggesting marketing strategies
+- **Access**: AI assistant button in ICP Profiles tab
+- **Prephrases**: "Help me understand my ICP demographics", "What do these profiles tell me?", etc.
+
+#### **3. Campaign Creation Tool** (Campaign Designer Tab)
+
+- **Purpose**: Creates targeted marketing campaigns based on ICPs
+- **Focus**: Writing ad copy, messaging, and campaign strategies
+- **Access**: AI assistant button in Campaign Designer tab
+- **Prephrases**: "Help me create a marketing campaign", "What messaging would resonate?", etc.
+
+#### **4. Campaign Research Tool** (Campaign Library Tab)
+
+- **Purpose**: Researches successful campaigns and marketing trends
+- **Focus**: Competitive analysis, best practices, and inspiration
+- **Access**: AI assistant button in Campaign Library tab
+- **Prephrases**: "Show me successful campaign examples", "What are trending approaches?", etc.
 
 ## 🏃‍♂️ Quick Start
 
@@ -52,12 +94,22 @@ npm run dev
 - Each profile shows detailed customer characteristics
 - Use profiles for marketing campaigns and targeting
 
+### 4. Create Campaigns
+
+- Use **"Campaign Designer"** to create targeted campaigns
+- Research trends and ideas in **"Campaign Library"**
+- Each tab has its own specialized AI assistant
+
 ## 🏗️ Project Structure
 
 ```
 src/
 ├── components/
 │   ├── ui/              # UI components (buttons, inputs, etc.)
+│   │   ├── chat-panel.tsx              # General guide (default)
+│   │   ├── specialized-chat.tsx        # Reusable AI chat component
+│   │   ├── ai-assistant-button.tsx     # AI assistant button component
+│   │   └── ai-assistants-config.ts     # Assistant configurations
 │   ├── icp/             # ICP generation components
 │   ├── campaign/        # Campaign tools
 │   └── layout/          # Header and layout
@@ -70,28 +122,49 @@ src/
 
 ## 🎯 Key Components
 
-- **OwnCompanyForm**: Company information input with AI assistant
+- **OwnCompanyForm**: Company information input with ICP Form Tool
 - **ICPGenerator**: Main interface for generating customer profiles
-- **ICPProfiles**: Display generated customer profiles
-- **ChatPanel**: AI chatbot for guided assistance
+- **ICPProfiles**: Display generated customer profiles with ICP Analysis Tool
+- **CampaignDesigner**: Create marketing campaigns with Campaign Creation Tool
+- **CampaignLibrary**: Research campaign ideas with Campaign Research Tool
+- **ChatPanel**: General guide for ICP concepts and getting started
+- **SpecializedChat**: Reusable AI chat component for tools
+- **AIAssistantButton**: Easy-to-use AI assistant buttons
 
-## 🤖 AI Assistant
+## 🤖 AI Assistant Features
 
-The **"Fill with AI"** button opens a professional chatbot that helps you:
+### **General Guide (Default)**
 
-- Understand what information to provide
-- Get suggestions for industry selection
-- Learn how to describe your target market
-- Receive guidance on value propositions
-- Get help with marketing channels
+- **Purpose**: Explains ICPs and application workflow
+- **Access**: Floating chat button (always available)
+- **Role**: Onboarding, navigation, and general help
+- **Prephrases**: "What are Ideal Customer Profiles?", "How do I get started?", etc.
+
+### **Specialized Tools**
+
+Each tool has focused expertise and relevant prephrases:
+
+- **ICP Form Tool**: Company information collection (no irrelevant questions)
+- **ICP Analysis Tool**: Profile interpretation and strategy suggestions
+- **Campaign Creation Tool**: Creative campaign development
+- **Campaign Research Tool**: Market research and competitive insights
+
+### **Smart Integration**
+
+- **Context-Aware**: Each tool focuses on its specific domain
+- **Easy Access**: AIAssistantButton component for simple integration
+- **Consistent UI**: Professional interface across all assistants
+- **Configurable**: Easy to add new tools or modify existing ones
 
 ## 💡 Usage Tips
 
-1. **Start with Company Name**: Required field for ICP generation
-2. **Use AI Assistant**: Click "Fill with AI" for guided help
-3. **Be Specific**: Detailed company information = better ICPs
-4. **Save Your Data**: Company information is saved locally
-5. **Review Profiles**: Check the ICP Profiles tab for results
+1. **Start with the Guide**: Use the floating chat for general help and ICP concepts
+2. **Use Specialized Tools**: Each tab has focused AI assistance for specific tasks
+3. **Try Prephrases**: Click suggestion buttons for quick help with each tool
+4. **Be Specific**: Detailed company information = better ICPs
+5. **Save Your Data**: Company information is saved locally
+6. **Review Profiles**: Check the ICP Profiles tab for results
+7. **Create Campaigns**: Use the campaign tools to act on your ICPs
 
 ## 🔧 Technical Details
 
@@ -99,6 +172,7 @@ The **"Fill with AI"** button opens a professional chatbot that helps you:
 - **AI**: Local Ollama with llama3.2:3b model
 - **Storage**: Browser localStorage
 - **No External APIs**: Everything runs locally
+- **Modular Design**: Easy to extend with new AI assistants
 
 ## 📝 License
 

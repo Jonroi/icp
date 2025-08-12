@@ -7,8 +7,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CardToolbar } from '@/components/ui/card-toolbar';
+
 import { Copy, Download, Save } from 'lucide-react';
+import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
 
 const campaignIdeas = [
   {
@@ -51,14 +52,12 @@ export function CampaignLibrary() {
             personalization builder.
           </CardDescription>
         </div>
-        <CardToolbar
-          tooltip='Review these AI-generated campaigns. You can copy content, download assets, or save a campaign to use later.'
-          questions={[
-            'Generate more suggestions.',
-            'Can you make a campaign for a local business?',
-            'What kind of image would work well here?',
-          ]}
-        />
+        <AIAssistantButton
+          assistantType='campaign-research-tool'
+          size='sm'
+          className='flex items-center gap-2'>
+          Research Campaigns
+        </AIAssistantButton>
       </CardHeader>
       <CardContent className='space-y-4'>
         {campaignIdeas.map((idea, index) => (

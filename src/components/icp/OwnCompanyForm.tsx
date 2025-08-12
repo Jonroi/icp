@@ -12,9 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { OwnCompany } from '@/services/project-service';
-import { ExternalLink, Save, MessageCircle } from 'lucide-react';
-import { useState } from 'react';
-import { ChatPanel } from '@/components/ui/chat-panel';
+import { ExternalLink, Save } from 'lucide-react';
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
@@ -27,16 +25,6 @@ export function OwnCompanyForm({
   onChange,
   onSave,
 }: OwnCompanyFormProps) {
-  const [showChatbot, setShowChatbot] = useState(false);
-
-  // Suggestions for the chatbot
-  const chatSuggestions = [
-    "Help me fill out my company information",
-    "What industry should I select?",
-    "How do I describe my target market?",
-    "What's a good value proposition?",
-    "Help me with marketing channels"
-  ];
   // Predefined options for dropdowns
   const industryOptions = [
     'SaaS/Software',
@@ -107,15 +95,7 @@ export function OwnCompanyForm({
       </div>
 
       {/* Action Buttons at the Top */}
-      <div className='flex justify-between items-center mb-4'>
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => setShowChatbot(true)}
-          className='flex items-center gap-2'>
-          <MessageCircle className='h-4 w-4' />
-          Fill with AI
-        </Button>
+      <div className='flex justify-end items-center mb-4'>
         <Button
           type='button'
           onClick={() => onSave?.(company)}
@@ -126,18 +106,6 @@ export function OwnCompanyForm({
           Save Company Info
         </Button>
       </div>
-
-      {/* Chatbot Modal */}
-      {showChatbot && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-          <div className='w-[600px] max-w-[90vw] h-[600px] max-h-[90vh]'>
-            <ChatPanel 
-              onClose={() => setShowChatbot(false)}
-              suggestions={chatSuggestions}
-            />
-          </div>
-        </div>
-      )}
 
       <div className='space-y-3'>
         <div className='flex gap-2'>

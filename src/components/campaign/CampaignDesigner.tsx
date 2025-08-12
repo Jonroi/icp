@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CardToolbar } from '@/components/ui/card-toolbar';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Copy, Download, ImageIcon, Save } from 'lucide-react';
+import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
 
 interface GeneratedCampaign {
   adCopy: string;
@@ -46,14 +47,12 @@ export function CampaignDesigner({}: CampaignDesignerProps) {
             Generate a full campaign based on your ICP.
           </CardDescription>
         </div>
-        <CardToolbar
-          tooltip='Select an ICP and a copy style, and our AI will generate a complete campaign for you, including ad copy, hooks, and landing page content.'
-          questions={[
-            "What is a 'copy style'?",
-            'Generate a campaign for a different ICP.',
-            "What are 'hooks'?",
-          ]}
-        />
+        <AIAssistantButton
+          assistantType='campaign-creation-tool'
+          size='sm'
+          className='flex items-center gap-2'>
+          Create Campaign
+        </AIAssistantButton>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='space-y-2'>

@@ -7,7 +7,6 @@ import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
 import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
 
 import { useAppState } from '@/hooks/useAppState';
-import { FloatingChat } from '@/components';
 
 export default function App() {
   const {
@@ -70,8 +69,6 @@ export default function App() {
           <CampaignLibrary />
         </TabsContent>
       </Tabs>
-
-      <FloatingChat />
     </div>
   );
 }
