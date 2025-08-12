@@ -30,14 +30,10 @@ interface GeneratedCampaign {
 }
 
 interface CampaignDesignerProps {
-  generatedCampaign: GeneratedCampaign | null;
-  onGenerateCampaign: () => void;
+  // Simplified props - no external dependencies
 }
 
-export function CampaignDesigner({
-  generatedCampaign,
-  onGenerateCampaign,
-}: CampaignDesignerProps) {
+export function CampaignDesigner({}: CampaignDesignerProps) {
   return (
     <Card className='mt-4'>
       <CardHeader className='flex-row items-start justify-between'>
@@ -114,11 +110,13 @@ export function CampaignDesigner({
           <Label>Campaign Details (Optional)</Label>
           <Textarea placeholder='e.g., Launching a new feature for analytics...' />
         </div>
-        <Button className='w-full' onClick={onGenerateCampaign}>
+        <Button
+          className='w-full'
+          onClick={() => alert('Campaign generation coming soon!')}>
           <Bot className='mr-2 h-4 w-4' />
           Generate Campaign
         </Button>
-        {generatedCampaign && (
+        {false && (
           <Card className='mt-6'>
             <CardHeader>
               <CardTitle>Generated Campaign</CardTitle>

@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { LocationSelector } from '@/components/ui/location-selector';
 import {
   Select,
@@ -13,111 +12,31 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { OwnCompany } from '@/services/project-service';
-import { CompanyDataFetcher } from '@/services/ai/company-data-fetcher';
-import {
-  ExternalLink,
-  RefreshCw,
-  Save,
-  ChevronDown,
-  Zap,
-  Search,
-} from 'lucide-react';
+import { ExternalLink, Save, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { ChatPanel } from '@/components/ui/chat-panel';
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
-  isFetchingData: boolean;
-  reviewsStatus?: { success: boolean; message: string } | null;
   onChange: (field: keyof OwnCompany, value: string) => void;
-  onFetchCustomerReviews: (companyName: string) => void;
   onSave?: (company: OwnCompany) => void;
-  // Dropdown controls
-  hasSaved?: boolean;
-  showDropdown?: boolean;
-  savedName?: string;
-  onToggleDropdown?: () => void;
-  onLoadSaved?: () => void;
 }
 
 export function OwnCompanyForm({
   company,
-  isFetchingData,
-  reviewsStatus,
   onChange,
-  onFetchCustomerReviews,
   onSave,
-  hasSaved,
-  showDropdown,
-  savedName,
-  onToggleDropdown,
-  onLoadSaved,
 }: OwnCompanyFormProps) {
-  const [isAutoFilling, setIsAutoFilling] = useState(false);
-  const [autoFillStatus, setAutoFillStatus] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
-  const companyDataFetcher = new CompanyDataFetcher();
+  const [showChatbot, setShowChatbot] = useState(false);
 
-  // Auto-fill company data from multiple sources
-  const handleAutoFill = async () => {
-    if (!company.name.trim()) {
-      setAutoFillStatus({
-        success: false,
-        message: 'Company name is required for auto-fill',
-      });
-      return;
-    }
-
-    if (!company.location || company.location === 'Global') {
-      setAutoFillStatus({
-        success: false,
-        message:
-          'Please select a specific location for better auto-fill results',
-      });
-      return;
-    }
-
-    setIsAutoFilling(true);
-    setAutoFillStatus(null);
-
-    try {
-      const result = await companyDataFetcher.fetchCompanyData(
-        company.name,
-        company.location,
-      );
-
-      if (result.success) {
-        // Apply the fetched data to the form
-        Object.entries(result.data).forEach(([key, value]) => {
-          if (value && key in company) {
-            onChange(key as keyof OwnCompany, value);
-          }
-        });
-
-        setAutoFillStatus({
-          success: true,
-          message: `Auto-filled data from ${result.sources.join(', ')} sources`,
-        });
-      } else {
-        setAutoFillStatus({
-          success: false,
-          message: `Auto-fill failed: ${
-            result.errors?.join(', ') || 'No data found'
-          }`,
-        });
-      }
-    } catch (error) {
-      setAutoFillStatus({
-        success: false,
-        message: `Auto-fill error: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-      });
-    } finally {
-      setIsAutoFilling(false);
-    }
-  };
-
+  // Suggestions for the chatbot
+  const chatSuggestions = [
+    "Help me fill out my company information",
+    "What industry should I select?",
+    "How do I describe my target market?",
+    "What's a good value proposition?",
+    "Help me with marketing channels"
+  ];
   // Predefined options for dropdowns
   const industryOptions = [
     'SaaS/Software',
@@ -187,6 +106,39 @@ export function OwnCompanyForm({
         <h3 className='font-medium'>Your Company</h3>
       </div>
 
+      {/* Action Buttons at the Top */}
+      <div className='flex justify-between items-center mb-4'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => setShowChatbot(true)}
+          className='flex items-center gap-2'>
+          <MessageCircle className='h-4 w-4' />
+          Fill with AI
+        </Button>
+        <Button
+          type='button'
+          onClick={() => onSave?.(company)}
+          disabled={!company.name.trim()}
+          className='flex items-center gap-2'
+          title='Save all company information'>
+          <Save className='h-4 w-4' />
+          Save Company Info
+        </Button>
+      </div>
+
+      {/* Chatbot Modal */}
+      {showChatbot && (
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+          <div className='w-[600px] max-w-[90vw] h-[600px] max-h-[90vh]'>
+            <ChatPanel 
+              onClose={() => setShowChatbot(false)}
+              suggestions={chatSuggestions}
+            />
+          </div>
+        </div>
+      )}
+
       <div className='space-y-3'>
         <div className='flex gap-2'>
           <div className='flex-1 space-y-2'>
@@ -204,40 +156,7 @@ export function OwnCompanyForm({
                 required
                 value={company.name}
                 onChange={(e) => onChange('name', e.target.value)}
-                className='pr-10'
               />
-              {hasSaved && (
-                <>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    className='absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7'
-                    onClick={onToggleDropdown}
-                    title='Select saved company'
-                    aria-haspopup='listbox'
-                    aria-expanded={!!showDropdown}>
-                    <ChevronDown className='h-4 w-4 opacity-70' />
-                  </Button>
-
-                  {showDropdown && (
-                    <Card className='absolute top-10 right-0 z-10 w-64 max-h-48 overflow-y-auto'>
-                      <CardContent className='p-2'>
-                        <div className='space-y-1'>
-                          <Button
-                            variant='ghost'
-                            size='sm'
-                            className='w-full justify-start text-left'
-                            onClick={onLoadSaved}
-                            title='Load saved company'>
-                            {savedName || 'Saved company'}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
             </div>
           </div>
 
@@ -249,66 +168,13 @@ export function OwnCompanyForm({
               className='w-full'
             />
           </div>
-
-          <div className='space-y-2'>
-            <div className='opacity-0 pointer-events-none'>
-              <Label>Placeholder</Label>
-            </div>
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={handleAutoFill}
-                disabled={
-                  isAutoFilling ||
-                  !company.name.trim() ||
-                  !company.location ||
-                  company.location === 'Global'
-                }
-                title='Auto-fill from multiple sources (Google Maps, LinkedIn, etc.) - requires company name and specific location'>
-                {isAutoFilling ? (
-                  <RefreshCw className='h-4 w-4 animate-spin' />
-                ) : (
-                  <Zap className='h-4 w-4' />
-                )}
-              </Button>
-              <Button
-                variant='default'
-                size='icon'
-                onClick={() => {
-                  if (!company.name.trim()) {
-                    alert('Company name is required to save!');
-                    return;
-                  }
-                  onSave?.(company);
-                }}
-                title='Save company details'>
-                <Save className='h-4 w-4' />
-              </Button>
-            </div>
-          </div>
         </div>
 
         <div className='space-y-2'>
           <p className='text-xs text-muted-foreground'>
-            Company name and location is required, But for better results, fill
-            all fields or use Auto-Fill to get comprehensive data from multiple
-            sources
+            Company name and location is required. Fill all fields for better
+            results.
           </p>
-          {company.name && !company.website && (
-            <p className='text-xs text-muted-foreground'>
-              💡 Enter your company name and location, then use Auto-Fill to get
-              comprehensive data from multiple sources
-            </p>
-          )}
-          {autoFillStatus && (
-            <p
-              className={`text-xs ${
-                autoFillStatus.success ? 'text-green-600' : 'text-orange-600'
-              }`}>
-              {autoFillStatus.message}
-            </p>
-          )}
         </div>
       </div>
 
@@ -608,60 +474,6 @@ export function OwnCompanyForm({
             rows={2}
           />
         </div>
-      </div>
-
-      {/* Save Button */}
-      <div className='flex justify-end pt-2'>
-        <Button
-          type='button'
-          onClick={() => onSave?.(company)}
-          disabled={!company.name.trim()}
-          className='flex items-center gap-2'
-          title='Save all company information'>
-          <Save className='h-4 w-4' />
-          Save Company Info
-        </Button>
-      </div>
-
-      <div className='space-y-2'>
-        <div className='flex items-center justify-between'>
-          <Label htmlFor='own-company-reviews'>Customer Reviews</Label>
-          <div className='flex gap-2'>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={() => {
-                if (company.name.trim()) {
-                  onFetchCustomerReviews(company.name);
-                }
-              }}
-              disabled={isFetchingData || !company.name.trim()}
-              title='Fetch customer data'>
-              {isFetchingData ? (
-                <RefreshCw className='h-4 w-4 animate-spin mr-2' />
-              ) : (
-                <Search className='h-4 w-4 mr-2' />
-              )}
-              {isFetchingData ? 'Fetching...' : 'Fetch Data'}
-            </Button>
-          </div>
-        </div>
-        <Textarea
-          id='own-company-reviews'
-          placeholder='Click "Fetch Data" to collect real customer reviews from Google Maps via Apify'
-          value={company.reviews || ''}
-          readOnly
-          rows={6}
-          className='max-h-48 overflow-y-auto'
-        />
-        {reviewsStatus && (
-          <div
-            className={`text-xs ${
-              reviewsStatus.success ? 'text-green-600' : 'text-red-600'
-            }`}>
-            {reviewsStatus.message}
-          </div>
-        )}
       </div>
     </Card>
   );

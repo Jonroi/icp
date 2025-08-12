@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_APIFY_API_TOKEN: string;
+  // Add environment variables here as needed
 }
 
 interface ImportMeta {

@@ -7,7 +7,6 @@ export { ICPPopup } from './dialogs/ICPPopup';
 // ICP components
 export { ICPGenerator } from './icp/ICPGenerator';
 export { ICPProfiles } from './icp/ICPProfiles';
-export { CompetitorForm } from './icp/CompetitorForm';
 export { LocationSelector } from './ui/location-selector';
 export { CONTINENTS, COUNTRIES_BY_REGION } from './ui/location-data';
 export { OwnCompanyForm } from './icp/OwnCompanyForm';

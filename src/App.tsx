@@ -5,7 +5,6 @@ import { ICPGenerator } from '@/components/icp/ICPGenerator';
 import { ICPProfiles } from '@/components/icp/ICPProfiles';
 import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
 import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
-import { ICPPopup } from '@/components/dialogs/ICPPopup';
 
 import { useAppState } from '@/hooks/useAppState';
 import { FloatingChat } from '@/components';
@@ -14,21 +13,7 @@ export default function App() {
   const {
     // State
     ownCompany,
-    ownCompanyReviewsStatus,
-    isFetchingOwnCompanyData,
-    competitors,
     additionalContext,
-    isFetchingCompanyInfo,
-    isFetchingData,
-    companyInfoStatus,
-    reviewsStatus,
-    generatedCampaign,
-    showICPPopup,
-    // Unused in UI but available via dialogs
-    // projectName,
-    // savedProjects,
-    savedCompetitors,
-    showCompetitorDropdown,
     generatedICPs,
     isLoading,
     error,
@@ -36,27 +21,8 @@ export default function App() {
     // Actions
     onOwnCompanyChange,
     saveOwnCompany,
-    onFetchOwnCompanyReviews,
-    hasSavedOwnCompany,
-    showOwnCompanyDropdown,
-    toggleOwnCompanyDropdown,
-    loadSavedOwnCompany,
     setAdditionalContext,
-    // setProjectName,
-    setShowICPPopup,
-    handleCompetitorChange,
-    addCompetitor,
-    removeCompetitor,
-    handleGenerateCampaign,
-    fetchCompanyInfo,
-    fetchCustomerReviews,
-    saveCompetitor,
-    loadSavedCompetitor,
-    toggleCompetitorDropdown,
     generateICPs,
-    // saveProject,
-    // loadProject,
-    // deleteProject,
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<string>('icp-generator');
@@ -78,34 +44,12 @@ export default function App() {
         <TabsContent value='icp-generator'>
           <ICPGenerator
             ownCompany={ownCompany}
-            ownCompanyReviewsStatus={ownCompanyReviewsStatus}
-            isFetchingOwnCompanyData={isFetchingOwnCompanyData}
-            competitors={competitors}
             additionalContext={additionalContext}
-            savedCompetitors={savedCompetitors}
-            showCompetitorDropdown={showCompetitorDropdown}
-            isFetchingCompanyInfo={isFetchingCompanyInfo}
-            isFetchingData={isFetchingData}
-            companyInfoStatus={companyInfoStatus}
-            reviewsStatus={reviewsStatus}
             isLoading={isLoading}
             error={error}
-            onCompetitorChange={handleCompetitorChange}
-            onAddCompetitor={addCompetitor}
-            onRemoveCompetitor={removeCompetitor}
             onAdditionalContextChange={setAdditionalContext}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
-            onFetchOwnCompanyReviews={onFetchOwnCompanyReviews}
-            hasSavedOwnCompany={hasSavedOwnCompany}
-            showOwnCompanyDropdown={showOwnCompanyDropdown}
-            onToggleOwnCompanyDropdown={toggleOwnCompanyDropdown}
-            onLoadSavedOwnCompany={loadSavedOwnCompany}
-            onFetchCompanyInfo={fetchCompanyInfo}
-            onFetchCustomerReviews={fetchCustomerReviews}
-            onSaveCompetitor={saveCompetitor}
-            onLoadSavedCompetitor={loadSavedCompetitor}
-            onToggleCompetitorDropdown={toggleCompetitorDropdown}
             onGenerateICPs={async () => {
               await generateICPs();
               alert('ICPs generated successfully!');
@@ -119,10 +63,7 @@ export default function App() {
         </TabsContent>
 
         <TabsContent value='campaign-designer'>
-          <CampaignDesigner
-            generatedCampaign={generatedCampaign}
-            onGenerateCampaign={handleGenerateCampaign}
-          />
+          <CampaignDesigner />
         </TabsContent>
 
         <TabsContent value='campaign-library'>
@@ -130,7 +71,6 @@ export default function App() {
         </TabsContent>
       </Tabs>
 
-      <ICPPopup isOpen={showICPPopup} onClose={() => setShowICPPopup(false)} />
       <FloatingChat />
     </div>
   );
