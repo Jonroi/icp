@@ -125,12 +125,15 @@ The application uses optimized Apify Google Maps Review Scraper settings for bet
 ### ⚠️ Apify Credit Usage Warning
 
 **Current Credit Consumption:**
-- **Main reviews**: 15 reviews per company
+
+- **Main reviews**: 20 reviews per company (optimized for cost control)
 - **LinkedIn insights**: 2 additional reviews per company
-- **Total per company**: 17 reviews
-- **Estimated cost**: ~17 Apify credits per company
+- **Total per company**: 22 reviews
+- **Estimated cost**: ~22 Apify credits per company
 
 **Credit Management Tips:**
+
+- **Cost Optimization**: System now fetches exactly 20 reviews (no over-fetching)
 - Start with 1-2 companies to test functionality
 - Use the free tier (1000 credits) for initial testing
 - Consider upgrading to paid plan for larger projects

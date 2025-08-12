@@ -76,7 +76,7 @@ export async function debugReviewFetching(
       {
         website,
         location: 'Finland',
-        maxResults: 10,
+        maxResults: 20, // Set to exactly 20 reviews for optimal cost control
         includeMarketData: true,
       },
     );

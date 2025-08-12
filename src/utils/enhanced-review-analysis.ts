@@ -5,7 +5,6 @@
 import { ApifyReviewsService } from '../services/apify-reviews-service';
 import { ReviewAnalyzer } from '../services/ai/review-analyzer';
 import { ICPGenerator } from '../services/ai/icp-generator';
-import { type CustomerReview } from '../services/ai/types';
 
 export interface EnhancedAnalysisStep {
   step: string;
@@ -90,7 +89,7 @@ export async function enhancedReviewAnalysis(
       {
         website,
         location: 'Finland',
-        maxResults: 50, // Optimized for ICP analysis
+        maxResults: 20, // Set to exactly 20 reviews for optimal cost control
         includeMarketData: true,
         includeSentimentAnalysis: true,
         includePainPoints: true,
@@ -101,7 +100,6 @@ export async function enhancedReviewAnalysis(
     steps.push({
       step: '6. Enhanced review collection completed',
       success: true,
-      count: reviews.reviews.length,
       data: {
         totalReviews: reviews.reviews.length,
         dataSources: reviews.dataSources.length,
@@ -172,7 +170,6 @@ export async function enhancedReviewAnalysis(
     steps.push({
       step: '10. ICP generation with enhanced insights completed',
       success: true,
-      count: icps.length,
       data: {
         icps: icps.map((icp) => ({
           name: icp.name,
@@ -205,10 +202,6 @@ export function formatEnhancedAnalysisResults(
 
     if (step.duration !== undefined) {
       output += `   Duration: ${step.duration}ms\n`;
-    }
-
-    if (step.count !== undefined) {
-      output += `   Count: ${step.count}\n`;
     }
 
     if (step.insights) {

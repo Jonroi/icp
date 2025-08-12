@@ -360,7 +360,7 @@ export class ApifyClient {
         searchStringsArray: [searchString],
         maxCrawledPlaces: 1,
         includeReviews: true,
-        maxReviews: options.maxResults || 50, // Increased for better demographic analysis
+        maxReviews: options.maxResults || 20, // Set to 20 for cost control
         reviewsLanguage: 'all',
         reviewsSort: 'newest',
         reviewsOrigin: 'google', // Target Google-native reviews for better coverage
@@ -488,6 +488,11 @@ export class ApifyClient {
       }
 
       // Step 3: Get the results
+      if (!completedRun.defaultDatasetId) {
+        throw new Error(
+          'No dataset ID found in completed run. Cannot fetch results.',
+        );
+      }
       const results = await this.getRunResults(completedRun.defaultDatasetId);
 
       console.log(
@@ -1077,7 +1082,7 @@ export class ApifyClient {
 
     // LinkedIn Company Scraper input format
     const runInput: ApifyRunInput = {
-      companyName: companyName,
+      query: companyName, // Use query instead of companyName for LinkedIn scraper
       // Add any other required parameters for the LinkedIn scraper
     };
 
@@ -1099,6 +1104,11 @@ export class ApifyClient {
       console.log(
         `🔗 [LINKEDIN APIFY] LinkedIn scraper completed, fetching results`,
       );
+      if (!completedRun.defaultDatasetId) {
+        throw new Error(
+          'No dataset ID found in completed LinkedIn run. Cannot fetch results.',
+        );
+      }
       const results = await this.getRunResults(completedRun.defaultDatasetId);
 
       console.log(
