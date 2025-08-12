@@ -63,9 +63,9 @@ export async function debugReviewFetching(
     return steps;
   }
 
-  // Step 5: Fetch reviews using Apify Google Maps API
+  // Step 5: Fetch data using Apify Google Maps API
   steps.push({
-    step: '5. Fetching reviews using Apify Google Maps API',
+    step: '5. Fetching data using Apify Google Maps API',
     success: true,
     data: { companyName, website },
   });
@@ -82,14 +82,14 @@ export async function debugReviewFetching(
     );
 
     steps.push({
-      step: '6. Apify Google Maps API review fetch completed',
+      step: '6. Apify Google Maps API data fetch completed',
       success: true,
       count: reviews.length,
       data: reviews.substring(0, 500) + '...',
     });
   } catch (error) {
     steps.push({
-      step: '6. Apify Google Maps API review fetch failed',
+      step: '6. Apify Google Maps API data fetch failed',
       success: false,
       error: String(error),
     });
@@ -99,7 +99,7 @@ export async function debugReviewFetching(
 }
 
 export function formatDebugResults(steps: DebugStep[]): string {
-  let output = '🔍 Apify Google Maps API Review Fetching Debug Results\n';
+  let output = '🔍 Apify Google Maps API Data Fetching Debug Results\n';
   output += '='.repeat(50) + '\n\n';
 
   for (const step of steps) {

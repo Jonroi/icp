@@ -144,8 +144,8 @@ interface AppState {
   isFetchingCompanyInfo: number | null;
   companyInfoStatus: Record<number, { success: boolean; message: string }>;
 
-  // Reviews Processing
-  isFetchingReviews: number | null;
+  // Data Processing
+  isFetchingData: number | null;
   reviewsStatus: Record<number, { success: boolean; message: string }>;
 
   // Generated Results

@@ -27,8 +27,8 @@ export class ApifyReviewsService {
   private static readonly RETRY_DELAY = 2000; // 2 seconds
 
   /**
-   * Fetch customer reviews using Apify Google Maps API
-   * This is the main service for collecting customer reviews
+   * Fetch customer data using Apify Google Maps API
+   * This is the main service for collecting customer data
    */
   static async fetchCustomerReviews(
     companyName: string,
@@ -45,7 +45,7 @@ export class ApifyReviewsService {
       includePainPoints: true, // Enable pain point extraction by default
     },
   ): Promise<string> {
-    console.log(`🔍 Apify: Fetching reviews for ${companyName}`);
+    console.log(`🔍 Apify: Fetching data for ${companyName}`);
 
     // Validate input
     const companyValidation = InputValidator.validateCompanyName(companyName);
@@ -106,7 +106,7 @@ export class ApifyReviewsService {
       includePainPoints: true, // Enable pain point extraction by default
     },
   ): Promise<ApifyReviewsResult> {
-    console.log(`🔍 Apify: Fetching structured reviews for ${companyName}`);
+    console.log(`🔍 Apify: Fetching structured data for ${companyName}`);
 
     // Validate input
     const companyValidation = InputValidator.validateCompanyName(companyName);

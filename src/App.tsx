@@ -19,7 +19,7 @@ export default function App() {
     competitors,
     additionalContext,
     isFetchingCompanyInfo,
-    isFetchingReviews,
+    isFetchingData,
     companyInfoStatus,
     reviewsStatus,
     generatedCampaign,
@@ -85,7 +85,7 @@ export default function App() {
             savedCompetitors={savedCompetitors}
             showCompetitorDropdown={showCompetitorDropdown}
             isFetchingCompanyInfo={isFetchingCompanyInfo}
-            isFetchingReviews={isFetchingReviews}
+            isFetchingData={isFetchingData}
             companyInfoStatus={companyInfoStatus}
             reviewsStatus={reviewsStatus}
             isLoading={isLoading}

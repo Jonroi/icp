@@ -76,9 +76,9 @@ export async function enhancedReviewAnalysis(
     return steps;
   }
 
-  // Step 5: Fetch reviews with enhanced analysis
+  // Step 5: Fetch data with enhanced analysis
   steps.push({
-    step: '5. Fetching reviews with enhanced sentiment analysis and pain point extraction',
+    step: '5. Fetching data with enhanced sentiment analysis and pain point extraction',
     success: true,
     data: { companyName, website },
   });

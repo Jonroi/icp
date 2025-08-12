@@ -27,9 +27,7 @@ export function useAppState() {
   const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState<
     number | null
   >(null);
-  const [isFetchingReviews, setIsFetchingReviews] = useState<number | null>(
-    null,
-  );
+  const [isFetchingData, setIsFetchingData] = useState<number | null>(null);
   const [companyInfoStatus, setCompanyInfoStatus] = useState<{
     [key: number]: { success: boolean; message: string };
   }>({});
@@ -316,7 +314,7 @@ export function useAppState() {
   const fetchCustomerReviews = async (index: number, companyName: string) => {
     if (!companyName.trim()) return;
 
-    setIsFetchingReviews(index);
+    setIsFetchingData(index);
 
     try {
       const reviewsText = await ReviewsService.fetchCustomerReviews(
@@ -343,12 +341,12 @@ export function useAppState() {
         ...reviewsStatus,
         [index]: {
           success: true,
-          message: `✅ Fetched ${reviewCount} lines of review data for ${companyName}, You can now generate ICPs`,
+          message: `✅ Fetched ${reviewCount} lines of data for ${companyName}, You can now generate ICPs`,
         },
       });
     } catch (error) {
-      console.error('Failed to fetch reviews:', error);
-      let errorMessage = `Failed to fetch reviews for ${companyName}`;
+      console.error('Failed to fetch data:', error);
+      let errorMessage = `Failed to fetch data for ${companyName}`;
 
       // Handle custom error types
       if (error instanceof Error && 'code' in error) {
@@ -367,14 +365,14 @@ export function useAppState() {
             errorMessage = `Found text but it doesn't appear to be customer reviews for ${companyName}`;
             break;
           case 'NETWORK_ERROR':
-            errorMessage = `Network error while fetching reviews for ${companyName}`;
+            errorMessage = `Network error while fetching data for ${companyName}`;
             break;
           default:
-            errorMessage = `Error fetching reviews: ${customError.message}`;
+            errorMessage = `Error fetching data: ${customError.message}`;
         }
       } else if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errorMessage = `Reviews timeout for ${companyName} (25s limit)`;
+          errorMessage = `Data fetch timeout for ${companyName} (25s limit)`;
         } else if (error.message?.includes('Failed to fetch')) {
           errorMessage = `Ollama not running. Please start Ollama first.`;
         }
@@ -388,7 +386,7 @@ export function useAppState() {
         },
       });
     } finally {
-      setIsFetchingReviews(null);
+      setIsFetchingData(null);
     }
   };
 
@@ -596,7 +594,7 @@ export function useAppState() {
     competitors,
     additionalContext,
     isFetchingCompanyInfo,
-    isFetchingReviews,
+    isFetchingData,
     companyInfoStatus,
     reviewsStatus,
     generatedCampaign,

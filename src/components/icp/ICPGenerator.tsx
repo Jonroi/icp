@@ -23,7 +23,7 @@ interface ICPGeneratorProps {
   savedCompetitors: string[];
   showCompetitorDropdown: { [key: number]: boolean };
   isFetchingCompanyInfo: number | null;
-  isFetchingReviews: number | null;
+  isFetchingData: number | null;
   companyInfoStatus: { [key: number]: { success: boolean; message: string } };
   reviewsStatus: { [key: number]: { success: boolean; message: string } };
   isLoading: boolean;
@@ -61,7 +61,7 @@ export function ICPGenerator({
   savedCompetitors,
   showCompetitorDropdown,
   isFetchingCompanyInfo,
-  isFetchingReviews,
+  isFetchingData,
   companyInfoStatus,
   reviewsStatus,
   isLoading,
@@ -132,7 +132,7 @@ export function ICPGenerator({
               savedCompetitors={savedCompetitors}
               showCompetitorDropdown={showCompetitorDropdown}
               isFetchingCompanyInfo={isFetchingCompanyInfo}
-              isFetchingReviews={isFetchingReviews}
+              isFetchingData={isFetchingData}
               companyInfoStatus={companyInfoStatus}
               reviewsStatus={reviewsStatus}
               onCompetitorChange={onCompetitorChange}

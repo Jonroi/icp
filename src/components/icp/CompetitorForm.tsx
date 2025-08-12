@@ -21,7 +21,7 @@ interface CompetitorFormProps {
   savedCompetitors: string[];
   showCompetitorDropdown: { [key: number]: boolean };
   isFetchingCompanyInfo: number | null;
-  isFetchingReviews: number | null;
+  isFetchingData: number | null;
   companyInfoStatus: { [key: number]: { success: boolean; message: string } };
   reviewsStatus: { [key: number]: { success: boolean; message: string } };
   onCompetitorChange: (
@@ -43,7 +43,7 @@ export function CompetitorForm({
   savedCompetitors,
   showCompetitorDropdown,
   isFetchingCompanyInfo,
-  isFetchingReviews,
+  isFetchingData,
   companyInfoStatus,
   reviewsStatus,
   onCompetitorChange,
@@ -261,20 +261,20 @@ export function CompetitorForm({
                   onFetchCustomerReviews(index, competitor.name);
                 }
               }}
-              disabled={isFetchingReviews === index || !competitor.name.trim()}
-              title='Fetch customer reviews'>
-              {isFetchingReviews === index ? (
+              disabled={isFetchingData === index || !competitor.name.trim()}
+              title='Fetch customer data'>
+              {isFetchingData === index ? (
                 <RefreshCw className='h-4 w-4 animate-spin mr-2' />
               ) : (
                 <Search className='h-4 w-4 mr-2' />
               )}
-              {isFetchingReviews === index ? 'Fetching...' : 'Fetch Reviews'}
+              {isFetchingData === index ? 'Fetching...' : 'Fetch Data'}
             </Button>
           </div>
         </div>
         <Textarea
           id={`competitor-reviews-${index}`}
-          placeholder='Copy and paste reviews here, Click "Fetch Reviews" to collect customer reviews automatically or ask AI Assistant to generate reviews'
+          placeholder='Copy and paste reviews here, Click "Fetch Data" to collect customer data automatically or ask AI Assistant to generate reviews'
           value={competitor.reviews || ''}
           readOnly
           rows={6}
