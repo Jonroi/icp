@@ -14,3 +14,4 @@ export {
 
 // AI services
 export * from './ai';
+export * from './ai/vercel-ai-service';

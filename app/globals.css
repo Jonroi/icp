@@ -81,3 +81,23 @@
     @apply bg-card text-card-foreground rounded-lg shadow-md border border-border p-6;
   }
 }
+
+/* Custom scrollbar styles */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-zinc-600::-webkit-scrollbar-thumb {
+    background-color: #52525b;
+    border-radius: 6px;
+  }
+  
+  .scrollbar-track-zinc-800::-webkit-scrollbar-track {
+    background-color: #27272a;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+}

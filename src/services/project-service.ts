@@ -37,7 +37,7 @@ export interface OwnCompany {
   name: string;
   website: string;
   social: string;
-  location?: string; // Location preference for the company
+  location?: string; // Target market location (where your customers are located)
   reviews?: string; // Customer reviews for the company
   linkedInData?: string; // LinkedIn insights and data
 

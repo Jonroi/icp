@@ -1,7 +1,8 @@
-import { useState, type KeyboardEvent } from 'react';
+import { type KeyboardEvent, useRef, useEffect } from 'react';
 import { X, Send, Bot } from 'lucide-react';
-import { OllamaClient } from '@/services/ai';
 import { Button } from './button';
+import { useVercelAI } from '@/services/ai/vercel-ai-service';
+import type { ChatMessage } from '@/services/ai/vercel-ai-service';
 
 interface SpecializedChatProps {
   onClose?: () => void;
@@ -9,13 +10,8 @@ interface SpecializedChatProps {
   instructions: string;
   suggestions: string[];
   placeholder?: string;
-}
-
-type ChatRole = 'system' | 'user' | 'assistant';
-
-interface ChatEntry {
-  role: ChatRole;
-  content: string;
+  onMessageReceived?: (message: string) => void;
+  initialMessage?: string;
 }
 
 export function SpecializedChat({
@@ -24,64 +20,56 @@ export function SpecializedChat({
   instructions,
   suggestions,
   placeholder = 'Ask a question...',
+  onMessageReceived,
+  initialMessage,
 }: SpecializedChatProps) {
-  const [messages, setMessages] = useState<ChatEntry[]>([
-    {
-      role: 'system',
-      content: instructions,
-    },
-  ]);
-  const [input, setInput] = useState<string>('');
-  const [isSending, setIsSending] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = async (content: string) => {
-    const trimmed = content.trim();
-    if (!trimmed || isSending) return;
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
+    useVercelAI({
+      systemMessage: instructions,
+      onError: (error) => {
+        console.error('Specialized chat error:', error);
+      },
+      onMessageReceived,
+      initialAssistantMessage: initialMessage,
+    });
 
-    const nextMessages: ChatEntry[] = [
-      ...messages,
-      { role: 'user', content: trimmed },
-    ];
+  // Keep input focused throughout the conversation
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    setMessages(nextMessages);
-    setInput('');
-    setIsSending(true);
-    setError(null);
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-    try {
-      const client = OllamaClient.getInstance();
+  // Keep input focused after messages are added
+  useEffect(() => {
+    if (inputRef.current && !isLoading) {
+      inputRef.current.focus();
+    }
+  }, [messages, isLoading]);
 
-      // Build conversation context for Ollama
-      const conversationContext = nextMessages
-        .filter((m) => m.role !== 'system')
-        .map(
-          (m) => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`,
-        )
-        .join('\n');
-
-      const prompt = `${instructions}
-
-Conversation:
-${conversationContext}
-
-Please provide a helpful response:`;
-
-      const assistantReply = await client.generateResponse(prompt);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: assistantReply },
-      ]);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Unknown error';
-      setError(message);
-    } finally {
-      setIsSending(false);
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      handleSubmit(e);
     }
   };
 
-  const handleSend = async () => {
-    await sendMessage(input);
+  const handleSuggestionClick = async (suggestion: string) => {
+    // Set the input to the suggestion and immediately send it
+    handleInputChange({
+      target: { value: suggestion },
+    } as React.ChangeEvent<HTMLTextAreaElement>);
+
+    // Create a fake form event and submit immediately
+    const fakeEvent = {
+      preventDefault: () => {},
+    } as React.FormEvent;
+
+    // Send the message immediately
+    handleSubmit(fakeEvent);
   };
 
   const handleTextareaKeyDown = (
@@ -89,7 +77,7 @@ Please provide a helpful response:`;
   ): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      void handleSend();
+      handleSubmit(e as React.FormEvent);
     }
   };
 
@@ -112,16 +100,16 @@ Please provide a helpful response:`;
               size='sm'
               variant='outline'
               className='text-xs'
-              onClick={() => void sendMessage(q)}
-              disabled={isSending}
+              onClick={() => handleSuggestionClick(q)}
+              disabled={isLoading}
               title={q}>
-              {q}
+              {isLoading ? 'Sending...' : q}
             </Button>
           ))}
         </div>
       )}
 
-      <div className='flex-1 overflow-y-auto px-3 py-3 space-y-3'>
+      <div className='flex-1 overflow-y-auto px-3 py-3 space-y-3 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-zinc-800'>
         {messages
           .filter((m) => m.role !== 'system')
           .map((m, idx) => (
@@ -137,25 +125,28 @@ Please provide a helpful response:`;
           ))}
         {error && (
           <div className='mr-auto max-w-[80%] rounded-lg border border-red-600 bg-red-950/40 px-3 py-2 text-sm text-red-200'>
-            {error}
+            {error.message}
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       <div className='border-t border-zinc-800 p-2'>
         <div className='flex items-end gap-2'>
           <textarea
+            ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleTextareaKeyDown}
             placeholder={placeholder}
             rows={2}
             className='flex-1 resize-none rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary'
-            disabled={isSending}
+            disabled={isLoading}
+            autoFocus
           />
           <Button
             onClick={handleSend}
-            disabled={isSending || input.trim().length === 0}
+            disabled={isLoading || input.trim().length === 0}
             title='Send'>
             <Send className='h-4 w-4' />
           </Button>

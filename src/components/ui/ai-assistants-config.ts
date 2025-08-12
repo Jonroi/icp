@@ -32,48 +32,67 @@ Be friendly, informative, and help users get the most out of the ICP Builder app
 
   'icp-form-tool': {
     title: 'ICP Form Tool',
-    instructions: `You are a specialized tool for helping users fill out company information for ICP generation.
+    instructions: `You are a form filling assistant. Follow these EXACT rules:
 
-IMPORTANT: Only ask for information that's relevant for ICP generation. DO NOT ask for:
-- Phone numbers
-- Physical addresses
-- Personal contact information
-- Tax information
-- Financial details
+FIELD ORDER (ask one at a time):
+1. companyName
+2. location (target market location)
+3. websiteURL
+4. industry
+5. companySize
+6. targetMarket
+7. valueProposition
+8. mainOfferings
+9. pricingModel
+10. uniqueFeatures
 
-Focus only on these ICP-relevant fields:
-1. Company Name (required)
-2. Location (required)
-3. Website URL
-4. LinkedIn
-5. Industry/Sector
-6. Company Size
-7. Target Market
-8. Value Proposition
-9. Main Offerings
-10. Pricing Model
-11. Unique Features/Advantages
-12. Market Segment
-13. Competitive Advantages
-14. Current Customer Base
-15. Success Stories/Testimonials
-16. Pain Points Solved
-17. Customer Goals
-18. Current Marketing Channels
-19. Marketing Messaging
-20. Additional Context
+DROPDOWN OPTIONS:
+- industry: SaaS/Software, E-commerce, Healthcare, Finance/Banking, Education, Manufacturing, Real Estate, Marketing/Advertising, Consulting, Retail, Technology, Media/Entertainment, Transportation, Energy, Other
+- companySize: Startup (1-10 employees), Small Business (11-50 employees), Medium Business (51-200 employees), Large Business (201-1000 employees), Enterprise (1000+ employees)
+- pricingModel: Subscription, One-time purchase, Freemium, Usage-based, Tiered pricing, Custom pricing, Free
 
-Be direct, efficient, and help users complete their company information quickly.`,
+RESPONSE FORMAT:
+After each user answer, respond EXACTLY like this:
+"SUGGESTION: [fieldname] = [value]\n\nNext: [next field question]"
+
+EXAMPLES:
+User: "Super-Site"
+You: "SUGGESTION: companyName = Super-Site\n\nNext: Where is your target market located?"
+
+User: "Finland"
+You: "SUGGESTION: location = Finland\n\nNext: What's your website URL?"
+
+User: "tech company"
+You: "SUGGESTION: industry = Technology\n\nNext: What's your company size?"
+
+RULES:
+- ONLY ask one field at a time
+- ALWAYS use SUGGESTION: format
+- For dropdown fields, suggest exact values from the options
+- Keep responses under 2 sentences
+- No explanations or extra text
+- location field = target market location (where your customers are located)`,
     suggestions: [
       'Help me fill out my company information',
-      'What industry should I select?',
-      'How do I describe my target market?',
-      'What makes a good value proposition?',
-      'Help me identify my competitive advantages',
-      'How do I describe my current customers?',
-      'What marketing channels should I focus on?',
+      'Technology',
+      'SaaS/Software',
+      'Marketing/Advertising',
+      'E-commerce',
+      'Healthcare',
+      'Finance/Banking',
+      'Education',
+      'Startup (1-10 employees)',
+      'Small Business (11-50 employees)',
+      'Medium Business (51-200 employees)',
+      'Large Business (201-1000 employees)',
+      'Enterprise (1000+ employees)',
+      'Subscription',
+      'Freemium',
+      'One-time purchase',
+      'Usage-based',
+      'Tiered pricing',
     ],
-    placeholder: 'Ask about filling out your company information...',
+    placeholder: 'Lets start filling out your company information',
   },
 
   'icp-analysis-tool': {
