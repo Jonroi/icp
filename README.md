@@ -5,6 +5,7 @@ A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powe
 ## 🚀 Features
 
 - **ICP Generator**: Create detailed customer profiles based on your company + competitor analysis and real customer data
+- **Enhanced Own Company Data**: Comprehensive business information collection with dropdown selectors for industry, company size, pricing model, market segment, and marketing channels
 - **ICP Profiles**: View and analyze AI-generated customer profiles with comprehensive demographics
 - **Google Maps Reviews Collector**: Gather real customer reviews from Google Maps using Apify integration
 - **Location-Based Review Search**: Choose between Global, continents, or country-specific review collection (150+ countries supported)
@@ -17,6 +18,84 @@ A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powe
 - **Test ICP Generation**: Built-in testing component for verifying AI generation functionality
 - **Retry Logic**: Robust error handling with exponential backoff for reliable API calls
 - **Structured Data Processing**: Enhanced LLM formatting with sentiment analysis and key insights
+
+## 🏢 Enhanced Own Company Data Collection
+
+The application now includes comprehensive business information collection to improve ICP generation quality:
+
+### **Business Information**
+
+- **Industry/Sector**: Define your business category (SaaS, E-commerce, Healthcare, etc.)
+- **Company Size**: Specify company size (Startup, SME, Enterprise, etc.)
+- **Target Market**: Describe your primary target market
+- **Value Proposition**: Core value you provide to customers
+- **Main Offerings**: Products/services you offer
+- **Pricing Model**: Your pricing structure (Subscription, One-time, Freemium, etc.)
+- **Unique Features**: What makes your product/service unique
+- **Market Segment**: Target segment (B2B, B2C, specific verticals)
+- **Competitive Advantages**: Key advantages over competitors
+
+### **Customer Insights**
+
+- **Current Customer Base**: Description of existing customers
+- **Success Stories**: Customer testimonials and case studies
+- **Pain Points Solved**: Problems your company solves
+- **Customer Goals**: Goals customers achieve with your help
+
+### **Marketing Context**
+
+- **Current Marketing Channels**: Channels you're currently using
+- **Marketing Messaging**: Current positioning and messaging
+
+This enhanced data helps the AI generate more accurate and relevant ICP profiles by understanding your business context, target market, and value proposition.
+
+## 📋 Dropdown Selectors for Easy Data Entry
+
+The application now includes **dropdown selectors** with predefined options to make data entry easier and more consistent:
+
+### **Available Dropdown Options**
+
+#### **Industry/Sector**
+
+- SaaS/Software, E-commerce, Healthcare, Finance/Banking
+- Education, Manufacturing, Real Estate, Marketing/Advertising
+- Consulting, Retail, Technology, Media/Entertainment
+- Transportation, Energy, Other
+
+#### **Company Size**
+
+- Startup (1-10 employees)
+- Small Business (11-50 employees)
+- Medium Business (51-200 employees)
+- Large Business (201-1000 employees)
+- Enterprise (1000+ employees)
+
+#### **Pricing Model**
+
+- Subscription, One-time purchase, Freemium
+- Usage-based, Tiered pricing, Custom pricing, Free
+
+#### **Market Segment**
+
+- B2B, B2C, B2B2C, D2C (Direct to Consumer)
+- Marketplace, Platform
+
+#### **Marketing Channels**
+
+Quick-add buttons for common channels:
+
+- LinkedIn, Google Ads, Facebook Ads, Instagram
+- Email Marketing, Content Marketing, SEO
+- Trade Shows, Referral Programs, Influencer Marketing
+- YouTube, TikTok, Twitter/X, Direct Mail, Cold Calling
+
+### **Benefits of Dropdown Selectors**
+
+✅ **Consistent Data**: Predefined options ensure data consistency
+✅ **Faster Entry**: No need to type common values
+✅ **Better Analysis**: Standardized data improves ICP generation quality
+✅ **User-Friendly**: Intuitive interface with clear options
+✅ **Quick Add**: Marketing channels can be added with one click
 
 ## 🏃‍♂️ Quick Start
 

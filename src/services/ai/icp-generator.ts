@@ -9,13 +9,284 @@ import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
 import { ReviewAnalyzer } from './review-analyzer';
 
+// Enhanced ICP types for Instruction Framework
+export interface ICPContext {
+  type: 'B2B' | 'B2C';
+  confidence: number;
+  reasoning: string;
+}
+
+export interface ICPAttributes {
+  // B2B Attributes
+  firmographics?: {
+    companySize: string;
+    industry: string;
+    revenue: string;
+    employeeCount: string;
+  };
+  technographics?: {
+    technologyStack: string[];
+    digitalMaturity: string;
+    automationLevel: string;
+  };
+  growthStage?: string;
+  decisionMakingStructure?: string;
+  buyingCycle?: string;
+  purchaseMotivations?: string[];
+
+  // B2C Attributes
+  demographics?: {
+    age: string;
+    gender: string;
+    location: string;
+    income: string;
+    education: string;
+  };
+  psychographics?: {
+    interests: string[];
+    values: string[];
+    lifestyle: string;
+    personality: string;
+  };
+  behavioralData?: {
+    onlineHabits: string[];
+    purchasingBehavior: string;
+    brandPreferences: string[];
+  };
+  triggers?: string[];
+}
+
+export interface ICPTemplate {
+  name: string;
+  description: string;
+  attributes: ICPAttributes;
+  context: 'B2B' | 'B2C';
+}
+
 export class ICPGenerator {
   private ollamaClient: OllamaClient;
+
+  // ICP Templates from Instruction Framework
+  private b2bTemplates: ICPTemplate[] = [
+    {
+      name: 'Startup Innovators',
+      description: 'Small, agile, high experimentation rate.',
+      context: 'B2B',
+      attributes: {
+        firmographics: {
+          companySize: 'Startup',
+          industry: 'Technology',
+          revenue: '< $1M',
+          employeeCount: '< 50',
+        },
+        growthStage: 'Early Stage',
+        decisionMakingStructure: 'Fast decisions',
+        buyingCycle: 'Quick evaluation',
+        purchaseMotivations: [
+          'Innovation',
+          'Speed to market',
+          'Cost efficiency',
+        ],
+      },
+    },
+    {
+      name: 'Process Optimizers',
+      description: 'Medium-sized, seeking efficiency.',
+      context: 'B2B',
+      attributes: {
+        firmographics: {
+          companySize: 'Scale-up',
+          industry: 'Mixed',
+          revenue: '$1M - $10M',
+          employeeCount: '50-200',
+        },
+        growthStage: 'Scale-up stage',
+        decisionMakingStructure: 'Process-driven',
+        buyingCycle: 'Evaluation period',
+        purchaseMotivations: [
+          'Efficiency',
+          'Automation',
+          'Process improvement',
+        ],
+      },
+    },
+    {
+      name: 'Established Loyalists',
+      description: 'Large, risk-averse.',
+      context: 'B2B',
+      attributes: {
+        firmographics: {
+          companySize: 'Enterprise',
+          industry: 'Established',
+          revenue: '> $10M',
+          employeeCount: '> 500',
+        },
+        growthStage: 'Mature',
+        decisionMakingStructure: 'Committee-based',
+        buyingCycle: 'Long RFP cycles',
+        purchaseMotivations: [
+          'Risk mitigation',
+          'Proven solutions',
+          'Stability',
+        ],
+      },
+    },
+    {
+      name: 'Price-Driven Competitors',
+      description: 'Chooses lowest bidder.',
+      context: 'B2B',
+      attributes: {
+        firmographics: {
+          companySize: 'Mixed',
+          industry: 'Competitive',
+          revenue: 'Mixed',
+          employeeCount: 'Mixed',
+        },
+        decisionMakingStructure: 'Price-focused',
+        buyingCycle: 'Long RFP cycles',
+        purchaseMotivations: [
+          'Cost reduction',
+          'Budget constraints',
+          'Competitive pricing',
+        ],
+      },
+    },
+  ];
+
+  private b2cTemplates: ICPTemplate[] = [
+    {
+      name: 'Trend-Conscious Urbanite',
+      description: 'Young, city-based, social media active.',
+      context: 'B2C',
+      attributes: {
+        demographics: {
+          age: '20-30',
+          gender: 'Mixed',
+          location: 'Urban areas',
+          income: 'Middle income',
+          education: 'Bachelor degree',
+        },
+        psychographics: {
+          interests: ['Technology', 'Social media', 'Trends'],
+          values: ['Innovation', 'Social connection', 'Self-expression'],
+          lifestyle: 'Urban professional',
+          personality: 'Early adopter',
+        },
+        behavioralData: {
+          onlineHabits: ['Social media', 'Mobile apps', 'Online shopping'],
+          purchasingBehavior: 'Impulse-driven',
+          brandPreferences: ['Trendy brands', 'Social media presence'],
+        },
+        triggers: [
+          'Social media trends',
+          'Peer recommendations',
+          'Limited time offers',
+        ],
+      },
+    },
+    {
+      name: 'Price-Conscious Family',
+      description: 'Family-oriented, seeks deals.',
+      context: 'B2C',
+      attributes: {
+        demographics: {
+          age: '30-50',
+          gender: 'Mixed',
+          location: 'Suburban',
+          income: 'Middle income',
+          education: 'Mixed',
+        },
+        psychographics: {
+          interests: ['Family activities', 'Budgeting', 'Value'],
+          values: ['Family', 'Financial security', 'Practicality'],
+          lifestyle: 'Family-focused',
+          personality: 'Practical',
+        },
+        behavioralData: {
+          onlineHabits: [
+            'Email newsletters',
+            'Comparison shopping',
+            'Family apps',
+          ],
+          purchasingBehavior: 'Research-driven',
+          brandPreferences: ['Value brands', 'Family-friendly'],
+        },
+        triggers: ['Sales and discounts', 'Family needs', 'Seasonal events'],
+      },
+    },
+    {
+      name: 'Quality-Focused Hobbyist',
+      description: 'Invests in passion.',
+      context: 'B2C',
+      attributes: {
+        demographics: {
+          age: '35-65',
+          gender: 'Mixed',
+          location: 'Mixed',
+          income: 'Middle to high income',
+          education: 'Mixed',
+        },
+        psychographics: {
+          interests: ['Niche hobbies', 'Quality products', 'Expertise'],
+          values: ['Quality', 'Expertise', 'Passion'],
+          lifestyle: 'Hobby-focused',
+          personality: 'Enthusiast',
+        },
+        behavioralData: {
+          onlineHabits: [
+            'Specialized forums',
+            'Expert reviews',
+            'Niche communities',
+          ],
+          purchasingBehavior: 'Research-intensive',
+          brandPreferences: ['Premium brands', 'Expert recommendations'],
+        },
+        triggers: [
+          'New product releases',
+          'Expert reviews',
+          'Community recommendations',
+        ],
+      },
+    },
+    {
+      name: 'Impulse Buyer',
+      description: 'Quick, emotion-driven purchases.',
+      context: 'B2C',
+      attributes: {
+        demographics: {
+          age: '18-45',
+          gender: 'Mixed',
+          location: 'Mixed',
+          income: 'Mixed',
+          education: 'Mixed',
+        },
+        psychographics: {
+          interests: ['Entertainment', 'Shopping', 'Social media'],
+          values: ['Instant gratification', 'Social status', 'Entertainment'],
+          lifestyle: 'Fast-paced',
+          personality: 'Impulsive',
+        },
+        behavioralData: {
+          onlineHabits: [
+            'Social media',
+            'Shopping apps',
+            'Entertainment platforms',
+          ],
+          purchasingBehavior: 'Emotion-driven',
+          brandPreferences: ['Popular brands', 'Trendy products'],
+        },
+        triggers: ['Emotional appeals', 'Limited time offers', 'Social proof'],
+      },
+    },
+  ];
 
   constructor() {
     this.ollamaClient = OllamaClient.getInstance();
   }
 
+  /**
+   * Enhanced ICP generation implementing the Instruction Framework
+   */
   async generateICPs(
     competitors: CompetitorData[],
     reviews: CustomerReview[],
@@ -25,7 +296,7 @@ export class ICPGenerator {
   }
 
   /**
-   * Enhanced ICP generation that returns Apify-based ICPs with data source tracking
+   * Enhanced ICP generation that implements the Instruction Framework
    */
   async generateApifyBasedICPs(
     competitors: CompetitorData[],
@@ -33,7 +304,7 @@ export class ICPGenerator {
     additionalContext: string = '',
     dataSources?: ApifyDataSource[],
   ): Promise<ApifyBasedICP[]> {
-    console.log(`🎯 Starting Apify-based ICP generation:`);
+    console.log(`🎯 Starting Instruction Framework ICP generation:`);
     console.log(`   🏢 Competitors: ${competitors.length}`);
     console.log(`   📝 Reviews: ${reviews.length}`);
     console.log(`   📊 Apify Data Sources: ${dataSources?.length || 0}`);
@@ -69,156 +340,369 @@ export class ICPGenerator {
     }
 
     try {
-      const competitorInfo = competitors
-        .map((c) => `${c.name} (${c.website})`)
-        .join('\n');
-      const reviewTexts = reviews.map((r) => r.text).join('\n');
-
-      // Enhanced review analysis using ReviewAnalyzer
-      console.log(`🔍 Analyzing reviews for ICP insights...`);
-      const reviewAnalysis = ReviewAnalyzer.analyzeBatch(reviews);
-      const icpInsights = ReviewAnalyzer.extractICPInsights(reviews);
-
-      console.log(`📊 Review analysis completed:`);
-      console.log(
-        `   📈 Sentiment: ${reviewAnalysis.sentimentDistribution.positive} positive, ${reviewAnalysis.sentimentDistribution.negative} negative`,
-      );
-      console.log(
-        `   🎯 Top pain points: ${reviewAnalysis.topPainPoints
-          .slice(0, 3)
-          .map((p) => p.point)
-          .join(', ')}`,
-      );
-      console.log(
-        `   👥 Customer segments: ${reviewAnalysis.customerSegments
-          .slice(0, 3)
-          .map((s) => s.segment)
-          .join(', ')}`,
-      );
-
-      console.log(`📝 Building enhanced prompt...`);
-      const prompt = this.buildApifyEnhancedICPPrompt(
-        competitorInfo,
-        reviewTexts,
+      // Step 1: Determine Context (B2B or B2C)
+      console.log(`🔍 Determining B2B/B2C context...`);
+      const context = await this.determineContext(
+        competitors,
+        reviews,
         additionalContext,
-        dataSources,
-        reviewAnalysis,
-        icpInsights,
+      );
+      console.log(
+        `   📊 Context: ${context.type} (confidence: ${context.confidence}%)`,
       );
 
-      console.log(`📤 Sending to ICP generator...`);
-      const startTime = Date.now();
-      const responseText = await this.ollamaClient.generateResponse(prompt);
-      const endTime = Date.now();
+      // Step 2: Select Attribute Set
+      console.log(`🎯 Selecting attribute set for ${context.type}...`);
+      const attributeSet = this.selectAttributeSet(context.type);
 
-      console.log(`✅ ICP generation completed:`);
-      console.log(`   ⏱️  Duration: ${endTime - startTime}ms`);
-      console.log(`   📊 Response length: ${responseText.length} chars`);
+      // Step 3: Analyze Data
+      console.log(`📊 Analyzing data with ${context.type} attributes...`);
+      const analysis = await this.analyzeDataWithAttributes(
+        competitors,
+        reviews,
+        additionalContext,
+        attributeSet,
+        context,
+      );
 
-      if (!responseText || responseText.trim().length === 0) {
-        throw AIServiceErrorFactory.createICPGenerationError(
-          'LLM_UNAVAILABLE',
-          'LLM returned empty response. Please check that Ollama is running and the model is available.',
-          { prompt: prompt.substring(0, 200) + '...' },
-        );
-      }
+      // Step 4: Assign ICP Types
+      console.log(`🏷️ Assigning ICP types...`);
+      const icpTypes = this.assignICPTypes(analysis, context.type);
 
-      console.log(`🔍 Parsing ICP response...`);
-      const icps = this.parseICPResponse(responseText);
+      // Step 5: Generate Output
+      console.log(`📝 Generating ICP profiles...`);
+      const icps = await this.generateICPsFromTypes(
+        icpTypes,
+        analysis,
+        dataSources,
+      );
 
-      console.log(`✅ ICP parsing finished:`);
+      console.log(`✅ Instruction Framework ICP generation completed:`);
       console.log(`   👥 ICP profiles created: ${icps.length}`);
 
-      if (icps.length === 0) {
-        throw AIServiceErrorFactory.createICPGenerationError(
-          'PARSING_FAILED',
-          'Failed to parse any valid ICPs from LLM response',
-          {
-            responseLength: responseText.length,
-            responsePreview: responseText.substring(0, 500) + '...',
-          },
-        );
-      }
-
-      // Convert to ApifyBasedICP format with data source tracking
-      const apifyBasedICPs: ApifyBasedICP[] = icps.map((icp) => ({
-        ...icp,
-        dataSources: dataSources || [],
-        confidence: this.calculateConfidence(reviews, dataSources),
-        marketInsights: this.extractMarketInsights(reviews, dataSources),
-      }));
-
-      return apifyBasedICPs;
+      return icps;
     } catch (error) {
-      if (error instanceof Error && 'code' in error) {
-        // Re-throw our custom errors
-        throw error;
-      }
-
-      console.error(`❌ ICP generation failed:`);
-      console.error(`   🔍 Error:`, error);
-      throw AIServiceErrorFactory.createICPGenerationError(
-        'ICP_GENERATION_FAILED',
-        `ICP generation failed: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-        {
-          competitorCount: competitors.length,
-          reviewCount: reviews.length,
-          hasAdditionalContext: additionalContext.length > 0,
-        },
-        error instanceof Error ? error : undefined,
-      );
+      console.error(`❌ ICP generation failed:`, error);
+      throw error;
     }
   }
 
-  private buildApifyEnhancedICPPrompt(
+  /**
+   * Step 1: Determine Context (B2B or B2C)
+   */
+  private async determineContext(
+    competitors: CompetitorData[],
+    reviews: CustomerReview[],
+    additionalContext: string,
+  ): Promise<ICPContext> {
+    const prompt = `Analyze the following data to determine if this is a B2B or B2C context:
+
+Competitors: ${competitors.map((c) => `${c.name} (${c.website})`).join('\n')}
+Reviews: ${reviews
+      .slice(0, 5)
+      .map((r) => r.text)
+      .join('\n')}
+Additional Context: ${additionalContext}
+
+B2B Indicators:
+- Company names, business websites, enterprise solutions
+- Professional terminology, industry-specific language
+- Business pain points, ROI discussions, implementation concerns
+- Decision-making processes, procurement mentions
+
+B2C Indicators:
+- Individual consumer language, personal experiences
+- Product reviews, personal recommendations
+- Lifestyle mentions, personal preferences
+- Individual purchasing decisions
+
+Respond with JSON:
+{
+  "type": "B2B" or "B2C",
+  "confidence": 0-100,
+  "reasoning": "explanation of your decision"
+}`;
+
+    try {
+      const response = await this.ollamaClient.generateResponse(prompt);
+      const context = JSON.parse(response);
+      return {
+        type: context.type === 'B2B' ? 'B2B' : 'B2C',
+        confidence: Math.min(100, Math.max(0, context.confidence || 50)),
+        reasoning: context.reasoning || 'Analysis based on data patterns',
+      };
+    } catch (error) {
+      console.warn('Context detection failed, defaulting to B2B:', error);
+      return {
+        type: 'B2B',
+        confidence: 50,
+        reasoning: 'Default fallback due to analysis error',
+      };
+    }
+  }
+
+  /**
+   * Step 2: Select Attribute Set
+   */
+  private selectAttributeSet(contextType: 'B2B' | 'B2C'): string[] {
+    if (contextType === 'B2B') {
+      return [
+        'firmographics',
+        'technographics',
+        'growthStage',
+        'decisionMakingStructure',
+        'buyingCycle',
+        'purchaseMotivations',
+      ];
+    } else {
+      return ['demographics', 'psychographics', 'behavioralData', 'triggers'];
+    }
+  }
+
+  /**
+   * Step 3: Analyze Data with Attributes
+   */
+  private async analyzeDataWithAttributes(
+    competitors: CompetitorData[],
+    reviews: CustomerReview[],
+    additionalContext: string,
+    attributeSet: string[],
+    context: ICPContext,
+  ): Promise<Record<string, unknown>> {
+    const competitorInfo = competitors
+      .map((c) => `${c.name} (${c.website})`)
+      .join('\n');
+    const reviewTexts = reviews.map((r) => r.text).join('\n');
+
+    // Enhanced review analysis
+    const reviewAnalysis = ReviewAnalyzer.analyzeBatch(reviews);
+    const icpInsights = ReviewAnalyzer.extractICPInsights(reviews);
+
+    const prompt = this.buildInstructionFrameworkPrompt(
+      competitorInfo,
+      reviewTexts,
+      additionalContext,
+      attributeSet,
+      context,
+      reviewAnalysis,
+      icpInsights,
+    );
+
+    const response = await this.ollamaClient.generateResponse(prompt);
+    return JSON.parse(response);
+  }
+
+  /**
+   * Step 4: Assign ICP Types
+   */
+  private assignICPTypes(
+    analysis: Record<string, unknown>,
+    contextType: 'B2B' | 'B2C',
+  ): string[] {
+    const templates =
+      contextType === 'B2B' ? this.b2bTemplates : this.b2cTemplates;
+
+    // Simple matching logic - in production, this would be more sophisticated
+    const matchedTypes: string[] = [];
+
+    if (contextType === 'B2B') {
+      const companySize =
+        typeof analysis.companySize === 'string' ? analysis.companySize : '';
+      const employeeCount =
+        typeof analysis.employeeCount === 'number' ? analysis.employeeCount : 0;
+      const decisionMaking =
+        typeof analysis.decisionMaking === 'string'
+          ? analysis.decisionMaking
+          : '';
+      const riskAversion = Boolean(analysis.riskAversion);
+      const priceSensitivity = Boolean(analysis.priceSensitivity);
+      const budgetFocus = Boolean(analysis.budgetFocus);
+
+      if (companySize.includes('startup') || employeeCount < 50) {
+        matchedTypes.push('Startup Innovators');
+      }
+      if (decisionMaking === 'process-driven' || employeeCount >= 50) {
+        matchedTypes.push('Process Optimizers');
+      }
+      if (employeeCount > 500 || riskAversion) {
+        matchedTypes.push('Established Loyalists');
+      }
+      if (priceSensitivity || budgetFocus) {
+        matchedTypes.push('Price-Driven Competitors');
+      }
+    } else {
+      const age = typeof analysis.age === 'string' ? analysis.age : '';
+      const socialMediaActive = Boolean(analysis.socialMediaActive);
+      const familyOriented = Boolean(analysis.familyOriented);
+      const priceConscious = Boolean(analysis.priceConscious);
+      const qualityFocused = Boolean(analysis.qualityFocused);
+      const expertiseSeeking = Boolean(analysis.expertiseSeeking);
+      const impulseDriven = Boolean(analysis.impulseDriven);
+      const emotionDriven = Boolean(analysis.emotionDriven);
+
+      if (age.includes('20-30') || socialMediaActive) {
+        matchedTypes.push('Trend-Conscious Urbanite');
+      }
+      if (familyOriented || priceConscious) {
+        matchedTypes.push('Price-Conscious Family');
+      }
+      if (qualityFocused || expertiseSeeking) {
+        matchedTypes.push('Quality-Focused Hobbyist');
+      }
+      if (impulseDriven || emotionDriven) {
+        matchedTypes.push('Impulse Buyer');
+      }
+    }
+
+    // Ensure we have at least 3 types
+    while (matchedTypes.length < 3) {
+      const availableTypes = templates
+        .map((t) => t.name)
+        .filter((name) => !matchedTypes.includes(name));
+      if (availableTypes.length > 0) {
+        matchedTypes.push(availableTypes[0]);
+      } else {
+        break;
+      }
+    }
+
+    return matchedTypes.slice(0, 3);
+  }
+
+  /**
+   * Step 5: Generate ICPs from Types
+   */
+  private async generateICPsFromTypes(
+    icpTypes: string[],
+    analysis: Record<string, unknown>,
+    dataSources?: ApifyDataSource[],
+  ): Promise<ApifyBasedICP[]> {
+    const templates = [...this.b2bTemplates, ...this.b2cTemplates];
+    const icps: ApifyBasedICP[] = [];
+
+    for (const typeName of icpTypes) {
+      const template = templates.find((t) => t.name === typeName);
+      if (template) {
+        const icp = this.createICPFromTemplate(template, analysis, dataSources);
+        icps.push(icp);
+      }
+    }
+
+    return icps;
+  }
+
+  /**
+   * Create ICP from template
+   */
+  private createICPFromTemplate(
+    template: ICPTemplate,
+    analysis: Record<string, unknown>,
+    dataSources?: ApifyDataSource[],
+  ): ApifyBasedICP {
+    // Convert template to ICP format
+    const icp: ApifyBasedICP = {
+      name: template.name,
+      description: template.description,
+      demographics: {
+        age: template.attributes.demographics?.age || '25-45',
+        gender: template.attributes.demographics?.gender || 'Mixed',
+        location: template.attributes.demographics?.location || 'Mixed',
+        income: template.attributes.demographics?.income || 'Middle income',
+        education: template.attributes.demographics?.education || 'Mixed',
+      },
+      psychographics: {
+        interests: template.attributes.psychographics?.interests || [
+          'Business',
+          'Technology',
+        ],
+        values: template.attributes.psychographics?.values || [
+          'Quality',
+          'Efficiency',
+        ],
+        lifestyle:
+          template.attributes.psychographics?.lifestyle || 'Professional',
+        painPoints: Array.isArray(analysis.painPoints)
+          ? (analysis.painPoints as string[])
+          : ['Time constraints', 'Complex solutions'],
+      },
+      behavior: {
+        onlineHabits: template.attributes.behavioralData?.onlineHabits || [
+          'Social media',
+          'Professional networks',
+        ],
+        purchasingBehavior:
+          template.attributes.behavioralData?.purchasingBehavior ||
+          'Research-driven decisions',
+        brandPreferences: template.attributes.behavioralData
+          ?.brandPreferences || ['Established brands', 'Innovative companies'],
+      },
+      goals: Array.isArray(analysis.goals)
+        ? (analysis.goals as string[])
+        : ['Business growth', 'Efficiency improvement'],
+      challenges: Array.isArray(analysis.challenges)
+        ? (analysis.challenges as string[])
+        : ['Finding the right solution', 'Implementation time'],
+      preferredChannels: this.generatePreferredChannelsFromTemplate(
+        template,
+        analysis,
+      ),
+      dataSources: dataSources || [],
+      confidence: this.calculateConfidence(
+        Array.isArray(analysis.reviews)
+          ? (analysis.reviews as CustomerReview[])
+          : [],
+        dataSources,
+      ),
+      marketInsights: this.extractMarketInsights(
+        Array.isArray(analysis.reviews)
+          ? (analysis.reviews as CustomerReview[])
+          : [],
+        dataSources,
+      ),
+    };
+
+    return icp;
+  }
+
+  /**
+   * Build Instruction Framework prompt
+   */
+  private buildInstructionFrameworkPrompt(
     competitorInfo: string,
     reviewTexts: string,
     additionalContext: string,
-    dataSources?: ApifyDataSource[],
-    reviewAnalysis?: any,
-    icpInsights?: any,
+    attributeSet: string[],
+    context: ICPContext,
+    reviewAnalysis?: Record<string, unknown>,
+    icpInsights?: Record<string, unknown>,
   ): string {
-    const dataSourceInfo = dataSources?.length
-      ? this.formatDataSourceInfo(dataSources)
-      : '';
-
-    return `Create 3 Ideal Customer Profile (ICP) profiles based on the following Apify Google Maps collected data. This data comes from structured Google Maps reviews, providing high-quality customer insights.
-
-${dataSourceInfo}
+    return `Analyze the following data using the ${
+      context.type
+    } attribute set: ${attributeSet.join(', ')}
 
 Competitors:
 ${competitorInfo}
 
-Customer Reviews & Market Data (from Apify Google Maps):
+Customer Reviews:
 ${reviewTexts}
+
+Additional Context:
+${additionalContext}
 
 ${
   reviewAnalysis
     ? `
-ENHANCED REVIEW ANALYSIS:
-Sentiment Distribution: ${
-        reviewAnalysis.sentimentDistribution.positive
-      } positive, ${reviewAnalysis.sentimentDistribution.negative} negative, ${
-        reviewAnalysis.sentimentDistribution.neutral
-      } neutral
-Average Rating: ${reviewAnalysis.averageRating.toFixed(1)}/5
-Top Pain Points: ${reviewAnalysis.topPainPoints
-        .slice(0, 5)
-        .map((p) => p.point)
-        .join(', ')}
-Customer Segments: ${reviewAnalysis.customerSegments
-        .slice(0, 5)
-        .map((s) => s.segment)
-        .join(', ')}
-Common Topics: ${reviewAnalysis.commonTopics
-        .slice(0, 5)
-        .map((t) => t.topic)
-        .join(', ')}
-Emotional Trends: ${reviewAnalysis.emotionalTrends
+Review Analysis:
+- Sentiment: ${reviewAnalysis.sentimentDistribution.positive} positive, ${
+        reviewAnalysis.sentimentDistribution.negative
+      } negative
+- Pain Points: ${reviewAnalysis.topPainPoints
         .slice(0, 3)
-        .map((e) => e.emotion)
+        .map((p: any) => p.point)
+        .join(', ')}
+- Customer Segments: ${reviewAnalysis.customerSegments
+        .slice(0, 3)
+        .map((s: any) => s.segment)
         .join(', ')}
 `
     : ''
@@ -227,94 +711,80 @@ Emotional Trends: ${reviewAnalysis.emotionalTrends
 ${
   icpInsights
     ? `
-ICP-RELEVANT INSIGHTS:
-Demographics: ${icpInsights.demographics.join(', ')}
-Psychographics: ${icpInsights.psychographics.join(', ')}
-Pain Points: ${icpInsights.painPoints.slice(0, 5).join(', ')}
-Goals: ${icpInsights.goals.join(', ')}
-Preferred Channels: ${icpInsights.preferredChannels.join(', ')}
-Purchasing Behavior: ${icpInsights.purchasingBehavior.join(', ')}
+ICP Insights:
+- Demographics: ${icpInsights.demographics.join(', ')}
+- Psychographics: ${icpInsights.psychographics.join(', ')}
+- Goals: ${icpInsights.goals.join(', ')}
 `
     : ''
 }
 
-Additional Context:
-${additionalContext}
+Analyze the data and extract the following ${context.type} attributes:
 
-IMPORTANT: This data was collected via Apify Google Maps API, ensuring accuracy and relevance. Use this structured data to create precise customer profiles.
+${
+  context.type === 'B2B'
+    ? `
+B2B Attributes:
+- Firmographics: company size, industry, revenue, employee count
+- Technographics: technology stack, digital maturity, automation level
+- Growth Stage: startup, scale-up, mature
+- Decision Making Structure: fast decisions, process-driven, committee-based
+- Buying Cycle: quick evaluation, evaluation period, long RFP cycles
+- Purchase Motivations: innovation, efficiency, risk mitigation, cost reduction
+`
+    : `
+B2C Attributes:
+- Demographics: age, gender, location, income, education
+- Psychographics: interests, values, lifestyle, personality
+- Behavioral Data: online habits, purchasing behavior, brand preferences
+- Triggers: social media trends, sales, expert reviews, emotional appeals
+`
+}
 
-Respond ONLY with valid JSON array containing exactly 3 ICP objects. Each ICP must have this exact structure:
-
-[
-  {
-    "name": "Profile name",
-    "description": "A short, marketing-friendly paragraph summarizing who they are, what they care about, and why they buy",
-    "demographics": {
-      "age": "Age range (e.g., 25-35, 35-45, 45-55, 55+)",
-      "gender": "Male, Female, or Mixed (based on review data patterns)",
-      "location": "Location",
-      "income": "Income level",
-      "education": "Education level"
-    },
-    "psychographics": {
-      "interests": ["interest1", "interest2"],
-      "values": ["value1", "value2"],
-      "lifestyle": "Lifestyle description",
-      "painPoints": ["pain1", "pain2"]
-    },
-    "behavior": {
-      "onlineHabits": ["habit1", "habit2"],
-      "purchasingBehavior": "Purchasing behavior description",
-      "brandPreferences": ["brand1", "brand2"]
-    },
-    "goals": ["goal1", "goal2"],
-    "challenges": ["challenge1", "challenge2"],
-    "preferredChannels": ["channel1", "channel2", "channel3"]
+Respond with JSON containing the extracted attributes and any additional insights for ICP generation.`;
   }
-]
 
-Apify Google Maps-Enhanced Analysis Instructions:
-- Leverage the structured Google Maps data to identify authentic customer patterns
-- Use platform-specific insights (Google Maps reviews) to understand channel preferences
-- Extract demographic signals from review language and context
-- Identify pain points from actual customer complaints and feedback
-- Use Google Maps data to validate trends and opportunities
+  /**
+   * Generate preferred channels based on template and analysis
+   */
+  private generatePreferredChannelsFromTemplate(
+    template: ICPTemplate,
+    analysis: Record<string, unknown>,
+  ): string[] {
+    const channels: string[] = [];
 
-IMPORTANT AGE ANALYSIS INSTRUCTIONS:
-- Analyze the review data for age indicators (language complexity, cultural references, technology usage)
-- Consider writing style, formality, and life stage indicators
-- Look for student indicators (student, university, school) → 18-25 age range
-- Look for young professional indicators (work, career, apartment) → 25-35 age range
-- Look for family indicators (family, child, apartment) → 30-50 age range
-- Look for senior indicators (retirement, health, grandchildren) → 55+ age range
-- Use specific age ranges like "25-35", "35-45", "45-55", "55+" rather than vague descriptions
+    if (template.context === 'B2B') {
+      channels.push(
+        'LinkedIn',
+        'Industry conferences',
+        'Trade shows',
+        'Email marketing',
+      );
+      if (template.attributes.firmographics?.companySize === 'Startup') {
+        channels.push(
+          'Startup events',
+          'Angel investor networks',
+          'Incubator programs',
+        );
+      }
+      if (template.attributes.firmographics?.companySize === 'Enterprise') {
+        channels.push(
+          'Executive networks',
+          'Industry associations',
+          'Consulting partnerships',
+        );
+      }
+    } else {
+      channels.push('Social media', 'Email marketing', 'Content marketing');
+      if (template.name === 'Trend-Conscious Urbanite') {
+        channels.push('Instagram', 'TikTok', 'Influencer partnerships');
+      }
+      if (template.name === 'Price-Conscious Family') {
+        channels.push('Email newsletters', 'Comparison sites', 'Family blogs');
+      }
+    }
 
-IMPORTANT GENDER ANALYSIS INSTRUCTIONS:
-- Analyze the review data for gender indicators (names, pronouns, context)
-- If reviews show clear male patterns (male names, male-oriented language), use "Male"
-- If reviews show clear female patterns (female names, female-oriented language), use "Female"
-- If mixed or unclear patterns, use "Mixed"
-- Consider Finnish names and cultural context in the reviews
-
-IMPORTANT: For "preferredChannels", consider the ICP's demographics, industry, and behavior to suggest specific marketing channels. Include a mix of:
-- Digital channels (social media platforms, websites, email, etc.)
-- Traditional channels (events, conferences, print media, etc.)
-- Industry-specific channels (trade shows, professional networks, etc.)
-- Content channels (blogs, podcasts, webinars, etc.)
-
-Examples of diverse channels:
-- LinkedIn, Twitter, Facebook, Instagram, TikTok
-- Industry conferences, trade shows, networking events
-- Google Ads, Facebook Ads, YouTube ads
-- Email marketing, newsletters, direct mail
-- Podcasts, webinars, YouTube channels
-- Industry publications, blogs, whitepapers
-- Professional associations, online communities
-- Referral programs, partnerships
-
-Choose channels that match the ICP's age, industry, online habits, and purchasing behavior.
-
-Respond with ONLY the JSON array, no additional text or explanations.`;
+    return channels.slice(0, 6); // Limit to 6 channels
   }
 
   private parseICPResponse(responseText: string): ICP[] {

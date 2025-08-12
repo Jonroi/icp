@@ -7,6 +7,77 @@ import { ReviewsService } from '@/services/reviews-service';
 import { LinkedInApifyService } from '@/services/linkedin-apify-service';
 
 export function useAppState() {
+  // Helper function to build comprehensive own company context
+  const buildOwnCompanyContext = (company: OwnCompany): string => {
+    if (!company.name && !company.website && !company.social) {
+      return '';
+    }
+
+    const sections: string[] = [];
+
+    // Basic Information
+    const basicInfo = [
+      `Name: ${company.name || 'N/A'}`,
+      `Website: ${company.website || 'N/A'}`,
+      `LinkedIn: ${company.social || 'N/A'}`,
+      `Location: ${company.location || 'N/A'}`,
+    ].join('\n');
+    sections.push(`Basic Information:\n${basicInfo}`);
+
+    // Business Information
+    const businessInfo = [
+      company.industry && `Industry: ${company.industry}`,
+      company.companySize && `Company Size: ${company.companySize}`,
+      company.targetMarket && `Target Market: ${company.targetMarket}`,
+      company.valueProposition &&
+        `Value Proposition: ${company.valueProposition}`,
+      company.mainOfferings && `Main Offerings: ${company.mainOfferings}`,
+      company.pricingModel && `Pricing Model: ${company.pricingModel}`,
+      company.uniqueFeatures && `Unique Features: ${company.uniqueFeatures}`,
+      company.marketSegment && `Market Segment: ${company.marketSegment}`,
+      company.competitiveAdvantages &&
+        `Competitive Advantages: ${company.competitiveAdvantages}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (businessInfo) {
+      sections.push(`Business Information:\n${businessInfo}`);
+    }
+
+    // Customer Insights
+    const customerInfo = [
+      company.currentCustomers &&
+        `Current Customers: ${company.currentCustomers}`,
+      company.successStories && `Success Stories: ${company.successStories}`,
+      company.painPointsSolved &&
+        `Pain Points Solved: ${company.painPointsSolved}`,
+      company.customerGoals && `Customer Goals: ${company.customerGoals}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (customerInfo) {
+      sections.push(`Customer Insights:\n${customerInfo}`);
+    }
+
+    // Marketing Context
+    const marketingInfo = [
+      company.currentMarketingChannels &&
+        `Current Marketing Channels: ${company.currentMarketingChannels}`,
+      company.marketingMessaging &&
+        `Marketing Messaging: ${company.marketingMessaging}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (marketingInfo) {
+      sections.push(`Marketing Context:\n${marketingInfo}`);
+    }
+
+    return sections.join('\n\n');
+  };
+
   const [competitors, setCompetitors] = useState<Competitor[]>([
     { name: '', website: '', social: '', location: '' },
     { name: '', website: '', social: '', location: '' },
@@ -765,14 +836,7 @@ Market Insights: ${linkedInData.insights}
       setIsLoading(true);
       setError(null);
       // Merge own company info into additional context so ICP generation is aware of it
-      const ownCompanyContext =
-        ownCompany.name || ownCompany.website || ownCompany.social
-          ? `Own Company Information:\nName: ${
-              ownCompany.name || 'N/A'
-            }\nWebsite: ${ownCompany.website || 'N/A'}\nLinkedIn: ${
-              ownCompany.social || 'N/A'
-            }`
-          : '';
+      const ownCompanyContext = buildOwnCompanyContext(ownCompany);
       const combinedContext = [ownCompanyContext, additionalContext]
         .filter((v) => Boolean(v && v.trim()))
         .join('\n\n');

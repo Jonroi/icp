@@ -3,6 +3,7 @@ export {
   ProjectService,
   type ProjectData,
   type Competitor,
+  type OwnCompany,
 } from './project-service';
 
 // Company search service

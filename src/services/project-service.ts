@@ -40,6 +40,23 @@ export interface OwnCompany {
   location?: string; // Location preference for the company
   reviews?: string; // Customer reviews for the company
   linkedInData?: string; // LinkedIn insights and data
+
+  // Enhanced business information for better ICP data
+  industry?: string; // Industry/sector the company operates in
+  companySize?: string; // Company size (startup, SME, enterprise, etc.)
+  targetMarket?: string; // Primary target market description
+  valueProposition?: string; // Core value proposition
+  mainOfferings?: string; // Main products/services offered
+  pricingModel?: string; // Pricing model (subscription, one-time, freemium, etc.)
+  uniqueFeatures?: string; // Unique features or competitive advantages
+  marketSegment?: string; // Market segment (B2B, B2C, specific verticals)
+  competitiveAdvantages?: string; // Key competitive advantages
+  currentCustomers?: string; // Description of current customer base
+  successStories?: string; // Customer success stories or testimonials
+  currentMarketingChannels?: string; // Current marketing channels being used
+  marketingMessaging?: string; // Current marketing messaging/positioning
+  painPointsSolved?: string; // Pain points the company solves for customers
+  customerGoals?: string; // Goals customers achieve with the company's help
 }
 
 export interface Review {
@@ -195,10 +212,37 @@ export class ProjectService {
   static saveOwnCompany(company: OwnCompany): void {
     const key = 'own-company';
     const payload = {
+      // Basic Information
       name: company.name,
       website: company.website,
       social: company.social,
       location: company.location,
+
+      // Enhanced Business Information
+      industry: company.industry,
+      companySize: company.companySize,
+      targetMarket: company.targetMarket,
+      valueProposition: company.valueProposition,
+      mainOfferings: company.mainOfferings,
+      pricingModel: company.pricingModel,
+      uniqueFeatures: company.uniqueFeatures,
+      marketSegment: company.marketSegment,
+      competitiveAdvantages: company.competitiveAdvantages,
+
+      // Customer Insights
+      currentCustomers: company.currentCustomers,
+      successStories: company.successStories,
+      painPointsSolved: company.painPointsSolved,
+      customerGoals: company.customerGoals,
+
+      // Marketing Context
+      currentMarketingChannels: company.currentMarketingChannels,
+      marketingMessaging: company.marketingMessaging,
+
+      // Additional Data
+      reviews: company.reviews,
+      linkedInData: company.linkedInData,
+
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(key, JSON.stringify(payload));
@@ -211,10 +255,36 @@ export class ProjectService {
     try {
       const parsed = JSON.parse(raw);
       return {
+        // Basic Information
         name: parsed.name || '',
         website: parsed.website || '',
         social: parsed.social || '',
         location: parsed.location || '',
+
+        // Enhanced Business Information
+        industry: parsed.industry || '',
+        companySize: parsed.companySize || '',
+        targetMarket: parsed.targetMarket || '',
+        valueProposition: parsed.valueProposition || '',
+        mainOfferings: parsed.mainOfferings || '',
+        pricingModel: parsed.pricingModel || '',
+        uniqueFeatures: parsed.uniqueFeatures || '',
+        marketSegment: parsed.marketSegment || '',
+        competitiveAdvantages: parsed.competitiveAdvantages || '',
+
+        // Customer Insights
+        currentCustomers: parsed.currentCustomers || '',
+        successStories: parsed.successStories || '',
+        painPointsSolved: parsed.painPointsSolved || '',
+        customerGoals: parsed.customerGoals || '',
+
+        // Marketing Context
+        currentMarketingChannels: parsed.currentMarketingChannels || '',
+        marketingMessaging: parsed.marketingMessaging || '',
+
+        // Additional Data
+        reviews: parsed.reviews || '',
+        linkedInData: parsed.linkedInData || '',
       };
     } catch (error) {
       console.error('Error loading own company:', error);
