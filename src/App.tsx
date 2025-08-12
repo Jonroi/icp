@@ -14,9 +14,7 @@ export default function App() {
   const {
     // State
     ownCompany,
-    ownCompanyStatus,
     ownCompanyReviewsStatus,
-    isFetchingOwnCompanyInfo,
     isFetchingOwnCompanyData,
     competitors,
     additionalContext,
@@ -38,7 +36,6 @@ export default function App() {
     // Actions
     onOwnCompanyChange,
     saveOwnCompany,
-    onFetchOwnCompanyInfo,
     onFetchOwnCompanyReviews,
     hasSavedOwnCompany,
     showOwnCompanyDropdown,
@@ -81,9 +78,7 @@ export default function App() {
         <TabsContent value='icp-generator'>
           <ICPGenerator
             ownCompany={ownCompany}
-            ownCompanyStatus={ownCompanyStatus}
             ownCompanyReviewsStatus={ownCompanyReviewsStatus}
-            isFetchingOwnCompanyInfo={isFetchingOwnCompanyInfo}
             isFetchingOwnCompanyData={isFetchingOwnCompanyData}
             competitors={competitors}
             additionalContext={additionalContext}
@@ -101,7 +96,6 @@ export default function App() {
             onAdditionalContextChange={setAdditionalContext}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
-            onFetchOwnCompanyInfo={onFetchOwnCompanyInfo}
             onFetchOwnCompanyReviews={onFetchOwnCompanyReviews}
             hasSavedOwnCompany={hasSavedOwnCompany}
             showOwnCompanyDropdown={showOwnCompanyDropdown}

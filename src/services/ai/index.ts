@@ -9,6 +9,7 @@ export { ReviewAnalyzer } from './review-analyzer';
 export { ReviewAgent } from './review-agent';
 export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
+export { CompanyDataFetcher } from './company-data-fetcher';
 // ChatGPT client removed - using Ollama only
 export { ApifyClient } from './apify-client';
 

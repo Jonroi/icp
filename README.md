@@ -5,7 +5,7 @@ A comprehensive tool for generating Ideal Customer Profiles (ICPs) using AI-powe
 ## 🚀 Features
 
 - **ICP Generator**: Create detailed customer profiles based on your company + competitor analysis and real customer data
-- **Enhanced Own Company Data**: Comprehensive business information collection with dropdown selectors for industry, company size, pricing model, market segment, and marketing channels
+- **Enhanced Own Company Data**: Comprehensive business information collection with dropdown selectors and automated data fetching from multiple sources (Google Maps, LinkedIn, etc.)
 - **ICP Profiles**: View and analyze AI-generated customer profiles with comprehensive demographics
 - **Google Maps Reviews Collector**: Gather real customer reviews from Google Maps using Apify integration
 - **Location-Based Review Search**: Choose between Global, continents, or country-specific review collection (150+ countries supported)
@@ -96,6 +96,55 @@ Quick-add buttons for common channels:
 ✅ **Better Analysis**: Standardized data improves ICP generation quality
 ✅ **User-Friendly**: Intuitive interface with clear options
 ✅ **Quick Add**: Marketing channels can be added with one click
+
+## 🤖 Automated Company Data Collection
+
+The application now includes **automated data fetching** from multiple sources to populate company information:
+
+### **Available Data Sources**
+
+#### **🔍 Google Maps Business Data**
+
+- Company name, website, and contact information
+- Business categories and industry classification
+- Location and address details
+- Business description and highlights
+- Estimated company size based on business type
+
+#### **💼 LinkedIn Company Data**
+
+- Official company profile information
+- Industry classification and company size
+- Company description and tagline
+- Specialties and main offerings
+- LinkedIn profile URL
+
+#### **💰 Crunchbase Data** (Future Implementation)
+
+- Funding information and company size
+- Industry classification and market data
+- Company description and key metrics
+- Founded date and location
+
+### **How Automated Data Collection Works**
+
+1. **Enter Company Name and Location**: User enters the company name and selects a specific location (not "Global")
+2. **Click Auto-Fill Button**: Click the ⚡ Auto-Fill button (only enabled when both name and location are provided)
+3. **Multi-Source Fetching**: System automatically queries:
+   - Google Maps for business details
+   - LinkedIn for company profile data
+   - (Future) Crunchbase for financial data
+4. **Intelligent Merging**: Data from multiple sources is intelligently combined
+5. **Form Population**: All available fields are automatically populated
+
+### **Benefits of Automated Data Collection**
+
+✅ **Time Saving**: No need to manually research and enter company data
+✅ **Accuracy**: Data comes from official sources (Google Maps, LinkedIn)
+✅ **Completeness**: Multiple sources provide comprehensive information
+✅ **Consistency**: Standardized data format across all companies
+✅ **Up-to-Date**: Real-time data from current sources
+✅ **Cost Effective**: Uses existing Apify credits efficiently
 
 ## 🏃‍♂️ Quick Start
 

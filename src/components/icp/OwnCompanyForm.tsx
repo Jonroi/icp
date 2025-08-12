@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,22 +13,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { OwnCompany } from '@/services/project-service';
+import { CompanyDataFetcher } from '@/services/ai/company-data-fetcher';
 import {
   ExternalLink,
   RefreshCw,
-  Search,
   Save,
   ChevronDown,
+  Zap,
+  Search,
 } from 'lucide-react';
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
-  isFetchingCompanyInfo: boolean;
   isFetchingData: boolean;
-  companyInfoStatus?: { success: boolean; message: string } | null;
   reviewsStatus?: { success: boolean; message: string } | null;
   onChange: (field: keyof OwnCompany, value: string) => void;
-  onFetchCompanyInfo: (companyName: string) => void;
   onFetchCustomerReviews: (companyName: string) => void;
   onSave?: (company: OwnCompany) => void;
   // Dropdown controls
@@ -40,12 +40,9 @@ interface OwnCompanyFormProps {
 
 export function OwnCompanyForm({
   company,
-  isFetchingCompanyInfo,
   isFetchingData,
-  companyInfoStatus,
   reviewsStatus,
   onChange,
-  onFetchCompanyInfo,
   onFetchCustomerReviews,
   onSave,
   hasSaved,
@@ -54,6 +51,73 @@ export function OwnCompanyForm({
   onToggleDropdown,
   onLoadSaved,
 }: OwnCompanyFormProps) {
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [autoFillStatus, setAutoFillStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const companyDataFetcher = new CompanyDataFetcher();
+
+  // Auto-fill company data from multiple sources
+  const handleAutoFill = async () => {
+    if (!company.name.trim()) {
+      setAutoFillStatus({
+        success: false,
+        message: 'Company name is required for auto-fill',
+      });
+      return;
+    }
+
+    if (!company.location || company.location === 'Global') {
+      setAutoFillStatus({
+        success: false,
+        message:
+          'Please select a specific location for better auto-fill results',
+      });
+      return;
+    }
+
+    setIsAutoFilling(true);
+    setAutoFillStatus(null);
+
+    try {
+      const result = await companyDataFetcher.fetchCompanyData(
+        company.name,
+        company.location,
+      );
+
+      if (result.success) {
+        // Apply the fetched data to the form
+        Object.entries(result.data).forEach(([key, value]) => {
+          if (value && key in company) {
+            onChange(key as keyof OwnCompany, value);
+          }
+        });
+
+        setAutoFillStatus({
+          success: true,
+          message: `Auto-filled data from ${result.sources.join(', ')} sources`,
+        });
+      } else {
+        setAutoFillStatus({
+          success: false,
+          message: `Auto-fill failed: ${
+            result.errors?.join(', ') || 'No data found'
+          }`,
+        });
+      }
+    } catch (error) {
+      setAutoFillStatus({
+        success: false,
+        message: `Auto-fill error: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
   // Predefined options for dropdowns
   const industryOptions = [
     'SaaS/Software',
@@ -194,17 +258,18 @@ export function OwnCompanyForm({
               <Button
                 variant='outline'
                 size='icon'
-                onClick={() => {
-                  if (company.name.trim()) {
-                    onFetchCompanyInfo(company.name);
-                  }
-                }}
-                disabled={isFetchingCompanyInfo || !company.name.trim()}
-                title='Fetch company info'>
-                {isFetchingCompanyInfo ? (
+                onClick={handleAutoFill}
+                disabled={
+                  isAutoFilling ||
+                  !company.name.trim() ||
+                  !company.location ||
+                  company.location === 'Global'
+                }
+                title='Auto-fill from multiple sources (Google Maps, LinkedIn, etc.) - requires company name and specific location'>
+                {isAutoFilling ? (
                   <RefreshCw className='h-4 w-4 animate-spin' />
                 ) : (
-                  <Search className='h-4 w-4' />
+                  <Zap className='h-4 w-4' />
                 )}
               </Button>
               <Button
@@ -226,20 +291,22 @@ export function OwnCompanyForm({
 
         <div className='space-y-2'>
           <p className='text-xs text-muted-foreground'>
-            Only the company name is required. All other fields are optional.
+            Company name and location is required, But for better results, fill
+            all fields or use Auto-Fill to get comprehensive data from multiple
+            sources
           </p>
           {company.name && !company.website && (
             <p className='text-xs text-muted-foreground'>
-              💡 Enter your company name and use Search to auto-fill optional
-              details
+              💡 Enter your company name and location, then use Auto-Fill to get
+              comprehensive data from multiple sources
             </p>
           )}
-          {companyInfoStatus && (
+          {autoFillStatus && (
             <p
               className={`text-xs ${
-                companyInfoStatus.success ? 'text-green-600' : 'text-orange-600'
+                autoFillStatus.success ? 'text-green-600' : 'text-orange-600'
               }`}>
-              {companyInfoStatus.message}
+              {autoFillStatus.message}
             </p>
           )}
         </div>

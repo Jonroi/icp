@@ -17,9 +17,7 @@ import type { OwnCompany } from '@/services/project-service';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
-  ownCompanyStatus?: { success: boolean; message: string } | null;
   ownCompanyReviewsStatus?: { success: boolean; message: string } | null;
-  isFetchingOwnCompanyInfo?: boolean;
   isFetchingOwnCompanyData?: boolean;
   competitors: Competitor[];
   additionalContext: string;
@@ -41,7 +39,6 @@ interface ICPGeneratorProps {
   onAdditionalContextChange: (context: string) => void;
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => void;
-  onFetchOwnCompanyInfo?: (companyName: string) => void;
   onFetchOwnCompanyReviews?: (companyName: string) => void;
   // Own company dropdown
   hasSavedOwnCompany?: () => boolean;
@@ -58,9 +55,7 @@ interface ICPGeneratorProps {
 
 export function ICPGenerator({
   ownCompany,
-  ownCompanyStatus,
   ownCompanyReviewsStatus,
-  isFetchingOwnCompanyInfo,
   isFetchingOwnCompanyData,
   competitors,
   additionalContext,
@@ -78,7 +73,6 @@ export function ICPGenerator({
   onAdditionalContextChange,
   onOwnCompanyChange,
   onSaveOwnCompany,
-  onFetchOwnCompanyInfo,
   onFetchOwnCompanyReviews,
   hasSavedOwnCompany,
   showOwnCompanyDropdown,
@@ -116,12 +110,9 @@ export function ICPGenerator({
         <div className='space-y-2'>
           <OwnCompanyForm
             company={ownCompany || { name: '', website: '', social: '' }}
-            isFetchingCompanyInfo={!!isFetchingOwnCompanyInfo}
             isFetchingData={!!isFetchingOwnCompanyData}
-            companyInfoStatus={ownCompanyStatus || null}
             reviewsStatus={ownCompanyReviewsStatus || null}
             onChange={(field, value) => onOwnCompanyChange?.(field, value)}
-            onFetchCompanyInfo={(name) => onFetchOwnCompanyInfo?.(name)}
             onFetchCustomerReviews={(name) => onFetchOwnCompanyReviews?.(name)}
             onSave={(company) => onSaveOwnCompany?.(company)}
             hasSaved={hasSavedOwnCompany?.()}

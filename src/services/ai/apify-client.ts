@@ -323,7 +323,7 @@ export class ApifyClient {
     return results.organic_results || [];
   }
 
-  private async performGoogleMapsSearch(
+  public async performGoogleMapsSearch(
     businessName: string,
     options: {
       location?: string;

@@ -180,7 +180,9 @@ export function CompetitorForm({
 
         <div className='space-y-2'>
           <p className='text-xs text-muted-foreground'>
-            Only the competitor name is required. All other fields are optional.
+            Competitor name and location is required, But for better results,
+            fill all fields or use Auto-Fill to get comprehensive data from
+            multiple sources
           </p>
           {competitor.name && !competitor.website && (
             <p className='text-xs text-muted-foreground'>

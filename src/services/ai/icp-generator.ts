@@ -484,7 +484,7 @@ Respond with JSON:
       additionalContext,
       attributeSet,
       context,
-      reviewAnalysis,
+      reviewAnalysis as unknown as Record<string, unknown>,
       icpInsights,
     );
 
@@ -642,10 +642,7 @@ Respond with JSON:
       challenges: Array.isArray(analysis.challenges)
         ? (analysis.challenges as string[])
         : ['Finding the right solution', 'Implementation time'],
-      preferredChannels: this.generatePreferredChannelsFromTemplate(
-        template,
-        analysis,
-      ),
+      preferredChannels: this.generatePreferredChannelsFromTemplate(template),
       dataSources: dataSources || [],
       confidence: this.calculateConfidence(
         Array.isArray(analysis.reviews)
@@ -693,17 +690,69 @@ ${
   reviewAnalysis
     ? `
 Review Analysis:
-- Sentiment: ${reviewAnalysis.sentimentDistribution.positive} positive, ${
-        reviewAnalysis.sentimentDistribution.negative
-      } negative
-- Pain Points: ${reviewAnalysis.topPainPoints
-        .slice(0, 3)
-        .map((p: any) => p.point)
-        .join(', ')}
-- Customer Segments: ${reviewAnalysis.customerSegments
-        .slice(0, 3)
-        .map((s: any) => s.segment)
-        .join(', ')}
+- Sentiment: ${
+        (reviewAnalysis as Record<string, unknown>).sentimentDistribution &&
+        typeof (reviewAnalysis as Record<string, unknown>)
+          .sentimentDistribution === 'object'
+          ? `${
+              (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution &&
+              typeof (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution === 'object' &&
+              (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution !== null
+                ? (
+                    (reviewAnalysis as Record<string, unknown>)
+                      .sentimentDistribution as Record<string, unknown>
+                  )?.positive || 0
+                : 0
+            } positive, ${
+              (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution &&
+              typeof (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution === 'object' &&
+              (reviewAnalysis as Record<string, unknown>)
+                .sentimentDistribution !== null
+                ? (
+                    (reviewAnalysis as Record<string, unknown>)
+                      .sentimentDistribution as Record<string, unknown>
+                  )?.negative || 0
+                : 0
+            } negative`
+          : 'N/A'
+      }
+- Pain Points: ${
+        (reviewAnalysis as Record<string, unknown>).topPainPoints &&
+        Array.isArray((reviewAnalysis as Record<string, unknown>).topPainPoints)
+          ? (
+              (reviewAnalysis as Record<string, unknown>)
+                .topPainPoints as unknown[]
+            )
+              .slice(0, 3)
+              .map(
+                (p: unknown) =>
+                  (p as Record<string, unknown>)?.point || 'Unknown',
+              )
+              .join(', ')
+          : 'N/A'
+      }
+- Customer Segments: ${
+        (reviewAnalysis as Record<string, unknown>).customerSegments &&
+        Array.isArray(
+          (reviewAnalysis as Record<string, unknown>).customerSegments,
+        )
+          ? (
+              (reviewAnalysis as Record<string, unknown>)
+                .customerSegments as unknown[]
+            )
+              .slice(0, 3)
+              .map(
+                (s: unknown) =>
+                  (s as Record<string, unknown>)?.segment || 'Unknown',
+              )
+              .join(', ')
+          : 'N/A'
+      }
 `
     : ''
 }
@@ -712,9 +761,19 @@ ${
   icpInsights
     ? `
 ICP Insights:
-- Demographics: ${icpInsights.demographics.join(', ')}
-- Psychographics: ${icpInsights.psychographics.join(', ')}
-- Goals: ${icpInsights.goals.join(', ')}
+- Demographics: ${
+        Array.isArray(icpInsights.demographics)
+          ? icpInsights.demographics.join(', ')
+          : 'N/A'
+      }
+- Psychographics: ${
+        Array.isArray(icpInsights.psychographics)
+          ? icpInsights.psychographics.join(', ')
+          : 'N/A'
+      }
+- Goals: ${
+        Array.isArray(icpInsights.goals) ? icpInsights.goals.join(', ') : 'N/A'
+      }
 `
     : ''
 }
@@ -749,7 +808,6 @@ Respond with JSON containing the extracted attributes and any additional insight
    */
   private generatePreferredChannelsFromTemplate(
     template: ICPTemplate,
-    analysis: Record<string, unknown>,
   ): string[] {
     const channels: string[] = [];
 
@@ -787,6 +845,7 @@ Respond with JSON containing the extracted attributes and any additional insight
     return channels.slice(0, 6); // Limit to 6 channels
   }
 
+  /*
   private parseICPResponse(responseText: string): ICP[] {
     console.log(`🔍 Parsing LLM response...`);
     console.log(`   📄 Response start: ${responseText.substring(0, 200)}...`);
@@ -848,7 +907,9 @@ Respond with JSON containing the extracted attributes and any additional insight
       );
     }
   }
+  */
 
+  /*
   private fixICPFields(icp: Partial<ICP>): ICP {
     return {
       name: icp.name || 'Unknown Profile',
@@ -893,7 +954,9 @@ Respond with JSON containing the extracted attributes and any additional insight
         : this.generatePreferredChannels(icp),
     };
   }
+  */
 
+  /*
   private generatePreferredChannels(icp: Partial<ICP>): string[] {
     const channels: string[] = [];
     const age = icp.demographics?.age || 'Mixed';
@@ -972,7 +1035,9 @@ Respond with JSON containing the extracted attributes and any additional insight
 
     return channels;
   }
+  */
 
+  /*
   private formatDataSourceInfo(dataSources: ApifyDataSource[]): string {
     const sourceInfo = dataSources
       .map((source) => {
@@ -987,6 +1052,7 @@ Respond with JSON containing the extracted attributes and any additional insight
 ${sourceInfo}
 `;
   }
+  */
 
   private calculateConfidence(
     reviews: CustomerReview[],
