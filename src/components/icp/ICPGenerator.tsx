@@ -12,12 +12,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Sparkles, Wand2 } from 'lucide-react';
 import { CompetitorForm } from './CompetitorForm';
 import type { Competitor } from './CompetitorForm';
-import { OwnCompanyForm, type OwnCompany } from './OwnCompanyForm';
+import { OwnCompanyForm } from './OwnCompanyForm';
+import type { OwnCompany } from '@/services/project-service';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
   ownCompanyStatus?: { success: boolean; message: string } | null;
-  isFetchingOwnCompany?: boolean;
+  ownCompanyReviewsStatus?: { success: boolean; message: string } | null;
+  isFetchingOwnCompanyInfo?: boolean;
+  isFetchingOwnCompanyData?: boolean;
   competitors: Competitor[];
   additionalContext: string;
   savedCompetitors: string[];
@@ -39,6 +42,7 @@ interface ICPGeneratorProps {
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => void;
   onFetchOwnCompanyInfo?: (companyName: string) => void;
+  onFetchOwnCompanyReviews?: (companyName: string) => void;
   // Own company dropdown
   hasSavedOwnCompany?: () => boolean;
   showOwnCompanyDropdown?: boolean;
@@ -55,7 +59,9 @@ interface ICPGeneratorProps {
 export function ICPGenerator({
   ownCompany,
   ownCompanyStatus,
-  isFetchingOwnCompany,
+  ownCompanyReviewsStatus,
+  isFetchingOwnCompanyInfo,
+  isFetchingOwnCompanyData,
   competitors,
   additionalContext,
   savedCompetitors,
@@ -73,6 +79,7 @@ export function ICPGenerator({
   onOwnCompanyChange,
   onSaveOwnCompany,
   onFetchOwnCompanyInfo,
+  onFetchOwnCompanyReviews,
   hasSavedOwnCompany,
   showOwnCompanyDropdown,
   onToggleOwnCompanyDropdown,
@@ -109,10 +116,13 @@ export function ICPGenerator({
         <div className='space-y-2'>
           <OwnCompanyForm
             company={ownCompany || { name: '', website: '', social: '' }}
-            isFetching={!!isFetchingOwnCompany}
-            status={ownCompanyStatus || null}
+            isFetchingCompanyInfo={!!isFetchingOwnCompanyInfo}
+            isFetchingData={!!isFetchingOwnCompanyData}
+            companyInfoStatus={ownCompanyStatus || null}
+            reviewsStatus={ownCompanyReviewsStatus || null}
             onChange={(field, value) => onOwnCompanyChange?.(field, value)}
-            onFetchInfo={(name) => onFetchOwnCompanyInfo?.(name)}
+            onFetchCompanyInfo={(name) => onFetchOwnCompanyInfo?.(name)}
+            onFetchCustomerReviews={(name) => onFetchOwnCompanyReviews?.(name)}
             onSave={(company) => onSaveOwnCompany?.(company)}
             hasSaved={hasSavedOwnCompany?.()}
             showDropdown={!!showOwnCompanyDropdown}

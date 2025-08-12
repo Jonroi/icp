@@ -38,6 +38,7 @@ export interface OwnCompany {
   website: string;
   social: string;
   location?: string; // Location preference for the company
+  reviews?: string; // Customer reviews for the company
 }
 
 export interface Review {

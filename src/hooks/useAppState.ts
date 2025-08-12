@@ -22,7 +22,13 @@ export function useAppState() {
     success: boolean;
     message: string;
   } | null>(null);
-  const [isFetchingOwnCompany, setIsFetchingOwnCompany] =
+  const [ownCompanyReviewsStatus, setOwnCompanyReviewsStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [isFetchingOwnCompanyInfo, setIsFetchingOwnCompanyInfo] =
+    useState<boolean>(false);
+  const [isFetchingOwnCompanyData, setIsFetchingOwnCompanyData] =
     useState<boolean>(false);
   const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState<
     number | null
@@ -392,7 +398,7 @@ export function useAppState() {
 
   const fetchOwnCompanyInfo = async (companyName: string) => {
     if (!companyName.trim()) return;
-    setIsFetchingOwnCompany(true);
+    setIsFetchingOwnCompanyInfo(true);
     try {
       const info = await CompanySearchService.searchCompanyOnline(companyName);
       if (info && info.name) {
@@ -448,7 +454,78 @@ export function useAppState() {
         message: errorMessage,
       });
     } finally {
-      setIsFetchingOwnCompany(false);
+      setIsFetchingOwnCompanyInfo(false);
+    }
+  };
+
+  const fetchOwnCompanyReviews = async (companyName: string) => {
+    if (!companyName.trim()) return;
+
+    setIsFetchingOwnCompanyData(true);
+
+    try {
+      const reviewsText = await ReviewsService.fetchCustomerReviews(
+        companyName,
+        ownCompany?.website,
+        {
+          location: ownCompany?.location, // Pass the location from own company data
+        },
+      );
+
+      // Count the number of reviews (lines)
+      const reviewCount = reviewsText
+        .split('\n')
+        .filter((line: string) => line.trim()).length;
+
+      setOwnCompany((prev) => ({
+        ...prev,
+        reviews: reviewsText,
+      }));
+
+      setOwnCompanyReviewsStatus({
+        success: true,
+        message: `✅ Fetched ${reviewCount} lines of data for ${companyName}, You can now generate ICPs`,
+      });
+    } catch (error) {
+      console.error('Failed to fetch own company data:', error);
+      let errorMessage = `Failed to fetch data for ${companyName}`;
+
+      // Handle custom error types
+      if (error instanceof Error && 'code' in error) {
+        const customError = error as any;
+        switch (customError.code) {
+          case 'INVALID_COMPANY_NAME':
+            errorMessage = `Invalid company name: ${customError.message}`;
+            break;
+          case 'INVALID_WEBSITE':
+            errorMessage = `Invalid website URL: ${customError.message}`;
+            break;
+          case 'NO_REVIEWS_FOUND':
+            errorMessage = `No reviews found for ${companyName}. The company may not have public reviews on supported platforms.`;
+            break;
+          case 'VALIDATION_FAILED':
+            errorMessage = `Found text but it doesn't appear to be customer reviews for ${companyName}`;
+            break;
+          case 'NETWORK_ERROR':
+            errorMessage = `Network error while fetching data for ${companyName}`;
+            break;
+          default:
+            errorMessage = `Error fetching data: ${customError.message}`;
+        }
+      } else if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = `Data fetch timeout for ${companyName} (25s limit)`;
+        } else if (error.message?.includes('Failed to fetch')) {
+          errorMessage = `Ollama not running. Please start Ollama first.`;
+        }
+      }
+
+      setOwnCompanyReviewsStatus({
+        success: false,
+        message: errorMessage,
+      });
+    } finally {
+      setIsFetchingOwnCompanyData(false);
     }
   };
 
@@ -589,7 +666,9 @@ export function useAppState() {
     // State
     ownCompany,
     ownCompanyStatus,
-    isFetchingOwnCompany,
+    ownCompanyReviewsStatus,
+    isFetchingOwnCompanyInfo,
+    isFetchingOwnCompanyData,
     showOwnCompanyDropdown,
     competitors,
     additionalContext,
@@ -617,6 +696,7 @@ export function useAppState() {
     saveOwnCompany,
     onOwnCompanyChange: handleOwnCompanyChange,
     onFetchOwnCompanyInfo: fetchOwnCompanyInfo,
+    onFetchOwnCompanyReviews: fetchOwnCompanyReviews,
     toggleOwnCompanyDropdown,
     loadSavedOwnCompany,
     setAdditionalContext,

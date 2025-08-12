@@ -15,7 +15,9 @@ export default function App() {
     // State
     ownCompany,
     ownCompanyStatus,
-    isFetchingOwnCompany,
+    ownCompanyReviewsStatus,
+    isFetchingOwnCompanyInfo,
+    isFetchingOwnCompanyData,
     competitors,
     additionalContext,
     isFetchingCompanyInfo,
@@ -37,6 +39,7 @@ export default function App() {
     onOwnCompanyChange,
     saveOwnCompany,
     onFetchOwnCompanyInfo,
+    onFetchOwnCompanyReviews,
     hasSavedOwnCompany,
     showOwnCompanyDropdown,
     toggleOwnCompanyDropdown,
@@ -79,7 +82,9 @@ export default function App() {
           <ICPGenerator
             ownCompany={ownCompany}
             ownCompanyStatus={ownCompanyStatus}
-            isFetchingOwnCompany={isFetchingOwnCompany}
+            ownCompanyReviewsStatus={ownCompanyReviewsStatus}
+            isFetchingOwnCompanyInfo={isFetchingOwnCompanyInfo}
+            isFetchingOwnCompanyData={isFetchingOwnCompanyData}
             competitors={competitors}
             additionalContext={additionalContext}
             savedCompetitors={savedCompetitors}
@@ -97,6 +102,7 @@ export default function App() {
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
             onFetchOwnCompanyInfo={onFetchOwnCompanyInfo}
+            onFetchOwnCompanyReviews={onFetchOwnCompanyReviews}
             hasSavedOwnCompany={hasSavedOwnCompany}
             showOwnCompanyDropdown={showOwnCompanyDropdown}
             onToggleOwnCompanyDropdown={toggleOwnCompanyDropdown}
