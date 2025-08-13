@@ -22,3 +22,8 @@ export { AIAssistantButton } from './ui/ai-assistant-button';
 export { EnhancedAIAssistantButton } from './ui/enhanced-ai-assistant-button';
 export { AI_ASSISTANTS } from './ui/ai-assistants-config';
 export { FloatingChat } from './ui/floating-chat';
+
+// Export new agent components
+export { AgentButton } from './agents/agent-button';
+export { AgentChat } from './agents/agent-chat';
+export { agentManager } from './agents/agent-manager';
