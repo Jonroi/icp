@@ -13,6 +13,9 @@
 /.next/
 /out/
 
+# vite/rollup build
+dist/
+
 # production
 /build
 
@@ -28,6 +31,9 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+
+# runtime local data
+data/*.json
 
 # vercel
 .vercel
