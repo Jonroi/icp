@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button } from './button';
+import { Input } from './input';
+import { Label } from './label';
 import {
   Select,
   SelectContent,
@@ -7,47 +8,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
+import { Button } from './button';
 import {
   getTestCompanyNames,
   getTestCompanyById,
 } from '@/services/test-companies-service';
 import type { OwnCompany } from '@/services/project-service';
-import { Building2, Loader2 } from 'lucide-react';
+import { Building2, Loader2, Plus, Save } from 'lucide-react';
 
 interface CompanySelectorProps {
+  value: string;
+  onChange: (field: keyof OwnCompany, value: string) => void;
   onCompanySelect: (company: OwnCompany) => void;
-  currentCompanyName?: string;
+  onSaveCompany?: (company: OwnCompany) => Promise<void>;
   className?: string;
 }
 
 export function CompanySelector({
+  value,
+  onChange,
   onCompanySelect,
-  currentCompanyName,
+  onSaveCompany,
   className = '',
 }: CompanySelectorProps) {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
     [],
   );
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [savedCompanies, setSavedCompanies] = useState<OwnCompany[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
 
   // Load available companies on component mount
   useEffect(() => {
     const loadCompanies = async () => {
       try {
         setIsLoadingCompanies(true);
-        const companyNames = await getTestCompanyNames();
-        setCompanies(companyNames);
 
-        // Set current company if it matches one of the test companies
-        if (currentCompanyName) {
-          const currentCompany = companyNames.find(
-            (c) => c.name === currentCompanyName,
-          );
-          if (currentCompany) {
-            setSelectedCompanyId(currentCompany.id);
-          }
+        // Load test companies
+        const testCompanyNames = await getTestCompanyNames();
+        setCompanies(testCompanyNames);
+
+        // Load saved companies from localStorage
+        const saved = localStorage.getItem('saved-companies');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setSavedCompanies(parsed);
         }
       } catch (error) {
         console.error('Error loading companies:', error);
@@ -57,15 +64,32 @@ export function CompanySelector({
     };
 
     loadCompanies();
-  }, [currentCompanyName]);
+  }, []);
 
   const handleCompanySelect = async (companyId: string) => {
     if (!companyId) return;
 
+    if (companyId === 'new') {
+      setIsCreatingNew(true);
+      return;
+    }
+
+    if (companyId === 'custom') {
+      setIsCreatingNew(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      setSelectedCompanyId(companyId);
 
+      // Check if it's a saved company
+      const savedCompany = savedCompanies.find((c) => c.id === companyId);
+      if (savedCompany) {
+        onCompanySelect(savedCompany);
+        return;
+      }
+
+      // Check if it's a test company
       const company = await getTestCompanyById(companyId);
       if (company) {
         onCompanySelect(company);
@@ -77,44 +101,131 @@ export function CompanySelector({
     }
   };
 
-  if (isLoadingCompanies) {
-    return (
-      <div
-        className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
-        <Loader2 className='h-4 w-4 animate-spin' />
-        Loading companies...
-      </div>
-    );
-  }
+  const handleSaveNewCompany = async () => {
+    if (!newCompanyName.trim() || !onSaveCompany) return;
 
-  if (companies.length === 0) {
-    return (
-      <div className={`text-sm text-muted-foreground ${className}`}>
-        No test companies available
-      </div>
-    );
-  }
+    try {
+      const newCompany: OwnCompany = {
+        id: `company-${Date.now()}`,
+        name: newCompanyName.trim(),
+        location: '',
+        website: '',
+        social: '',
+        industry: '',
+        companySize: '',
+        targetMarket: '',
+        valueProposition: '',
+        mainOfferings: '',
+        pricingModel: '',
+        uniqueFeatures: '',
+        marketSegment: '',
+        competitiveAdvantages: '',
+        currentCustomers: '',
+        successStories: '',
+        painPointsSolved: '',
+        customerGoals: '',
+        currentMarketingChannels: '',
+        marketingMessaging: '',
+      };
+
+      await onSaveCompany(newCompany);
+
+      // Add to saved companies
+      const updatedSaved = [...savedCompanies, newCompany];
+      setSavedCompanies(updatedSaved);
+      localStorage.setItem('saved-companies', JSON.stringify(updatedSaved));
+
+      // Select the new company
+      onCompanySelect(newCompany);
+
+      // Reset form
+      setNewCompanyName('');
+      setIsCreatingNew(false);
+    } catch (error) {
+      console.error('Error saving new company:', error);
+    }
+  };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <Building2 className='h-4 w-4 text-muted-foreground' />
-      <span className='text-sm text-muted-foreground'>Test Company:</span>
-      <Select
-        value={selectedCompanyId}
-        onValueChange={handleCompanySelect}
-        disabled={isLoading}>
-        <SelectTrigger className='w-64'>
-          <SelectValue placeholder='Select a test company' />
-        </SelectTrigger>
-        <SelectContent>
-          {companies.map((company) => (
-            <SelectItem key={company.id} value={company.id}>
-              {company.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {isLoading && <Loader2 className='h-4 w-4 animate-spin' />}
+    <div className={`space-y-2 ${className}`}>
+      <Label htmlFor='company-selector'>
+        Company{' '}
+        <span className='text-red-600' aria-hidden='true'>
+          *
+        </span>
+      </Label>
+
+      {isCreatingNew ? (
+        <div className='flex gap-2'>
+          <Input
+            placeholder='Enter company name'
+            value={newCompanyName}
+            onChange={(e) => setNewCompanyName(e.target.value)}
+            className='flex-1'
+          />
+          <Button
+            onClick={handleSaveNewCompany}
+            disabled={!newCompanyName.trim()}
+            size='sm'
+            className='flex items-center gap-2'>
+            <Save className='h-4 w-4' />
+            Save
+          </Button>
+          <Button
+            onClick={() => setIsCreatingNew(false)}
+            variant='outline'
+            size='sm'>
+            Cancel
+          </Button>
+        </div>
+      ) : (
+        <div className='flex gap-2'>
+          <div className='flex-1'>
+            <Select
+              onValueChange={handleCompanySelect}
+              disabled={isLoading || isLoadingCompanies}>
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Select or create a company' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='new' className='flex items-center gap-2'>
+                  <Plus className='h-4 w-4' />
+                  Create New Company
+                </SelectItem>
+
+                {savedCompanies.length > 0 && (
+                  <>
+                    <div className='px-2 py-1.5 text-sm font-semibold text-muted-foreground'>
+                      Your Companies
+                    </div>
+                    {savedCompanies.map((company) => (
+                      <SelectItem key={company.id} value={company.id || ''}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+
+                <div className='px-2 py-1.5 text-sm font-semibold text-muted-foreground'>
+                  Test Companies
+                </div>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id || ''}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(isLoading || isLoadingCompanies) && (
+            <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+          )}
+        </div>
+      )}
+
+      <p className='text-xs text-muted-foreground'>
+        Select an existing company or create a new one to get started.
+      </p>
     </div>
   );
 }

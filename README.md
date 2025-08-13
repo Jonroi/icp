@@ -109,7 +109,7 @@ npm run dev
 
 ## 🏗️ Project Structure
 
-```
+```text
 src/
 ├── components/
 │   ├── ui/              # UI components (buttons, inputs, etc.)

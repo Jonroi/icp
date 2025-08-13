@@ -22,8 +22,8 @@ export function ICPPopup({ isOpen, onClose }: ICPPopupProps) {
           <div>
             <h3 className='font-medium mb-2'>Ideal Customer Profile (ICP)</h3>
             <p className='text-sm text-muted-foreground mb-3'>
-              An ICP is a detailed description of your perfect customer - the
-              type of person or company that would benefit most from your
+              An ICP is a detailed description of your perfect customer &mdash;
+              the type of person or company that would benefit most from your
               product or service.
             </p>
           </div>
@@ -54,8 +54,8 @@ export function ICPPopup({ isOpen, onClose }: ICPPopupProps) {
                 brand preferences
               </li>
               <li>
-                • <strong>Goals & Challenges:</strong> What they want to achieve
-                and what's holding them back
+                • <strong>Goals &amp; Challenges:</strong> What they want to
+                achieve and what&apos;s holding them back
               </li>
             </ul>
           </div>
@@ -63,10 +63,10 @@ export function ICPPopup({ isOpen, onClose }: ICPPopupProps) {
           <div>
             <h4 className='font-medium mb-2'>How to Use This Tool:</h4>
             <ol className='text-sm text-muted-foreground space-y-1'>
-              <li>1. Add your main competitors' websites</li>
+              <li>1. Add your main competitors&apos; websites</li>
               <li>2. Include customer reviews from Google, Trustpilot, etc.</li>
               <li>3. Add any additional context about your market</li>
-              <li>4. Click "Generate Ideal Customer Personas"</li>
+              <li>4. Click &quot;Generate Ideal Customer Personas&quot;</li>
               <li>5. Use the results to guide your marketing strategy</li>
             </ol>
           </div>

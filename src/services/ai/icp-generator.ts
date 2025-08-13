@@ -8,7 +8,6 @@ import type {
 import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
 import { ReviewAnalyzer } from './review-analyzer';
-import { companyDataService } from '../company-data-service';
 
 // Enhanced ICP types for Instruction Framework
 export interface ICPContext {
@@ -1153,9 +1152,26 @@ ${sourceInfo}
     customerReviews: CustomerReview[] = [],
   ): Promise<ICP[]> {
     try {
-      // Get company data from the centralized service
-      const companyData = await companyDataService.getCurrentData();
-      const progress = await companyDataService.getCompletionProgress();
+      // Get company data from the API
+      const response = await fetch('/api/company-data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get company data');
+      }
+
+      const companyData = result.data;
+      const progress = companyData.progress;
 
       // Check if we have enough data to generate ICPs
       if (progress.filled < 5) {
@@ -1165,16 +1181,18 @@ ${sourceInfo}
       }
 
       // Use the existing method with the stored data
-      return await this.generateICPFromOwnCompany(
-        companyData.currentData,
+      return await this.generateICPs(
         competitors,
         customerReviews,
+        JSON.stringify(companyData.currentData),
       );
     } catch (error) {
-      throw AIServiceErrorFactory.createError('ICP_GENERATION_FAILED', {
-        message: `Failed to generate ICPs from stored data: ${error}`,
-        originalError: error,
-      });
+      throw AIServiceErrorFactory.createICPGenerationError(
+        'ICP_GENERATION_FAILED',
+        `Failed to generate ICPs from stored data: ${error}`,
+        undefined,
+        error instanceof Error ? error : new Error(String(error)),
+      );
     }
   }
 
@@ -1185,7 +1203,25 @@ ${sourceInfo}
     progress: { filled: number; total: number; percentage: number };
   }> {
     try {
-      const progress = await companyDataService.getCompletionProgress();
+      // Get company data from the API
+      const response = await fetch('/api/company-data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get company data');
+      }
+
+      const progress = result.data.progress;
       const canGenerate = progress.filled >= 5;
 
       return {

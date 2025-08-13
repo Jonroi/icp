@@ -87,6 +87,71 @@ export function AgentChat({
     }
   }, [agent, availableTools]);
 
+  // Auto-trigger data check for company profile agent
+  useEffect(() => {
+    if (agentId === 'company-profile-agent' && agent) {
+      // Auto-check current data after a short delay (no visible user message)
+      const timer = setTimeout(async () => {
+        try {
+          // Use the agent manager to execute the tool properly (background operation)
+          const result = await agentManager.executeTool(
+            agentId,
+            'get_current_form_data',
+            {},
+          );
+
+          // Create a response message based on the data
+          let responseContent = '';
+          if (result && result.currentData) {
+            const filledCount = result.filledFields?.length || 0;
+            const totalFields = 18;
+            const percentage = Math.round((filledCount / totalFields) * 100);
+
+            if (filledCount === 0) {
+              responseContent = `I can see we're starting fresh! You have 0 out of ${totalFields} fields filled.`;
+            } else if (result.isComplete) {
+              responseContent = `Great! I can see you have a complete profile for "${
+                result.currentData.name || 'your company'
+              }". You have ${filledCount} out of ${totalFields} fields filled (${percentage}% complete).`;
+            } else {
+              responseContent = `I can see you have a profile for "${
+                result.currentData.name || 'your company'
+              }". You have ${filledCount} out of ${totalFields} fields filled (${percentage}% complete).`;
+            }
+          } else {
+            responseContent = `I can see we're starting fresh! You have 0 out of 18 fields filled.`;
+          }
+
+          const assistantMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant' as const,
+            content: responseContent,
+          };
+
+          // Add assistant message to custom messages
+          setCustomMessages((prev) => [...prev, assistantMessage]);
+
+          // Call callbacks
+          onMessageReceived?.(responseContent);
+        } catch (error) {
+          console.error('Error auto-checking form data:', error);
+
+          // Fallback message if tool execution fails
+          const fallbackMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant' as const,
+            content: `I can see we're starting fresh! You have 0 out of 18 fields filled.`,
+          };
+
+          setCustomMessages((prev) => [...prev, fallbackMessage]);
+          onMessageReceived?.(fallbackMessage.content);
+        }
+      }, 1500); // 1.5 second delay to let the greeting sink in
+
+      return () => clearTimeout(timer);
+    }
+  }, [agentId, agent, onMessageReceived]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
@@ -294,45 +359,108 @@ export function AgentChat({
               {/* Quick Actions after bot messages for Company Profile Agent */}
               {agentId === 'company-profile-agent' &&
                 m.role === 'assistant' &&
-                context?.currentData &&
-                displayContent.includes('What would you like to do?') &&
+                (displayContent.includes('fields filled') ||
+                  displayContent.includes('profile for')) &&
                 showActionButtons && (
                   <div className='flex flex-wrap gap-2 mt-3 ml-0'>
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      className='text-sm'
-                      onClick={() =>
-                        handleSuggestionClick('Modify existing info')
-                      }
-                      disabled={isLoading}
-                      title='Modify existing info'>
-                      Modify existing info
-                    </Button>
-                    {!context.currentData.isComplete && (
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        className='text-sm'
-                        onClick={() =>
-                          handleSuggestionClick(
-                            'Continue filling missing fields',
-                          )
-                        }
-                        disabled={isLoading}
-                        title='Add missing fields'>
-                        Add missing fields
-                      </Button>
+                    {/* Show different buttons based on data state */}
+                    {context?.currentData &&
+                    context.currentData.filledFields &&
+                    context.currentData.filledFields.length > 0 ? (
+                      <>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Fill missing fields')
+                          }
+                          disabled={isLoading}
+                          title='Continue filling'>
+                          Continue filling
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Get smart suggestions')
+                          }
+                          disabled={isLoading}
+                          title='Smart suggestions'>
+                          Smart suggestions
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Validate form completion')
+                          }
+                          disabled={isLoading}
+                          title='Validate form'>
+                          Validate form
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Batch fill multiple fields')
+                          }
+                          disabled={isLoading}
+                          title='Batch fill'>
+                          Batch fill
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() => handleSuggestionClick('Reset form')}
+                          disabled={isLoading}
+                          title='Start fresh'>
+                          Start fresh
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick(
+                              'Start systematic form filling',
+                            )
+                          }
+                          disabled={isLoading}
+                          title='Start filling'>
+                          Start filling
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Load test company')
+                          }
+                          disabled={isLoading}
+                          title='Load test company'>
+                          Load test company
+                        </Button>
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='text-sm'
+                          onClick={() =>
+                            handleSuggestionClick('Get smart suggestions')
+                          }
+                          disabled={isLoading}
+                          title='Smart suggestions'>
+                          Smart suggestions
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      className='text-sm'
-                      onClick={() => handleSuggestionClick('Generate ICPs')}
-                      disabled={isLoading}
-                      title='Generate ICPs'>
-                      Generate ICPs
-                    </Button>
                   </div>
                 )}
             </div>

@@ -88,6 +88,7 @@ export class DataManager {
         name: 'Test Company',
         location: 'Test Location',
         website: 'https://testcompany.com',
+        social: 'https://linkedin.com/company/testcompany',
         industry: 'Technology',
         companySize: '10-50 employees',
         targetMarket: 'Small businesses',

@@ -29,7 +29,8 @@ export class AIService {
 
   // Analyze customer reviews
   async analyzeReviews(reviews: CustomerReview[]): Promise<string> {
-    return this.reviewAnalyzer.analyzeReviews(reviews);
+    const analysis = ReviewAnalyzer.analyzeBatch(reviews);
+    return JSON.stringify(analysis, null, 2);
   }
 
   // Generate ICP profiles

@@ -115,59 +115,6 @@ export function CampaignDesigner({}: CampaignDesignerProps) {
           <Bot className='mr-2 h-4 w-4' />
           Generate Campaign
         </Button>
-        {false && (
-          <Card className='mt-6'>
-            <CardHeader>
-              <CardTitle>Generated Campaign</CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='space-y-2'>
-                <h4 className='font-semibold'>Ad Copy</h4>
-                <p className='text-sm text-muted-foreground'>
-                  {generatedCampaign.adCopy}
-                </p>
-              </div>
-              <div className='space-y-2'>
-                <h4 className='font-semibold'>Image</h4>
-                <img
-                  src={generatedCampaign.image}
-                  alt='Generated Campaign'
-                  className='rounded-md border'
-                  data-ai-hint={generatedCampaign.imageHint}
-                />
-              </div>
-              <div className='space-y-2'>
-                <h4 className='font-semibold'>Call to Action (CTA)</h4>
-                <p className='text-sm text-muted-foreground'>
-                  {generatedCampaign.cta}
-                </p>
-              </div>
-              <div className='space-y-2'>
-                <h4 className='font-semibold'>Hooks</h4>
-                <p className='text-sm text-muted-foreground'>
-                  {generatedCampaign.hooks}
-                </p>
-              </div>
-              <div className='space-y-2'>
-                <h4 className='font-semibold'>Landing Page Copy</h4>
-                <p className='text-sm text-muted-foreground'>
-                  {generatedCampaign.landingPageCopy}
-                </p>
-              </div>
-            </CardContent>
-            <CardFooter className='flex justify-end gap-2'>
-              <Button variant='outline'>
-                <Copy className='mr-2 h-4 w-4' /> Copy
-              </Button>
-              <Button variant='outline'>
-                <Download className='mr-2 h-4 w-4' /> Download Assets
-              </Button>
-              <Button>
-                <Save className='mr-2 h-4 w-4' /> Save to Personalization
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
       </CardContent>
     </Card>
   );

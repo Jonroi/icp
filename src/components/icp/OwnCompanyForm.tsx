@@ -18,14 +18,12 @@ import { ExternalLink, Save, RotateCcw } from 'lucide-react';
 interface OwnCompanyFormProps {
   company: OwnCompany;
   onChange: (field: keyof OwnCompany, value: string) => void;
-  onSave?: (company: OwnCompany) => void;
   onReset?: () => void;
 }
 
 export function OwnCompanyForm({
   company,
   onChange,
-  onSave,
   onReset,
 }: OwnCompanyFormProps) {
   // Handle bulk company selection
@@ -37,9 +35,13 @@ export function OwnCompanyForm({
   };
 
   // Handle form reset
-  const handleReset = () => {
+  const handleReset = async () => {
     if (onReset) {
-      onReset();
+      try {
+        await onReset();
+      } catch (error) {
+        console.error('Error resetting form:', error);
+      }
     } else {
       // Fallback: clear all fields manually
       const emptyCompany: OwnCompany = {
@@ -134,55 +136,39 @@ export function OwnCompanyForm({
   ];
   return (
     <Card className='p-4 space-y-3 bg-muted/30 relative'>
-      <div className='flex items-center justify-between mb-3'>
+      <div className='mb-3'>
         <h3 className='font-medium'>Your Company</h3>
-        <CompanySelector
-          onCompanySelect={handleCompanySelect}
-          currentCompanyName={company.name}
-        />
       </div>
 
-      {/* Action Buttons at the Top */}
-      <div className='flex justify-end items-center gap-2 mb-4'>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={handleReset}
-          className='flex items-center gap-2'
-          title='Clear all fields and start over'>
-          <RotateCcw className='h-4 w-4' />
-          Reset Form
-        </Button>
-        <Button
-          type='button'
-          onClick={() => onSave?.(company)}
-          disabled={!company.name.trim()}
-          className='flex items-center gap-2'
-          title='Save all company information'>
-          <Save className='h-4 w-4' />
-          Save Company Info
-        </Button>
-      </div>
+      {/* Reset Button - Only show if onReset is provided */}
+      {onReset && (
+        <div className='flex justify-end items-center gap-2 mb-4'>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={async () => {
+              try {
+                await handleReset();
+              } catch (error) {
+                console.error('Error resetting form:', error);
+              }
+            }}
+            className='flex items-center gap-2'
+            title='Clear all fields and start over'>
+            <RotateCcw className='h-4 w-4' />
+            Reset Form
+          </Button>
+        </div>
+      )}
 
       <div className='space-y-3'>
         <div className='flex gap-2'>
-          <div className='flex-1 space-y-2'>
-            <Label htmlFor='own-company-name'>
-              Company Name{' '}
-              <span className='text-red-600' aria-hidden='true'>
-                *
-              </span>
-            </Label>
-            <div className='relative'>
-              <Input
-                id='own-company-name'
-                placeholder='Enter your company name (required)'
-                aria-required='true'
-                required
-                value={company.name}
-                onChange={(e) => onChange('name', e.target.value)}
-              />
-            </div>
+          <div className='flex-1'>
+            <CompanySelector
+              value={company.name}
+              onChange={onChange}
+              onCompanySelect={handleCompanySelect}
+            />
           </div>
 
           <div className='w-48 space-y-2'>

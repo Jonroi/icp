@@ -52,10 +52,9 @@ export interface CompanyDataTable {
   version: number;
 }
 
-// File system storage implementation for testing (PostgreSQL-ready)
+// File system storage implementation (PostgreSQL-ready)
 class FileSystemCompanyDataService implements CompanyDataService {
   private data: OwnCompany = {} as OwnCompany;
-  private readonly STORAGE_KEY = 'icp-builder-company-data';
   private readonly FILE_PATH = './company-data.json';
   private readonly TEST_USER_ID = 'test-user-123';
 
@@ -82,8 +81,8 @@ class FileSystemCompanyDataService implements CompanyDataService {
   ];
 
   async getCurrentData(): Promise<CompanyDataState> {
-    // Load data from storage
-    await this.loadFromStorage();
+    // Load data from file
+    await this.loadFromFile();
 
     const filledFields = this.fieldOrder.filter(
       (field) => this.data[field] && this.data[field]!.trim() !== '',
@@ -106,8 +105,8 @@ class FileSystemCompanyDataService implements CompanyDataService {
   ): Promise<FormFieldUpdate> {
     this.data[field] = value;
 
-    // Save to storage after each update
-    await this.saveToStorage();
+    // Save to file after each update
+    await this.saveToFile();
 
     return {
       field,
@@ -116,142 +115,88 @@ class FileSystemCompanyDataService implements CompanyDataService {
     };
   }
 
-  // Unified storage method that works in both browser and Node.js
-  async saveToStorage(): Promise<void> {
-    try {
-      // Try localStorage first (browser environment)
-      if (typeof window !== 'undefined' && window.localStorage) {
-        this.saveToLocalStorage();
-        return;
-      }
-
-      // Fallback to file system (Node.js environment)
-      await this.saveToFile();
-    } catch (error) {
-      console.warn('Failed to save company data:', error);
-    }
-  }
-
-  // Unified loading method that works in both browser and Node.js
-  async loadFromStorage(): Promise<void> {
-    try {
-      // Try localStorage first (browser environment)
-      if (typeof window !== 'undefined' && window.localStorage) {
-        this.loadFromLocalStorage();
-        return;
-      }
-
-      // Fallback to file system (Node.js environment)
-      await this.loadFromFile();
-    } catch (error) {
-      console.warn('Failed to load company data:', error);
-    }
-  }
-
-  // Save data to file system (PostgreSQL-ready format) - Node.js only
+  // Save data to file system (PostgreSQL-ready format)
   async saveToFile(): Promise<void> {
     try {
-      const fs = require('fs').promises;
+      // Only try to use fs in Node.js environment
+      if (typeof window === 'undefined' && typeof require !== 'undefined') {
+        const fs = require('fs').promises;
 
-      // Convert to PostgreSQL-ready format
-      const dataRows: CompanyDataRow[] = Object.entries(this.data)
-        .filter(([_, value]) => value && value.trim() !== '')
-        .map(([field, value]) => ({
-          id: `${this.TEST_USER_ID}-${field}`,
+        // Convert to PostgreSQL-ready format
+        const dataRows: CompanyDataRow[] = Object.entries(this.data)
+          .filter(([_, value]) => value && value.trim() !== '')
+          .map(([field, value]) => ({
+            id: `${this.TEST_USER_ID}-${field}`,
+            user_id: this.TEST_USER_ID,
+            field_name: field as keyof OwnCompany,
+            field_value: value,
+            created_at: new Date(),
+            updated_at: new Date(),
+            version: 1,
+          }));
+
+        const dataToSave = {
           user_id: this.TEST_USER_ID,
-          field_name: field as keyof OwnCompany,
-          field_value: value,
-          created_at: new Date(),
-          updated_at: new Date(),
-          version: 1,
-        }));
+          data_rows: dataRows,
+          lastUpdated: new Date().toISOString(),
+          version: '1.0',
+          // Keep legacy format for backward compatibility
+          legacy_data: this.data,
+        };
 
-      const dataToSave = {
-        user_id: this.TEST_USER_ID,
-        data_rows: dataRows,
-        lastUpdated: new Date().toISOString(),
-        version: '1.0',
-        // Keep legacy format for backward compatibility
-        legacy_data: this.data,
-      };
-
-      await fs.writeFile(this.FILE_PATH, JSON.stringify(dataToSave, null, 2));
-      console.log(
-        `✅ Company data saved to ${this.FILE_PATH} (PostgreSQL-ready format)`,
-      );
+        await fs.writeFile(this.FILE_PATH, JSON.stringify(dataToSave, null, 2));
+        console.log(
+          `✅ Company data saved to ${this.FILE_PATH} (PostgreSQL-ready format)`,
+        );
+      } else {
+        console.log(
+          'File system operations not available in browser environment',
+        );
+      }
     } catch (error) {
       console.warn('Failed to save company data to file:', error);
     }
   }
 
-  // Load data from file system (PostgreSQL-ready format) - Node.js only
+  // Load data from file system (PostgreSQL-ready format)
   async loadFromFile(): Promise<void> {
     try {
-      const fs = require('fs').promises;
-      const fileContent = await fs.readFile(this.FILE_PATH, 'utf-8');
-      const parsed = JSON.parse(fileContent);
+      // Only try to use fs in Node.js environment
+      if (typeof window === 'undefined' && typeof require !== 'undefined') {
+        const fs = require('fs').promises;
+        const fileContent = await fs.readFile(this.FILE_PATH, 'utf-8');
+        const parsed = JSON.parse(fileContent);
 
-      // Handle both new PostgreSQL format and legacy format
-      if (parsed.data_rows && Array.isArray(parsed.data_rows)) {
-        // New PostgreSQL-ready format
-        this.data = {} as OwnCompany;
-        for (const row of parsed.data_rows) {
-          this.data[row.field_name as keyof OwnCompany] = row.field_value;
+        // Handle both new PostgreSQL format and legacy format
+        if (parsed.data_rows && Array.isArray(parsed.data_rows)) {
+          // New PostgreSQL-ready format
+          this.data = {} as OwnCompany;
+          for (const row of parsed.data_rows) {
+            this.data[row.field_name as keyof OwnCompany] = row.field_value;
+          }
+          console.log(
+            `✅ Company data loaded from ${this.FILE_PATH} (PostgreSQL format)`,
+          );
+        } else if (parsed.legacy_data) {
+          // Legacy format
+          this.data = parsed.legacy_data;
+          console.log(
+            `✅ Company data loaded from ${this.FILE_PATH} (legacy format)`,
+          );
+        } else if (parsed.data) {
+          // Old format
+          this.data = parsed.data;
+          console.log(
+            `✅ Company data loaded from ${this.FILE_PATH} (old format)`,
+          );
         }
+      } else {
         console.log(
-          `✅ Company data loaded from ${this.FILE_PATH} (PostgreSQL format)`,
-        );
-      } else if (parsed.legacy_data) {
-        // Legacy format
-        this.data = parsed.legacy_data;
-        console.log(
-          `✅ Company data loaded from ${this.FILE_PATH} (legacy format)`,
-        );
-      } else if (parsed.data) {
-        // Old format
-        this.data = parsed.data;
-        console.log(
-          `✅ Company data loaded from ${this.FILE_PATH} (old format)`,
+          'File system operations not available in browser environment',
         );
       }
     } catch (error) {
       console.warn('Failed to load company data from file:', error);
-    }
-  }
-
-  // Save to localStorage - Browser only
-  private saveToLocalStorage(): void {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const dataToSave = {
-          user_id: this.TEST_USER_ID,
-          data: this.data,
-          lastUpdated: new Date().toISOString(),
-          version: '1.0',
-        };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
-        console.log('✅ Company data saved to localStorage');
-      }
-    } catch (error) {
-      console.warn('Failed to save company data to localStorage:', error);
-    }
-  }
-
-  // Load from localStorage - Browser only
-  private loadFromLocalStorage(): void {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const stored = localStorage.getItem(this.STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed.data) {
-            this.data = parsed.data;
-            console.log('✅ Company data loaded from localStorage');
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to load company data from localStorage:', error);
     }
   }
 

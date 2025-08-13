@@ -103,16 +103,63 @@ export function useAppState() {
     setOwnCompany((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveOwnCompany = (company: OwnCompany) => {
+  const saveOwnCompany = async (company: OwnCompany) => {
     if (!company.name.trim()) {
       alert('Company name is required to save!');
       return;
     }
-    ProjectService.saveOwnCompany(company);
-    alert(`Your company "${company.name}" saved!`);
+
+    try {
+      // Save to localStorage (for backward compatibility)
+      ProjectService.saveOwnCompany(company);
+
+      // Also save to API endpoint (for LangChain tools compatibility)
+      const fieldsToSave = [
+        'name',
+        'location',
+        'website',
+        'social',
+        'industry',
+        'companySize',
+        'targetMarket',
+        'valueProposition',
+        'mainOfferings',
+        'pricingModel',
+        'uniqueFeatures',
+        'marketSegment',
+        'competitiveAdvantages',
+        'currentCustomers',
+        'successStories',
+        'painPointsSolved',
+        'customerGoals',
+        'currentMarketingChannels',
+        'marketingMessaging',
+      ];
+
+      // Save each field to the API
+      for (const field of fieldsToSave) {
+        if (company[field as keyof OwnCompany]) {
+          await fetch('/api/company-data', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              field,
+              value: company[field as keyof OwnCompany],
+            }),
+          });
+        }
+      }
+
+      alert(`Your company "${company.name}" saved successfully!`);
+    } catch (error) {
+      console.error('Error saving company data:', error);
+      alert('Error saving company data. Please try again.');
+    }
   };
 
-  const resetOwnCompany = () => {
+  const resetOwnCompany = async () => {
     const emptyCompany: OwnCompany = {
       name: '',
       location: '',
@@ -134,9 +181,29 @@ export function useAppState() {
       currentMarketingChannels: '',
       marketingMessaging: '',
     };
-    setOwnCompany(emptyCompany);
-    setAdditionalContext('');
-    alert('Form has been reset. All fields have been cleared.');
+
+    try {
+      // Clear localStorage
+      localStorage.removeItem('own-company');
+
+      // Clear API storage
+      await fetch('/api/company-data', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setOwnCompany(emptyCompany);
+      setAdditionalContext('');
+      alert('Form has been reset. All fields have been cleared.');
+    } catch (error) {
+      console.error('Error resetting company data:', error);
+      // Still clear the form even if API call fails
+      setOwnCompany(emptyCompany);
+      setAdditionalContext('');
+      alert('Form has been reset. All fields have been cleared.');
+    }
   };
 
   // ICP generation

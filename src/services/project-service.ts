@@ -34,6 +34,7 @@ export interface GeneratedCampaign {
 }
 
 export interface OwnCompany {
+  id?: string;
   name: string;
   website: string;
   social: string;

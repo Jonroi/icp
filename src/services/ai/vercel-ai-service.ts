@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export interface ChatMessage {
   id: string;
@@ -39,12 +39,16 @@ export function useVercelAI(options: UseChatOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
 
   // Add system message if provided
-  const allMessages = systemMessage
-    ? [
-        { id: 'system', role: 'system' as const, content: systemMessage },
-        ...messages,
-      ]
-    : messages;
+  const allMessages = useMemo(
+    () =>
+      systemMessage
+        ? [
+            { id: 'system', role: 'system' as const, content: systemMessage },
+            ...messages,
+          ]
+        : messages,
+    [systemMessage, messages],
+  );
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {

@@ -127,7 +127,7 @@ export function LocationSelector({
               <div className='max-h-64 overflow-y-auto'>
                 {filteredOptions.length === 0 ? (
                   <div className='p-4 text-center text-muted-foreground text-sm'>
-                    No locations found for "{searchTerm}"
+                    No locations found for &quot;{searchTerm}&quot;
                   </div>
                 ) : (
                   <div className='py-1'>

@@ -8,6 +8,7 @@ export const getCurrentFormDataTool = new DynamicTool({
     'Get the current values of all form fields to understand what has been filled. Use this when user wants to modify existing info or continue filling missing fields.',
   func: async () => {
     try {
+      // Call the API instead of using the service directly
       const response = await fetch('/api/company-data', {
         method: 'GET',
         headers: {
@@ -20,7 +21,7 @@ export const getCurrentFormDataTool = new DynamicTool({
       }
 
       const result = await response.json();
-      console.log('🔍 LangChain Tool: Server response:', result);
+      console.log('🔍 LangChain Tool: Current form data:', result);
 
       if (result.success) {
         return JSON.stringify(result.data, null, 2);
@@ -61,6 +62,7 @@ export const updateFormFieldTool = new DynamicTool({
         throw new Error('Field and value are required');
       }
 
+      // Call the API instead of using the service directly
       const response = await fetch('/api/company-data', {
         method: 'POST',
         headers: {
@@ -77,7 +79,7 @@ export const updateFormFieldTool = new DynamicTool({
       }
 
       const result = await response.json();
-      console.log('🔍 LangChain Tool: Update response:', result);
+      console.log('🔍 LangChain Tool: Updated field:', result);
 
       if (result.success) {
         return JSON.stringify({
@@ -107,30 +109,21 @@ export const loadTestCompaniesTool = new DynamicTool({
     'Load available test companies that can be used to fill the form. Use this when user wants to see available test companies or switch between them.',
   func: async () => {
     try {
-      const response = await fetch('/test-companies-data.json', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
+      // Use fetch to get test companies data
+      const response = await fetch('/test-companies-data.json');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const result = await response.json();
-      console.log('🔍 LangChain Tool: Test companies response:', result);
+      console.log('🔍 LangChain Tool: Test companies loaded from file');
 
-      return JSON.stringify(
-        result.companies.map((company: any) => ({
-          id: company.id,
-          name: company.name,
-          industry: company.industry,
-          location: company.location,
-        })),
-        null,
-        2,
-      );
+      const companies = (result.companies || []).map((company: any) => ({
+        id: company.id,
+        name: company.name,
+        industry: company.industry,
+        location: company.location,
+      }));
+      return JSON.stringify(companies, null, 2);
     } catch (error) {
       console.error('Error loading test companies:', error);
       return JSON.stringify({
@@ -148,6 +141,7 @@ export const resetFormTool = new DynamicTool({
     'Reset all form fields to empty values. Use this when user wants to clear all data and start over.',
   func: async () => {
     try {
+      // Call the API instead of using the service directly
       const response = await fetch('/api/company-data', {
         method: 'DELETE',
         headers: {
@@ -160,12 +154,17 @@ export const resetFormTool = new DynamicTool({
       }
 
       const result = await response.json();
-      console.log('🔍 LangChain Tool: Reset form response:', result);
+      console.log('🔍 LangChain Tool: Reset form completed');
 
-      return JSON.stringify({
-        success: true,
-        message: 'All form fields have been reset successfully',
-      });
+      if (result.success) {
+        return JSON.stringify({
+          success: true,
+          message:
+            result.message || 'All form fields have been reset successfully',
+        });
+      } else {
+        throw new Error(result.error || 'Failed to reset form');
+      }
     } catch (error) {
       console.error('Error resetting form:', error);
       return JSON.stringify({

@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+interface DataRow {
+  id: string;
+  user_id: string;
+  field_name: string;
+  field_value: string;
+  created_at: Date;
+  updated_at: Date;
+  version: number;
+}
+
+interface CompanyData {
+  user_id?: string;
+  data_rows: DataRow[];
+  legacy_data: Record<string, string>;
+  lastUpdated?: string;
+  version?: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const filePath = path.join(process.cwd(), 'company-data.json');
@@ -29,9 +47,9 @@ export async function GET(request: NextRequest) {
     const parsed = JSON.parse(fileContent);
 
     // Process the data
-    let companyData = {};
-    let filledFields = [];
-    let nextField = 'name';
+    let companyData: Record<string, string> = {};
+    let filledFields: string[] = [];
+    let nextField: string | null = 'name';
     let isComplete = false;
 
     if (parsed.data_rows && Array.isArray(parsed.data_rows)) {
@@ -134,7 +152,7 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(process.cwd(), 'company-data.json');
 
     // Read existing data
-    let existingData = { data_rows: [], legacy_data: {} };
+    let existingData: CompanyData = { data_rows: [], legacy_data: {} };
     try {
       const fileContent = await fs.readFile(filePath, 'utf-8');
       existingData = JSON.parse(fileContent);
@@ -157,7 +175,7 @@ export async function POST(request: NextRequest) {
     // Update data_rows if it exists
     if (existingData.data_rows && Array.isArray(existingData.data_rows)) {
       const existingRowIndex = existingData.data_rows.findIndex(
-        (row: any) => row.field_name === field,
+        (row: DataRow) => row.field_name === field,
       );
 
       if (existingRowIndex >= 0) {
@@ -192,6 +210,39 @@ export async function POST(request: NextRequest) {
     console.error('Error updating company data:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update company data' },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const filePath = path.join(process.cwd(), 'company-data.json');
+
+    // Check if file exists
+    try {
+      await fs.access(filePath);
+    } catch (error) {
+      // File doesn't exist, return success (already reset)
+      return NextResponse.json({
+        success: true,
+        message: 'Company data already reset',
+        timestamp: new Date(),
+      });
+    }
+
+    // Delete the file
+    await fs.unlink(filePath);
+
+    return NextResponse.json({
+      success: true,
+      message: 'All company data has been reset successfully',
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    console.error('Error resetting company data:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to reset company data' },
       { status: 500 },
     );
   }
