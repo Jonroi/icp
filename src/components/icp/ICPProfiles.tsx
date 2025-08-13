@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Bot, Sparkles, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
-import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
+import { AgentButton } from '@/components/agents/agent-button';
 
 interface ICP {
   name: string;
@@ -53,12 +53,13 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
               View and manage your generated Ideal Customer Profiles
             </CardDescription>
           </div>
-          <AIAssistantButton
-            assistantType='icp-analysis-tool'
+          <AgentButton
+            agentId='icp-analyzer-agent'
             size='sm'
-            className='flex items-center gap-2'>
+            className='flex items-center gap-2'
+            context={{ generatedICPs }}>
             Analyze ICPs
-          </AIAssistantButton>
+          </AgentButton>
         </div>
       </CardHeader>
       <CardContent>
