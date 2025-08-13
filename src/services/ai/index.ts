@@ -20,3 +20,7 @@ export {
   type ReviewCollectionError,
   type CompanySearchError,
 } from './error-types';
+
+// Export LangChain services
+export * from './langchain-tools';
+export * from './langchain-agent-service';

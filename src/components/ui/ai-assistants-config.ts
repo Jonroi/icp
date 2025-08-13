@@ -73,7 +73,11 @@ RULES:
 - No explanations or extra text
 - location field = target market location (where your customers are located)`,
     suggestions: [
-      'Help me fill out my company information',
+      'Start filling company information',
+      'Show test companies',
+      'Switch to TechFlow Solutions',
+      'Switch to Green Energy Innovations',
+      'Reset form',
       'Technology',
       'SaaS/Software',
       'Marketing/Advertising',
@@ -92,7 +96,7 @@ RULES:
       'Usage-based',
       'Tiered pricing',
     ],
-    placeholder: 'Lets start filling out your company information',
+    placeholder: 'Choose an option or type your answer...',
   },
 
   'icp-analysis-tool': {
@@ -110,15 +114,15 @@ Your expertise includes:
 
 Be analytical, insightful, and provide actionable advice based on ICP data.`,
     suggestions: [
-      'Help me understand my ICP demographics',
-      'What do these customer profiles tell me about my market?',
+      'Analyze my ICP demographics',
+      'What do these customer profiles tell me?',
       'How can I reach these customer segments?',
       'What marketing strategies work for this audience?',
       'Help me identify opportunities from my ICPs',
       'How do I validate these customer profiles?',
       'What questions should I ask my customers?',
     ],
-    placeholder: 'Ask about analyzing your ICP profiles...',
+    placeholder: 'Choose an analysis option...',
   },
 
   'campaign-creation-tool': {
@@ -137,15 +141,15 @@ Your expertise includes:
 
 Focus on creating campaigns that resonate with the target ICP and drive results.`,
     suggestions: [
-      'Help me create a marketing campaign for my ICP',
-      'What messaging would resonate with my target audience?',
+      'Create a marketing campaign for my ICP',
+      'What messaging would resonate with my audience?',
       'How do I create compelling ad copy?',
       'What campaign themes should I explore?',
       'Help me plan a multi-channel campaign',
       'How do I create effective hooks?',
       'What creative elements should I include?',
     ],
-    placeholder: 'Ask about creating marketing campaigns...',
+    placeholder: 'Choose a campaign creation option...',
   },
 
   'campaign-research-tool': {
@@ -172,6 +176,6 @@ Focus on providing valuable insights and inspiration for marketing campaigns.`,
       'What are the latest marketing trends?',
       'Help me analyze campaign performance',
     ],
-    placeholder: 'Ask about researching campaigns and trends...',
+    placeholder: 'Choose a research option...',
   },
 };

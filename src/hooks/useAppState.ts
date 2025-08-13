@@ -112,6 +112,33 @@ export function useAppState() {
     alert(`Your company "${company.name}" saved!`);
   };
 
+  const resetOwnCompany = () => {
+    const emptyCompany: OwnCompany = {
+      name: '',
+      location: '',
+      website: '',
+      social: '',
+      industry: '',
+      companySize: '',
+      targetMarket: '',
+      valueProposition: '',
+      mainOfferings: '',
+      pricingModel: '',
+      uniqueFeatures: '',
+      marketSegment: '',
+      competitiveAdvantages: '',
+      currentCustomers: '',
+      successStories: '',
+      painPointsSolved: '',
+      customerGoals: '',
+      currentMarketingChannels: '',
+      marketingMessaging: '',
+    };
+    setOwnCompany(emptyCompany);
+    setAdditionalContext('');
+    alert('Form has been reset. All fields have been cleared.');
+  };
+
   // ICP generation
   const handleGenerateICPs = async () => {
     if (!ownCompany.name.trim()) {
@@ -171,6 +198,7 @@ export function useAppState() {
 
     // Actions
     saveOwnCompany,
+    resetOwnCompany,
     onOwnCompanyChange: handleOwnCompanyChange,
     setAdditionalContext,
     generateICPs: handleGenerateICPs,

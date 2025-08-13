@@ -20,6 +20,7 @@ export default function App() {
     // Actions
     onOwnCompanyChange,
     saveOwnCompany,
+    resetOwnCompany,
     setAdditionalContext,
     generateICPs,
   } = useAppState();
@@ -49,6 +50,7 @@ export default function App() {
             onAdditionalContextChange={setAdditionalContext}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
+            onResetOwnCompany={resetOwnCompany}
             onGenerateICPs={async () => {
               await generateICPs();
               alert('ICPs generated successfully!');

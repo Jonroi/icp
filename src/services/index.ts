@@ -12,6 +12,12 @@ export {
   type CompanySearchResult,
 } from './company-search-service';
 
+// Company data service
+export * from './company-data-service';
+
+// Test companies service
+export * from './test-companies-service';
+
 // AI services
 export * from './ai';
 export * from './ai/vercel-ai-service';

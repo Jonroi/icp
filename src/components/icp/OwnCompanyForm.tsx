@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { LocationSelector } from '@/components/ui/location-selector';
+import { CompanySelector } from '@/components/ui/company-selector';
 import {
   Select,
   SelectContent,
@@ -12,19 +13,62 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { OwnCompany } from '@/services/project-service';
-import { ExternalLink, Save } from 'lucide-react';
+import { ExternalLink, Save, RotateCcw } from 'lucide-react';
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
   onChange: (field: keyof OwnCompany, value: string) => void;
   onSave?: (company: OwnCompany) => void;
+  onReset?: () => void;
 }
 
 export function OwnCompanyForm({
   company,
   onChange,
   onSave,
+  onReset,
 }: OwnCompanyFormProps) {
+  // Handle bulk company selection
+  const handleCompanySelect = (selectedCompany: OwnCompany) => {
+    // Update all fields at once
+    Object.entries(selectedCompany).forEach(([field, value]) => {
+      onChange(field as keyof OwnCompany, value);
+    });
+  };
+
+  // Handle form reset
+  const handleReset = () => {
+    if (onReset) {
+      onReset();
+    } else {
+      // Fallback: clear all fields manually
+      const emptyCompany: OwnCompany = {
+        name: '',
+        location: '',
+        website: '',
+        social: '',
+        industry: '',
+        companySize: '',
+        targetMarket: '',
+        valueProposition: '',
+        mainOfferings: '',
+        pricingModel: '',
+        uniqueFeatures: '',
+        marketSegment: '',
+        competitiveAdvantages: '',
+        currentCustomers: '',
+        successStories: '',
+        painPointsSolved: '',
+        customerGoals: '',
+        currentMarketingChannels: '',
+        marketingMessaging: '',
+      };
+
+      Object.entries(emptyCompany).forEach(([field, value]) => {
+        onChange(field as keyof OwnCompany, value);
+      });
+    }
+  };
   // Predefined options for dropdowns
   const industryOptions = [
     'SaaS/Software',
@@ -92,10 +136,23 @@ export function OwnCompanyForm({
     <Card className='p-4 space-y-3 bg-muted/30 relative'>
       <div className='flex items-center justify-between mb-3'>
         <h3 className='font-medium'>Your Company</h3>
+        <CompanySelector
+          onCompanySelect={handleCompanySelect}
+          currentCompanyName={company.name}
+        />
       </div>
 
       {/* Action Buttons at the Top */}
-      <div className='flex justify-end items-center mb-4'>
+      <div className='flex justify-end items-center gap-2 mb-4'>
+        <Button
+          type='button'
+          variant='outline'
+          onClick={handleReset}
+          className='flex items-center gap-2'
+          title='Clear all fields and start over'>
+          <RotateCcw className='h-4 w-4' />
+          Reset Form
+        </Button>
         <Button
           type='button'
           onClick={() => onSave?.(company)}

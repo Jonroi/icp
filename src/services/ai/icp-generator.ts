@@ -8,6 +8,7 @@ import type {
 import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
 import { ReviewAnalyzer } from './review-analyzer';
+import { companyDataService } from '../company-data-service';
 
 // Enhanced ICP types for Instruction Framework
 export interface ICPContext {
@@ -1144,5 +1145,62 @@ ${sourceInfo}
     }
 
     return { trends, opportunities, threats };
+  }
+
+  // New method to generate ICPs using centralized company data
+  async generateICPFromStoredData(
+    competitors: CompetitorData[] = [],
+    customerReviews: CustomerReview[] = [],
+  ): Promise<ICP[]> {
+    try {
+      // Get company data from the centralized service
+      const companyData = await companyDataService.getCurrentData();
+      const progress = await companyDataService.getCompletionProgress();
+
+      // Check if we have enough data to generate ICPs
+      if (progress.filled < 5) {
+        throw new Error(
+          `Need at least 5 fields filled to generate ICPs. Currently have ${progress.filled}/${progress.total} fields filled.`,
+        );
+      }
+
+      // Use the existing method with the stored data
+      return await this.generateICPFromOwnCompany(
+        companyData.currentData,
+        competitors,
+        customerReviews,
+      );
+    } catch (error) {
+      throw AIServiceErrorFactory.createError('ICP_GENERATION_FAILED', {
+        message: `Failed to generate ICPs from stored data: ${error}`,
+        originalError: error,
+      });
+    }
+  }
+
+  // Method to check if we have enough data for ICP generation
+  async canGenerateICPs(): Promise<{
+    canGenerate: boolean;
+    reason?: string;
+    progress: { filled: number; total: number; percentage: number };
+  }> {
+    try {
+      const progress = await companyDataService.getCompletionProgress();
+      const canGenerate = progress.filled >= 5;
+
+      return {
+        canGenerate,
+        reason: canGenerate
+          ? undefined
+          : `Need at least 5 fields filled. Currently have ${progress.filled}/${progress.total} fields filled.`,
+        progress,
+      };
+    } catch (error) {
+      return {
+        canGenerate: false,
+        reason: `Error checking data: ${error}`,
+        progress: { filled: 0, total: 18, percentage: 0 },
+      };
+    }
   }
 }

@@ -22,6 +22,7 @@ interface ICPGeneratorProps {
   onAdditionalContextChange: (context: string) => void;
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => void;
+  onResetOwnCompany?: () => void;
   onGenerateICPs: () => Promise<void>;
 }
 
@@ -33,6 +34,7 @@ export function ICPGenerator({
   onAdditionalContextChange,
   onOwnCompanyChange,
   onSaveOwnCompany,
+  onResetOwnCompany,
   onGenerateICPs,
 }: ICPGeneratorProps) {
   return (
@@ -62,6 +64,7 @@ export function ICPGenerator({
             company={ownCompany || { name: '', website: '', social: '' }}
             onChange={(field, value) => onOwnCompanyChange?.(field, value)}
             onSave={(company) => onSaveOwnCompany?.(company)}
+            onReset={onResetOwnCompany}
           />
         </div>
 

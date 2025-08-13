@@ -13,14 +13,14 @@ A streamlined tool for generating Ideal Customer Profiles (ICPs) using AI analys
 
 ## 🤖 AI Assistant System
 
-The application includes a comprehensive AI assistant system with a general guide and specialized tools:
+The application uses **LangChain** for all AI operations, providing a robust and scalable AI assistant system with specialized tools and agents.
 
 ### **General Guide** (Default ChatPanel)
 
 - **Purpose**: Explains ICPs and helps users get started
 - **Role**: General information, workflow guidance, and navigation help
 - **Access**: Available through the floating chat button
-- **Prephrases**: "What are Ideal Customer Profiles?", "How do I get started?", etc.
+- **Interface**: Button-based interaction with no pretext messages
 
 ### **4 Specialized Tools**
 
@@ -29,28 +29,35 @@ The application includes a comprehensive AI assistant system with a general guid
 - **Purpose**: Helps fill out company information for ICP generation
 - **Focus**: Only relevant fields (no phone numbers, addresses, etc.)
 - **Access**: "Fill with AI" button in the company form
-- **Prephrases**: "Help me fill out my company information", "What industry should I select?", etc.
+- **Interface**: Direct button selection for form fields and options
 
 #### **2. ICP Analysis Tool** (ICP Profiles Tab)
 
 - **Purpose**: Analyzes generated customer profiles and demographics
 - **Focus**: Interpreting ICP data and suggesting marketing strategies
 - **Access**: AI assistant button in ICP Profiles tab
-- **Prephrases**: "Help me understand my ICP demographics", "What do these profiles tell me?", etc.
+- **Interface**: Button-based analysis options
 
 #### **3. Campaign Creation Tool** (Campaign Designer Tab)
 
 - **Purpose**: Creates targeted marketing campaigns based on ICPs
 - **Focus**: Writing ad copy, messaging, and campaign strategies
 - **Access**: AI assistant button in Campaign Designer tab
-- **Prephrases**: "Help me create a marketing campaign", "What messaging would resonate?", etc.
+- **Interface**: Direct campaign creation options
 
 #### **4. Campaign Research Tool** (Campaign Library Tab)
 
 - **Purpose**: Researches successful campaigns and marketing trends
 - **Focus**: Competitive analysis, best practices, and inspiration
 - **Access**: AI assistant button in Campaign Library tab
-- **Prephrases**: "Show me successful campaign examples", "What are trending approaches?", etc.
+- **Interface**: Research and trend analysis buttons
+
+### **LangChain Integration**
+
+- **Agents**: Uses LangChain agents for complex AI operations
+- **Tools**: Implements LangChain tools for form management and data processing
+- **Memory**: Leverages LangChain's conversation memory
+- **Structured Output**: Uses LangChain's function calling for consistent responses
 
 ## 🏃‍♂️ Quick Start
 

@@ -1,4 +1,10 @@
-import { type KeyboardEvent, useRef, useEffect, useState } from 'react';
+import {
+  type KeyboardEvent,
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
 import { X, Send, Bot, Zap, Wrench, MoreHorizontal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useVercelAI } from '@/services/ai/vercel-ai-service';
@@ -27,6 +33,8 @@ export function AgentChat({
   const [agent, setAgent] = useState<AgentConfig | undefined>();
   const [availableTools, setAvailableTools] = useState<AgentTool[]>([]);
   const [toolResults, setToolResults] = useState<Record<string, any>>({});
+  const [customMessages, setCustomMessages] = useState<ChatMessage[]>([]);
+  const [showActionButtons, setShowActionButtons] = useState(true);
 
   // Get agent configuration
   useEffect(() => {
@@ -38,6 +46,9 @@ export function AgentChat({
       }
       setAgent(agentConfig);
       setAvailableTools(agentConfig?.tools || []);
+
+      // Reset button visibility when agent changes
+      setShowActionButtons(true);
     } catch (error) {
       console.error('Error loading agent configuration:', error);
     }
@@ -60,14 +71,21 @@ export function AgentChat({
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, customMessages]);
 
   // Keep input focused after messages are added
   useEffect(() => {
     if (inputRef.current && !isLoading) {
       inputRef.current.focus();
     }
-  }, [messages, isLoading]);
+  }, [messages, customMessages, isLoading]);
+
+  // Always show action buttons initially for better UX
+  useEffect(() => {
+    if (agent && availableTools.length > 0) {
+      setShowActionButtons(true);
+    }
+  }, [agent, availableTools]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,18 +95,65 @@ export function AgentChat({
   };
 
   const handleSuggestionClick = async (suggestion: string) => {
-    // Set the input to the suggestion and immediately send it
-    handleInputChange({
-      target: { value: suggestion },
-    } as React.ChangeEvent<HTMLTextAreaElement>);
+    // Hide action buttons when any button is clicked
+    setShowActionButtons(false);
 
-    // Create a fake form event and submit immediately
-    const fakeEvent = {
-      preventDefault: () => {},
-    } as React.FormEvent;
+    // Create a user message directly
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user' as const,
+      content: suggestion,
+    };
 
-    // Send the message immediately
-    handleSubmit(fakeEvent);
+    // Add user message to custom messages immediately
+    setCustomMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: suggestion }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const assistantMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant' as const,
+        content: data.content,
+      };
+
+      // Add assistant message to custom messages
+      setCustomMessages((prev) => [...prev, assistantMessage]);
+
+      // Call callbacks
+      onMessageReceived?.(data.content);
+
+      // Check for tool execution in the response
+      if (
+        data.content.includes('tool') ||
+        data.content.includes('FILL_FIELD')
+      ) {
+        onToolExecuted?.('suggestion_click', {
+          suggestion,
+          response: data.content,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending suggestion:', error);
+    }
   };
 
   const handleToolClick = async (tool: AgentTool) => {
@@ -203,20 +268,21 @@ export function AgentChat({
 
       {/* Messages */}
       <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-zinc-800'>
-        {messages
-          .filter((m) => m.role !== 'system')
-          .map((m, idx) => {
-            // For company profile agent, filter out FILL_FIELD lines from display
-            let displayContent = m.content;
-            if (agentId === 'company-profile-agent' && m.role === 'assistant') {
-              displayContent = m.content
-                .replace(/FILL_FIELD:\s*\w+\s*=\s*.+?(?:\n|$)/g, '')
-                .trim();
-            }
+        {[
+          ...messages.filter((m) => m.role !== 'system'),
+          ...customMessages,
+        ].map((m, idx) => {
+          // For company profile agent, filter out FILL_FIELD lines from display
+          let displayContent = m.content;
+          if (agentId === 'company-profile-agent' && m.role === 'assistant') {
+            displayContent = m.content
+              .replace(/FILL_FIELD:\s*\w+\s*=\s*.+?(?:\n|$)/g, '')
+              .trim();
+          }
 
-            return (
+          return (
+            <div key={idx}>
               <div
-                key={idx}
                 className={
                   m.role === 'user'
                     ? 'ml-auto max-w-[75%] rounded-lg bg-primary/10 px-4 py-3 text-sm'
@@ -224,8 +290,54 @@ export function AgentChat({
                 }>
                 {displayContent}
               </div>
-            );
-          })}
+
+              {/* Quick Actions after bot messages for Company Profile Agent */}
+              {agentId === 'company-profile-agent' &&
+                m.role === 'assistant' &&
+                context?.currentData &&
+                displayContent.includes('What would you like to do?') &&
+                showActionButtons && (
+                  <div className='flex flex-wrap gap-2 mt-3 ml-0'>
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='text-sm'
+                      onClick={() =>
+                        handleSuggestionClick('Modify existing info')
+                      }
+                      disabled={isLoading}
+                      title='Modify existing info'>
+                      Modify existing info
+                    </Button>
+                    {!context.currentData.isComplete && (
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        className='text-sm'
+                        onClick={() =>
+                          handleSuggestionClick(
+                            'Continue filling missing fields',
+                          )
+                        }
+                        disabled={isLoading}
+                        title='Add missing fields'>
+                        Add missing fields
+                      </Button>
+                    )}
+                    <Button
+                      size='sm'
+                      variant='outline'
+                      className='text-sm'
+                      onClick={() => handleSuggestionClick('Generate ICPs')}
+                      disabled={isLoading}
+                      title='Generate ICPs'>
+                      Generate ICPs
+                    </Button>
+                  </div>
+                )}
+            </div>
+          );
+        })}
 
         {/* AI Typing Indicator */}
         {isLoading && <TypingIndicator />}

@@ -1,57 +1,98 @@
 import type { AgentConfig, AgentTool, FormFieldSuggestion } from './types';
 import type { OwnCompany } from '@/services/project-service';
 
-// Tools for the Company Profile Agent
-const formFillingTool: AgentTool = {
-  name: 'fill_company_form',
+// Server-side API tools that work with company-data.json file
+const getCurrentFormDataTool: AgentTool = {
+  name: 'get_current_form_data',
   description:
-    'Fill out company information form fields with intelligent suggestions',
+    'Get the current values of all form fields to understand what has been filled',
+  parameters: {},
+  execute: async () => {
+    try {
+      // Call the server-side API
+      const response = await fetch('/api/company-data', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('🔍 Agent Tool: Server response:', result);
+
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.error || 'Failed to get company data');
+      }
+    } catch (error) {
+      console.error('Error getting current form data:', error);
+      return {
+        currentData: {} as OwnCompany,
+        filledFields: [],
+        nextField: 'name',
+        isComplete: false,
+        progress: { filled: 0, total: 18, percentage: 0 },
+      };
+    }
+  },
+};
+
+const updateFormFieldTool: AgentTool = {
+  name: 'update_form_field',
+  description: 'Update a specific form field with new value',
   parameters: {
     field: 'string',
-    context: 'string',
-    currentData: 'object',
+    value: 'string',
   },
-  execute: async (params: {
-    field: keyof OwnCompany;
-    context: string;
-    currentData: OwnCompany;
-  }) => {
-    // This would integrate with AI service to generate intelligent suggestions
-    return {
-      suggestions: [] as FormFieldSuggestion[],
-      reasoning: 'AI-powered form field suggestions based on context',
-    };
-  },
-};
+  execute: async (params: { field: keyof OwnCompany; value: string }) => {
+    try {
+      // Call the server-side API
+      const response = await fetch('/api/company-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          field: params.field,
+          value: params.value,
+        }),
+      });
 
-const industryAnalysisTool: AgentTool = {
-  name: 'analyze_industry',
-  description: 'Analyze industry trends and provide relevant suggestions',
-  parameters: {
-    industry: 'string',
-    companySize: 'string',
-  },
-  execute: async (params: { industry: string; companySize: string }) => {
-    // Would integrate with market research services
-    return {
-      insights: [],
-      recommendations: [],
-    };
-  },
-};
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-const websiteAnalysisTool: AgentTool = {
-  name: 'analyze_website',
-  description: 'Analyze company website and extract relevant information',
-  parameters: {
-    url: 'string',
-  },
-  execute: async (params: { url: string }) => {
-    // Would integrate with website scraper service
-    return {
-      extractedInfo: {},
-      suggestions: [],
-    };
+      const result = await response.json();
+      console.log('🔍 Agent Tool: Update response:', result);
+
+      if (result.success) {
+        return {
+          success: true,
+          field: result.field,
+          value: result.value,
+          message: result.message,
+          timestamp: result.timestamp,
+          progress: { filled: 0, total: 18, percentage: 0 }, // Will be calculated on next get
+        };
+      } else {
+        throw new Error(result.error || 'Failed to update field');
+      }
+    } catch (error) {
+      console.error('Error updating form field:', error);
+      return {
+        success: false,
+        field: params.field,
+        value: params.value,
+        message: 'Error updating field',
+        timestamp: new Date(),
+        progress: { filled: 0, total: 18, percentage: 0 },
+      };
+    }
   },
 };
 
@@ -61,74 +102,95 @@ export const CompanyProfileAgent: AgentConfig = {
   description:
     'Intelligent assistant for filling out company information with AI-powered suggestions',
   icon: '🏢',
-  instructions: `You are a specialized Company Profile Assistant with advanced form-filling capabilities.
+  instructions: `You are a helpful Company Profile Assistant. Your job is to help users fill out their company information form step by step.
 
-Your primary role is to help users complete their company profile information intelligently and efficiently.
+IMPORTANT RULES:
+1. ALWAYS check current form data first using get_current_form_data tool
+2. If data exists and fields are filled, acknowledge the existing profile and ask what they want to do
+3. If starting fresh (no data or empty fields), begin with the first field (name)
+4. When user answers, immediately use update_form_field tool to save their answer
+5. Then ask for the next field with a brief explanation
+6. Keep responses short and direct
+7. If user wants to change something, let them and update the field
+8. ALWAYS use tools when mentioned in your instructions - this is critical!
 
-CAPABILITIES:
-- Smart form field suggestions based on context
-- Industry analysis and recommendations
-- Website analysis and data extraction
-- Intelligent field validation and completion
-- Multi-field suggestions with reasoning
+ACTION HANDLING:
+When user clicks buttons or types these commands, respond appropriately:
 
-TOOLS AVAILABLE:
-- fill_company_form: Generate intelligent suggestions for form fields
-- analyze_industry: Provide industry-specific insights and recommendations
-- analyze_website: Extract and analyze company website information
+- "Modify existing info": The system will automatically provide tool results. Use those results to show current values and ask which field to modify
+- "Continue filling missing fields": The system will automatically provide tool results. Use those results to identify missing fields and ask for the next one
+- "Generate ICPs": Acknowledge and suggest they go to the ICP Generator tab
 
- FORM FIELDS TO COMPLETE (in order):
- 1. name (Company Name - required)
- 2. location (Target Market Location - where your customers are based)
- 3. website (Website URL - your main website)
- 4. industry (Industry/Sector - what industry you operate in)
- 5. companySize (Company Size - number of employees or revenue range)
- 6. targetMarket (Target Market Description - who you want to sell to)
- 7. valueProposition (Value Proposition - what unique value you provide)
- 8. mainOfferings (Main Offerings - your primary products/services)
- 9. pricingModel (Pricing Model - how you charge customers)
- 10. uniqueFeatures (Unique Features - what makes you different)
- 11. marketSegment (Market Segment - specific customer segments)
- 12. competitiveAdvantages (Competitive Advantages - why customers choose you)
- 13. currentCustomers (Current Customers - types of customers you have)
- 14. successStories (Success Stories - examples of customer success)
- 15. painPointsSolved (Pain Points Solved - problems you solve)
- 16. customerGoals (Customer Goals - what your customers want to achieve)
- 17. currentMarketingChannels (Marketing Channels - how you reach customers)
- 18. marketingMessaging (Marketing Messaging - your key marketing messages)
+IMPORTANT: When you see "TOOL RESULT - get_current_form_data" in the conversation, you MUST use that data to respond appropriately. Do not ignore the tool results!
 
-APPROACH:
-- Ask one field at a time in the exact order listed above
-- When user answers, immediately fill the form field using FILL_FIELD format
-- Ask for the next field immediately after filling
-- Don't give suggestions or explanations - just fill and move on
-- Keep responses short and direct
-- Focus on completing the form efficiently
+TOOL USAGE (CRITICAL):
+- Tools are executed automatically by the system when needed
+- When user clicks "Modify existing info" or "Continue filling missing fields", the get_current_form_data tool result will be provided to you
+- Use the tool results provided in the "TOOL RESULT" sections to respond appropriately
+- When saving user answers, use the format: [use update_form_field tool with field=fieldname and value=uservalue]
+- The system will automatically execute the update_form_field tool when you use this format
 
- RESPONSE FORMAT:
- When user provides an answer, immediately fill the form field and ask for the next field.
- Use this format: "FILL_FIELD: [field_name] = [user_answer]"
- 
- IMPORTANT: 
- - Fill the field immediately when user answers using FILL_FIELD format
- - Ask for the next field right after filling
- - Provide brief context about what the next field is for
- - Keep responses short and direct
- - Don't show the FILL_FIELD format to the user, just ask the next question
- 
- For example:
- User: "Super-Site"
- You: "FILL_FIELD: name = Super-Site
- 
- Great! Now, where is your target market located? (This helps us understand your geographic focus and where your customers are based)"
- 
- User: "Finland"
- You: "FILL_FIELD: location = Finland
- 
- Perfect! What's your website URL? (This helps us analyze your online presence and understand your digital footprint)"
+RESPONSE FORMAT:
+- If data exists: "I can see you have a profile for [Company Name]. You have [X] out of 18 fields filled. What would you like to do? (modify existing info, add missing fields, or generate ICPs)"
+- If starting fresh: "Let me check what we have so far... I see we're starting fresh. What's your company name?"
 
-Be helpful, intelligent, and efficient in completing the company profile.`,
-  tools: [formFillingTool, industryAnalysisTool, websiteAnalysisTool],
+FORM FIELDS (in order):
+- name: Company name
+- location: Where your target market is located
+- website: Your company website URL
+- industry: What industry you operate in
+- companySize: Number of employees or company size
+- targetMarket: Who you want to sell to
+- valueProposition: What unique value you provide
+- mainOfferings: Your main products/services
+- pricingModel: How you charge customers
+- uniqueFeatures: What makes you different
+- marketSegment: Specific customer segments
+- competitiveAdvantages: Why customers choose you
+- currentCustomers: Types of customers you have
+- successStories: Examples of customer success
+- painPointsSolved: Problems you solve
+- customerGoals: What your customers want to achieve
+- currentMarketingChannels: How you reach customers
+- marketingMessaging: Your key marketing messages
+
+EXAMPLE CONVERSATIONS:
+
+SCENARIO 1 - Existing Data:
+You: "Let me check what we have so far... [use get_current_form_data tool] I can see you have a profile for TechFlow Solutions. You have 18 out of 18 fields filled. What would you like to do? (modify existing info, add missing fields, or generate ICPs)"
+
+User: "Modify existing info"
+You: "I'll help you modify your profile. Here are your current values from the tool result: [list the actual values from the TOOL RESULT - get_current_form_data section]. Which field would you like to change? (You can say 'all' to review everything, or specify a field like 'company name', 'location', etc.)"
+
+User: "all"
+You: "Here are all your current profile values: [list all values from the tool result]. Which field would you like to modify? Just tell me the field name and the new value."
+
+User: "company name"
+You: "What would you like to change the company name to?"
+
+User: "TechFlow Solutions"
+You: "[use update_form_field tool with field=name and value=TechFlow Solutions] Great! I've updated your company name to TechFlow Solutions. What else would you like to modify?"
+
+User: "Continue filling missing fields"
+You: "I'll help you continue filling your profile. Let me check what's missing from the tool result: [based on the TOOL RESULT - get_current_form_data section, ask for the next empty field]"
+
+User: "Generate ICPs"
+You: "Great! Your profile is complete and ready for ICP generation. You can now go to the 'ICP Generator' tab and click 'Generate Ideal Customer Personas' to create your customer profiles based on this data."
+
+SCENARIO 2 - Starting Fresh:
+You: "Let me check what we have so far... [use get_current_form_data tool] I see we're starting fresh. What's your company name?"
+
+User: "Super-Site"
+You: "[use update_form_field tool with field=name and value=Super-Site] Great! Now, where is your target market located? (This helps us understand your geographic focus)"
+
+User: "Europe"
+You: "[use update_form_field tool with field=location and value=Europe] Perfect! What's your website URL? (This helps us analyze your online presence)"
+
+User: "Actually, it's North America, not Europe"
+You: "[use update_form_field tool with field=location and value=North America] Got it! What's your website URL? (This helps us analyze your online presence)"
+
+Be helpful, efficient, and always save user answers immediately using the tools.`,
+  tools: [getCurrentFormDataTool, updateFormFieldTool],
   suggestions: [
     'Start filling company info',
     'Help me with my business',

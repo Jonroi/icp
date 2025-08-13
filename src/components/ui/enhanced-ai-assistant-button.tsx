@@ -84,11 +84,7 @@ DROPDOWN VALUES FOR REFERENCE:
               suggestions={assistant.suggestions}
               placeholder={assistant.placeholder}
               onClose={() => setShowAssistant(false)}
-              initialMessage={
-                assistantType === 'icp-form-tool'
-                  ? "Hi! I'm here to help you fill out your company information for creating Ideal Customer Profiles (ICPs). Let's go through this step by step. First, what's your company name?"
-                  : undefined
-              }
+              initialMessage={undefined}
               onMessageReceived={(message) => {
                 // Parse AI suggestions and apply them to form
                 if (assistantType === 'icp-form-tool' && onFormUpdate) {

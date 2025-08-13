@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { runAgent } from '@/services/ai/langchain-agent-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,50 +15,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert messages to Ollama format
-    const systemMessage =
-      messages.find((m) => m.role === 'system')?.content || '';
-    const userMessages = messages.filter((m) => m.role === 'user');
-    const assistantMessages = messages.filter((m) => m.role === 'assistant');
+    // Get the last user message
+    const lastUserMessage =
+      messages.filter((m) => m.role === 'user').pop()?.content || '';
 
-    // Build conversation context
-    const conversationContext = [...userMessages, ...assistantMessages]
-      .map((m) => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`)
-      .join('\n');
-
-    const prompt = systemMessage
-      ? `<|system|>${systemMessage}</s><|user|>${conversationContext}</s><|assistant|>`
-      : `<|user|>${conversationContext}</s><|assistant|>`;
-
-    // Call Ollama API
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3.2:3b-instruct-q4_K_M',
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          top_p: 0.9,
-          max_tokens: 2048,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.status}`);
+    if (!lastUserMessage) {
+      return new Response(JSON.stringify({ error: 'No user message found' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    const data = await response.json();
-    const assistantMessage = data.response || 'No response generated';
+    console.log('🤖 Running LangChain agent with input:', lastUserMessage);
+
+    // Run the LangChain agent
+    const agentResponse = await runAgent(lastUserMessage);
+
+    console.log('🤖 Agent response:', agentResponse);
 
     return new Response(
       JSON.stringify({
         role: 'assistant',
-        content: assistantMessage,
+        content: agentResponse,
       }),
       {
         headers: { 'Content-Type': 'application/json' },
