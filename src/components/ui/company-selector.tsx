@@ -9,10 +9,7 @@ import {
   SelectValue,
 } from './select';
 import { Button } from './button';
-import {
-  getTestCompanyNames,
-  getTestCompanyById,
-} from '@/services/test-companies-service';
+import { companiesService } from '@/services/companies-service';
 import type { OwnCompany } from '@/services/project-service';
 import { Building2, Loader2, Plus, Save } from 'lucide-react';
 
@@ -46,9 +43,13 @@ export function CompanySelector({
       try {
         setIsLoadingCompanies(true);
 
-        // Load test companies
-        const testCompanyNames = await getTestCompanyNames();
-        setCompanies(testCompanyNames);
+        // Load companies from server file (seeded + user)
+        const resp = await fetch('/api/company', { cache: 'no-store' });
+        if (resp.ok) {
+          const json = await resp.json();
+          const list = (json.list || []) as Array<{ id: string; name: string }>;
+          setCompanies(list);
+        }
 
         // Load saved companies from localStorage
         const saved = localStorage.getItem('saved-companies');
@@ -89,10 +90,14 @@ export function CompanySelector({
         return;
       }
 
-      // Check if it's a test company
-      const company = await getTestCompanyById(companyId);
-      if (company) {
-        onCompanySelect(company);
+      // Ask server to select and mirror fields, then fetch current form data to populate UI
+      await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
+        cache: 'no-store',
+      });
+      const stateResp = await fetch('/api/company-data');
+      if (stateResp.ok) {
+        const data = await stateResp.json();
+        onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
       }
     } catch (error) {
       console.error('Error loading company data:', error);

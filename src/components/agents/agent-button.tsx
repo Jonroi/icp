@@ -125,83 +125,7 @@ export function AgentButton({
     }
   };
 
-  const getInitialMessage = () => {
-    if (!agent) return undefined;
-
-    // Generate greeting based on agent type
-    switch (agentId) {
-      case 'company-profile-agent':
-        return `🤖 Hi! I'm your ${agent.name}. I'm here to automate the tedious task of filling out your company profile form.
-
-I can:
-• Fill forms systematically with smart suggestions
-• Validate inputs to prevent errors
-• Update multiple fields efficiently
-• Track your progress and guide you through completion
-• Provide intelligent field suggestions based on context
-
-Let me check your current progress...`;
-
-      case 'icp-analyzer-agent':
-        return `🎯 Hi! I'm your ${agent.name}. I'm here to help you analyze and generate Ideal Customer Profiles (ICPs).
-
-I can help you with:
-• Analyzing customer data and reviews
-• Generating detailed ICPs
-• Providing market insights
-• Optimizing your customer targeting
-
-What would you like to work on? You can:
-• Generate new ICPs
-• Analyze existing customer data
-• Get market insights
-• Or ask me anything about customer profiling!`;
-
-      case 'campaign-creator-agent':
-        return `🚀 Hi! I'm your ${agent.name}. I'm here to help you create effective marketing campaigns.
-
-I can help you with:
-• Creating targeted marketing campaigns
-• Developing ad copy and messaging
-• Planning campaign strategies
-• Optimizing campaign performance
-
-What would you like to create? You can:
-• Design a new campaign
-• Get campaign ideas
-• Optimize existing campaigns
-• Or tell me about your marketing goals!`;
-
-      case 'research-agent':
-        return `🔍 Hi! I'm your ${agent.name}. I'm here to help you research competitors and market opportunities.
-
-I can help you with:
-• Competitor analysis
-• Market research
-• Industry insights
-• Data collection and analysis
-
-What would you like to research? You can:
-• Analyze competitors
-• Research market trends
-• Gather industry data
-• Or tell me what you'd like to explore!`;
-
-      case 'general-guide-agent':
-        return `🤖 Hi! I'm your ${agent.name}. I'm here to help you with general business guidance and questions.
-
-I can help you with:
-• Business strategy advice
-• General questions about ICPs and marketing
-• Best practices and tips
-• Troubleshooting issues
-
-What can I help you with today? Feel free to ask me anything!`;
-
-      default:
-        return `👋 Hi! I'm your ${agent.name}. How can I help you today?`;
-    }
-  };
+  // No pretext messages per project rules
 
   return (
     <>
@@ -223,7 +147,6 @@ What can I help you with today? Feel free to ask me anything!`;
               onMessageReceived={handleMessageReceived}
               onToolExecuted={handleToolExecuted}
               context={{ ...context, currentData }}
-              initialMessage={getInitialMessage()}
             />
           </div>
         </div>

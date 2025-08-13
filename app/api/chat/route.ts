@@ -1,5 +1,10 @@
 import { NextRequest } from 'next/server';
-import { runAgent } from '@/services/ai/langchain-agent-service';
+import { LangChainStream, StreamingTextResponse } from 'ai';
+import { createCompanyProfileAgent } from '@/services/ai/langchain-agent-service';
+import { agentManager } from '@/components/agents/agent-manager';
+import { AIMessage, HumanMessage } from '@langchain/core/messages';
+
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,9 +20,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get the last user message
+    const systemMessageFromRequest = messages.find(
+      (m: any) => m.role === 'system',
+    );
+    const userMessages = messages.filter((m: any) => m.role === 'user');
     const lastUserMessage =
-      messages.filter((m) => m.role === 'user').pop()?.content || '';
+      userMessages[userMessages.length - 1]?.content || '';
+
+    // Build chat history excluding the last user message
+    const history = messages
+      .slice(0, messages.length - 1)
+      .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+      .map((m: any) =>
+        m.role === 'user'
+          ? new HumanMessage(m.content)
+          : new AIMessage(m.content),
+      );
 
     if (!lastUserMessage) {
       return new Response(JSON.stringify({ error: 'No user message found' }), {
@@ -26,22 +44,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log('🤖 Running LangChain agent with input:', lastUserMessage);
+    console.log('🤖 Streaming LangChain agent with input:', lastUserMessage);
 
-    // Run the LangChain agent
-    const agentResponse = await runAgent(lastUserMessage);
+    const agent = await createCompanyProfileAgent();
 
-    console.log('🤖 Agent response:', agentResponse);
+    const { stream, handlers } = LangChainStream();
 
-    return new Response(
-      JSON.stringify({
-        role: 'assistant',
-        content: agentResponse,
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    // Kick off the agent invocation; stream tokens via handlers
+    void agent
+      .invoke(
+        {
+          input: lastUserMessage,
+          system_message:
+            systemMessageFromRequest?.content ||
+            agentManager.getAgent('company-profile-agent')?.instructions ||
+            'You are a helpful assistant.',
+          chat_history: history,
+        },
+        { callbacks: [handlers] },
+      )
+      .catch((err: unknown) => {
+        console.error('Agent streaming error:', err);
+      });
+
+    return new StreamingTextResponse(stream);
   } catch (error) {
     console.error('AI chat error:', error);
     return new Response(

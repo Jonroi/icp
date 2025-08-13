@@ -22,12 +22,16 @@ interface CompanyData {
 
 export async function GET(request: NextRequest) {
   try {
-    const filePath = path.join(process.cwd(), 'company-data.json');
+    const filePath = path.join(process.cwd(), 'data', 'company-data.json');
 
     // Check if file exists
     try {
       await fs.access(filePath);
     } catch (error) {
+      // Ensure data directory exists
+      try {
+        await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true });
+      } catch (_) {}
       // File doesn't exist, return empty data
       return NextResponse.json({
         success: true,
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const filePath = path.join(process.cwd(), 'company-data.json');
+    const filePath = path.join(process.cwd(), 'data', 'company-data.json');
 
     // Read existing data
     let existingData: CompanyData = { data_rows: [], legacy_data: {} };
@@ -217,7 +221,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const filePath = path.join(process.cwd(), 'company-data.json');
+    const filePath = path.join(process.cwd(), 'data', 'company-data.json');
 
     // Check if file exists
     try {

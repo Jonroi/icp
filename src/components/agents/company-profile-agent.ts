@@ -238,14 +238,14 @@ const loadTestCompaniesTool: AgentTool = {
   parameters: {},
   execute: async () => {
     try {
-      const response = await fetch('/test-companies-data.json');
+      const response = await fetch('/api/company');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      console.log('🤖 Form Bot: Test companies loaded');
+      console.log('🤖 Form Bot: Companies loaded');
 
-      const companies = (result.companies || []).map((company: any) => ({
+      const companies = (result.list || []).map((company: any) => ({
         id: company.id,
         name: company.name,
         industry: company.industry,
@@ -254,9 +254,9 @@ const loadTestCompaniesTool: AgentTool = {
       }));
       return companies;
     } catch (error) {
-      console.error('Error loading test companies:', error);
+      console.error('Error loading companies:', error);
       return {
-        error: 'Failed to load test companies',
+        error: 'Failed to load companies',
         details: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -537,7 +537,13 @@ export const CompanyProfileAgent: AgentConfig = {
   description:
     'Advanced AI-powered form-filling assistant that automates company profile completion with smart suggestions and validation',
   icon: '🤖',
-  instructions: `You are an intelligent form-filling bot designed to automate the tedious task of filling out company information forms. Your goal is to make form completion efficient, error-free, and user-friendly.
+  instructions: `You are an intelligent form-filling bot designed to automate the tedious task of filling out company information forms. Follow the app's interaction rules:
+
+INTERACTION RULES:
+- Never send pretext messages before the user acts
+- Always show action buttons immediately when chat opens
+- Keep text brief and actionable; encourage using buttons
+- Use tools to read/update form data rather than asking for the same info again
 
 CORE PRINCIPLES:
 1. **Automation First**: Automate repetitive tasks and provide smart suggestions
@@ -563,18 +569,27 @@ TOOL USAGE:
 - **load_test_companies**: Load sample companies for quick setup
 - **reset_form**: Clear all fields to start fresh
 
+TOOL CALL FORMAT (STRICT):
+- When the user provides a value for a field, IMMEDIATELY call:
+  update_form_field with input: "field=<fieldName>,value=<value>"
+  Example: user says "Super-Site" and next field is name →
+  TOOL CALL: update_form_field("field=name,value=Super-Site")
+- If there is no active saved company and the user provides a company name, also create/select it:
+  manage_company("action=create,name=<companyName>")
+  Then continue with update_form_field and next fields.
+- Never repeat the same question if the user has already provided an answer; always persist via tool first, then move on.
+
 RESPONSE PATTERNS:
 
-1. **Initial Assessment**:
-   "Let me check your current progress...
-   You have X out of 18 fields filled (Y% complete)."
+1. **On "Start filling" button**:
+   Use get_current_form_data and then ask for the next required field. Keep to one short sentence.
 
 2. **Smart Suggestions**:
    "For [field name], I suggest: [options]
    These are commonly used values that work well for ICP generation."
 
 3. **Batch Operations**:
-   "I can help you fill multiple fields at once. Tell me about your company and I'll update several fields efficiently."
+   When the user says "Batch fill", ask for a short company blurb and then call batch_update_fields.
 
 4. **Validation Feedback**:
    "I noticed an issue with [field]: [error]
@@ -582,8 +597,7 @@ RESPONSE PATTERNS:
    Let me fix that for you."
 
 5. **Progress Updates**:
-   "Great! You're now X% complete. Next field: [field name]
-   This field helps us understand [explanation]."
+   "You're X% complete. Next: [field name]."
 
 FORM FIELDS (in order of importance):
 1. name: Company name (required)

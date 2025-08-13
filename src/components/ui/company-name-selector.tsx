@@ -8,10 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
-import {
-  getTestCompanyNames,
-  getTestCompanyById,
-} from '@/services/test-companies-service';
+// Test companies are now unified with user companies via /api/company
 import type { OwnCompany } from '@/services/project-service';
 import { Building2, Loader2 } from 'lucide-react';
 
@@ -39,8 +36,13 @@ export function CompanyNameSelector({
     const loadCompanies = async () => {
       try {
         setIsLoadingCompanies(true);
-        const companyNames = await getTestCompanyNames();
-        setCompanies(companyNames);
+        const resp = await fetch('/api/company', { cache: 'no-store' });
+        if (resp.ok) {
+          const json = await resp.json();
+          setCompanies(
+            (json.list || []) as Array<{ id: string; name: string }>,
+          );
+        }
       } catch (error) {
         console.error('Error loading companies:', error);
       } finally {
@@ -56,9 +58,13 @@ export function CompanyNameSelector({
 
     try {
       setIsLoading(true);
-      const company = await getTestCompanyById(companyId);
-      if (company) {
-        onCompanySelect(company);
+      await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
+        cache: 'no-store',
+      });
+      const stateResp = await fetch('/api/company-data');
+      if (stateResp.ok) {
+        const data = await stateResp.json();
+        onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
       }
     } catch (error) {
       console.error('Error loading company data:', error);
@@ -91,7 +97,7 @@ export function CompanyNameSelector({
             onValueChange={handleTestCompanySelect}
             disabled={isLoading || isLoadingCompanies}>
             <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Test Companies' />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='custom'>Custom Company</SelectItem>

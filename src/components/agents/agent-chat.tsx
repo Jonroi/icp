@@ -10,6 +10,7 @@ import { Button } from '../ui/button';
 import { useVercelAI } from '@/services/ai/vercel-ai-service';
 import type { ChatMessage } from '@/services/ai/vercel-ai-service';
 import type { AgentConfig, AgentTool } from './types';
+import type { OwnCompany } from '@/services/project-service';
 import { agentManager } from './agent-manager';
 
 interface AgentChatProps {
@@ -35,6 +36,13 @@ export function AgentChat({
   const [toolResults, setToolResults] = useState<Record<string, any>>({});
   const [customMessages, setCustomMessages] = useState<ChatMessage[]>([]);
   const [showActionButtons, setShowActionButtons] = useState(true);
+  const [companyChoices, setCompanyChoices] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [showCompanyPicker, setShowCompanyPicker] = useState(false);
+  const [localCompanyMap, setLocalCompanyMap] = useState<
+    Record<string, OwnCompany>
+  >({});
 
   // Get agent configuration
   useEffect(() => {
@@ -55,23 +63,47 @@ export function AgentChat({
   }, [agentId]);
 
   // Initialize useVercelAI only when agent is loaded
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } =
-    useVercelAI({
-      systemMessage: agent?.instructions || '',
-      onError: (error) => {
-        console.error('Agent chat error:', error);
-      },
-      onMessageReceived,
-      initialAssistantMessage: initialMessage,
-    });
+  const handleMessageDone = useCallback(
+    async (message: string) => {
+      onMessageReceived?.(message);
+      try {
+        const resp = await fetch('/api/company-data');
+        if (resp.ok) {
+          const data = await resp.json();
+          onToolExecuted?.('sync_form_state', data?.data || {});
+        }
+      } catch (_) {}
+    },
+    [onMessageReceived, onToolExecuted],
+  );
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    error,
+    append,
+  } = useVercelAI({
+    systemMessage: agent?.instructions || '',
+    onError: (error) => {
+      console.error('Agent chat error:', error);
+    },
+    onMessageReceived: handleMessageDone,
+    // No pretext message per rules. initialAssistantMessage intentionally omitted
+  });
 
   // Keep input focused throughout the conversation
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, customMessages]);
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+    });
+  }, [messages, customMessages, isLoading]);
 
   // Keep input focused after messages are added
   useEffect(() => {
@@ -87,70 +119,143 @@ export function AgentChat({
     }
   }, [agent, availableTools]);
 
-  // Auto-trigger data check for company profile agent
-  useEffect(() => {
-    if (agentId === 'company-profile-agent' && agent) {
-      // Auto-check current data after a short delay (no visible user message)
-      const timer = setTimeout(async () => {
-        try {
-          // Use the agent manager to execute the tool properly (background operation)
-          const result = await agentManager.executeTool(
-            agentId,
-            'get_current_form_data',
-            {},
-          );
+  // Do not auto-send bot pretext messages; instead, show action buttons to kick off flows
 
-          // Create a response message based on the data
-          let responseContent = '';
-          if (result && result.currentData) {
-            const filledCount = result.filledFields?.length || 0;
-            const totalFields = 18;
-            const percentage = Math.round((filledCount / totalFields) * 100);
+  // Welcome prompt card for ICP Generator when there is no conversation yet
+  const showWelcomeCard =
+    agentId === 'company-profile-agent' &&
+    messages.filter((m) => m.role !== 'system').length === 0 &&
+    customMessages.length === 0;
 
-            if (filledCount === 0) {
-              responseContent = `I can see we're starting fresh! You have 0 out of ${totalFields} fields filled.`;
-            } else if (result.isComplete) {
-              responseContent = `Great! I can see you have a complete profile for "${
-                result.currentData.name || 'your company'
-              }". You have ${filledCount} out of ${totalFields} fields filled (${percentage}% complete).`;
-            } else {
-              responseContent = `I can see you have a profile for "${
-                result.currentData.name || 'your company'
-              }". You have ${filledCount} out of ${totalFields} fields filled (${percentage}% complete).`;
-            }
-          } else {
-            responseContent = `I can see we're starting fresh! You have 0 out of 18 fields filled.`;
-          }
-
-          const assistantMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant' as const,
-            content: responseContent,
-          };
-
-          // Add assistant message to custom messages
-          setCustomMessages((prev) => [...prev, assistantMessage]);
-
-          // Call callbacks
-          onMessageReceived?.(responseContent);
-        } catch (error) {
-          console.error('Error auto-checking form data:', error);
-
-          // Fallback message if tool execution fails
-          const fallbackMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant' as const,
-            content: `I can see we're starting fresh! You have 0 out of 18 fields filled.`,
-          };
-
-          setCustomMessages((prev) => [...prev, fallbackMessage]);
-          onMessageReceived?.(fallbackMessage.content);
-        }
-      }, 1500); // 1.5 second delay to let the greeting sink in
-
-      return () => clearTimeout(timer);
+  const handleStartNewProfile = useCallback(async () => {
+    try {
+      await agentManager.executeTool(agentId, 'reset_form', {});
+      // Also create/select a new company record immediately using manage_company
+      await agentManager.executeTool(agentId, 'manage_company', {
+        // The tool expects a string; we'll do it via chat to keep flow consistent
+      } as any);
+    } catch (_) {
+      // ignore reset errors; continue to start filling
     }
-  }, [agentId, agent, onMessageReceived]);
+    await append({ role: 'user', content: 'Start systematic form filling' });
+  }, [agentId, append]);
+
+  const handleEditExistingProfile = useCallback(async () => {
+    try {
+      // Load locally saved companies from localStorage
+      let localList: { id: string; name: string }[] = [];
+      const localMap: Record<string, OwnCompany> = {};
+      if (typeof window !== 'undefined') {
+        const savedRaw = localStorage.getItem('saved-companies');
+        if (savedRaw) {
+          try {
+            const saved = JSON.parse(savedRaw) as OwnCompany[];
+            for (const c of saved) {
+              if (c.id && c.name) {
+                localList.push({ id: c.id, name: c.name });
+                localMap[c.id] = c;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      // Fetch server companies
+      let serverList: { id: string; name: string }[] = [];
+      try {
+        const resp = await fetch('/api/company', { cache: 'no-store' });
+        if (resp.ok) {
+          const json = await resp.json();
+          serverList = Array.isArray(json.list) ? json.list : [];
+        }
+      } catch (_) {}
+
+      // Merge, preferring server entries when ids collide
+      const mergedMap = new Map<string, { id: string; name: string }>();
+      for (const c of localList) mergedMap.set(c.id, c);
+      for (const c of serverList) mergedMap.set(c.id, c);
+      const merged = Array.from(mergedMap.values());
+
+      if (merged.length > 0) {
+        setLocalCompanyMap(localMap);
+        setCompanyChoices(merged.slice(0, 6));
+        setShowCompanyPicker(true);
+        return;
+      }
+
+      // No companies; fall back to test company flow
+      await append({ role: 'user', content: 'Load test company' });
+    } catch (_) {
+      await append({ role: 'user', content: 'Load test company' });
+    }
+  }, [append]);
+
+  const handleSelectCompany = useCallback(
+    async (companyId: string) => {
+      let selectedOk = false;
+      try {
+        const resp = await fetch(
+          `/api/company?id=${encodeURIComponent(companyId)}`,
+          {
+            cache: 'no-store',
+          },
+        );
+        if (resp.ok) {
+          const json = await resp.json();
+          selectedOk = Boolean(json?.success);
+        }
+      } catch (_) {}
+
+      // Fallback: if not found on server but exists locally, mirror fields into form
+      if (!selectedOk && localCompanyMap[companyId]) {
+        const c = localCompanyMap[companyId];
+        const keys: (keyof OwnCompany)[] = [
+          'name',
+          'location',
+          'website',
+          'social',
+          'industry',
+          'companySize',
+          'targetMarket',
+          'valueProposition',
+          'mainOfferings',
+          'pricingModel',
+          'uniqueFeatures',
+          'marketSegment',
+          'competitiveAdvantages',
+          'currentCustomers',
+          'successStories',
+          'painPointsSolved',
+          'customerGoals',
+          'currentMarketingChannels',
+          'marketingMessaging',
+        ];
+        for (const k of keys) {
+          const v = c[k];
+          if (typeof v === 'string' && v.trim() !== '') {
+            try {
+              await fetch('/api/company-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ field: k, value: v }),
+              });
+            } catch (_) {}
+          }
+        }
+      }
+
+      setShowCompanyPicker(false);
+      try {
+        const resp = await fetch('/api/company-data');
+        if (resp.ok) {
+          const data = await resp.json();
+          onToolExecuted?.('sync_form_state', data?.data || {});
+        }
+      } catch (_) {}
+      await append({ role: 'user', content: 'Fill missing fields' });
+    },
+    [append, localCompanyMap, onToolExecuted],
+  );
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,62 +268,8 @@ export function AgentChat({
     // Hide action buttons when any button is clicked
     setShowActionButtons(false);
 
-    // Create a user message directly
-    const userMessage = {
-      id: Date.now().toString(),
-      role: 'user' as const,
-      content: suggestion,
-    };
-
-    // Add user message to custom messages immediately
-    setCustomMessages((prev) => [...prev, userMessage]);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: suggestion }],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant' as const,
-        content: data.content,
-      };
-
-      // Add assistant message to custom messages
-      setCustomMessages((prev) => [...prev, assistantMessage]);
-
-      // Call callbacks
-      onMessageReceived?.(data.content);
-
-      // Check for tool execution in the response
-      if (
-        data.content.includes('tool') ||
-        data.content.includes('FILL_FIELD')
-      ) {
-        onToolExecuted?.('suggestion_click', {
-          suggestion,
-          response: data.content,
-        });
-      }
-    } catch (error) {
-      console.error('Error sending suggestion:', error);
-    }
+    // Send suggestion directly as a user message to the chat stream
+    await append({ role: 'user', content: suggestion });
   };
 
   const handleToolClick = async (tool: AgentTool) => {
@@ -316,7 +367,7 @@ export function AgentChat({
       {/* Quick Suggestions - Only show a few key ones */}
       {Array.isArray(agent.suggestions) && agent.suggestions.length > 0 && (
         <div className='flex flex-wrap gap-2 border-b border-zinc-800 px-4 py-3'>
-          {agent.suggestions.slice(0, 3).map((q, idx) => (
+          {agent.suggestions.slice(0, 4).map((q, idx) => (
             <Button
               key={idx}
               size='sm'
@@ -333,6 +384,54 @@ export function AgentChat({
 
       {/* Messages */}
       <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-zinc-800'>
+        {/* Welcome card (non-chat text) */}
+        {showWelcomeCard && (
+          <div className='mr-auto max-w-[75%] rounded-lg bg-zinc-800 px-4 py-4 text-sm'>
+            <div className='space-y-3'>
+              <div className='text-zinc-100'>
+                ICP Generator helps you fill your company profile quickly so we
+                can create strong ICPs.
+              </div>
+              <div className='text-zinc-300'>
+                Do you want to start a new profile or edit an existing one?
+              </div>
+              <div className='flex gap-2'>
+                <Button
+                  size='sm'
+                  onClick={handleStartNewProfile}
+                  title='Start new profile'>
+                  Start new
+                </Button>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={handleEditExistingProfile}
+                  title='Edit existing'>
+                  Edit existing
+                </Button>
+              </div>
+              {showCompanyPicker && companyChoices.length > 0 && (
+                <div className='mt-2'>
+                  <div className='mb-2 text-xs text-zinc-400'>
+                    Your companies
+                  </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {companyChoices.map((c) => (
+                      <Button
+                        key={c.id}
+                        size='sm'
+                        variant='outline'
+                        onClick={() => handleSelectCompany(c.id)}
+                        title={`Edit ${c.name}`}>
+                        {c.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {[
           ...messages.filter((m) => m.role !== 'system'),
           ...customMessages,

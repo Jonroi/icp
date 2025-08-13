@@ -216,13 +216,13 @@ async function createTestProfile() {
       },
     };
 
-    // Save to company-data.json
+    // Save to data/company-data.json
     console.log('1. Creating comprehensive test profile...');
     await fs.writeFile(
-      './company-data.json',
+      './data/company-data.json',
       JSON.stringify(testProfile, null, 2),
     );
-    console.log('✅ Test profile saved to company-data.json');
+    console.log('✅ Test profile saved to data/company-data.json');
 
     // Display profile summary
     console.log('\n2. Test Profile Summary:');

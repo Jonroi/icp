@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useChat, type Message } from 'ai/react';
 
 export interface ChatMessage {
   id: string;
@@ -22,104 +22,48 @@ export function useVercelAI(options: UseChatOptions = {}) {
     onMessageReceived,
     initialAssistantMessage,
   } = options;
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (initialAssistantMessage) {
-      return [
-        {
-          id: 'initial',
-          role: 'assistant',
-          content: initialAssistantMessage,
-        },
-      ];
-    }
-    return initialMessages;
-  });
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
 
-  // Add system message if provided
-  const allMessages = useMemo(
-    () =>
-      systemMessage
-        ? [
-            { id: 'system', role: 'system' as const, content: systemMessage },
-            ...messages,
-          ]
-        : messages,
-    [systemMessage, messages],
-  );
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setInput(e.target.value);
-    },
-    [],
-  );
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!input.trim() || isLoading) return;
-
-      const userMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: input.trim(),
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
-      setInput('');
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+  const mergedInitialMessages: Message[] = [
+    ...(systemMessage
+      ? [{ id: 'system', role: 'system' as const, content: systemMessage }]
+      : []),
+    ...(initialAssistantMessage
+      ? [
+          {
+            id: 'initial',
+            role: 'assistant' as const,
+            content: initialAssistantMessage,
           },
-          body: JSON.stringify({
-            messages: allMessages.concat(userMessage),
-          }),
-        });
+        ]
+      : []),
+    ...initialMessages,
+  ];
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.content,
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
-
-        // Call the callback with the assistant's message
-        onMessageReceived?.(assistantMessage.content);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
-        setError(error);
-        onError?.(error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [input, isLoading, allMessages, onError, onMessageReceived],
-  );
-
-  return {
-    messages: messages.filter((m) => m.role !== 'system'),
+  const {
+    messages,
     input,
     handleInputChange,
     handleSubmit,
+    isLoading,
+    error,
+    append,
+  } = useChat({
+    api: '/api/chat',
+    initialMessages: mergedInitialMessages,
+    onError(error) {
+      onError?.(error);
+    },
+    onFinish(message) {
+      onMessageReceived?.(message.content);
+    },
+  });
+
+  return {
+    messages: messages.filter((m) => m.role !== 'system') as ChatMessage[],
+    input,
+    handleInputChange,
+    handleSubmit,
+    append,
     isLoading,
     error,
   };

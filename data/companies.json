@@ -1,4 +1,5 @@
 {
+  "activeCompanyId": "company-1755116644915",
   "companies": [
     {
       "id": "techflow-solutions",
@@ -20,7 +21,8 @@
       "painPointsSolved": "High software development costs, long development cycles, lack of customization",
       "customerGoals": "Digital transformation, operational efficiency, competitive advantage",
       "currentMarketingChannels": "LinkedIn, Google Ads, referrals, industry conferences",
-      "marketingMessaging": "Transform your business with custom software solutions that fit your budget and timeline"
+      "marketingMessaging": "Transform your business with custom software solutions that fit your budget and timeline",
+      "updatedAt": "2025-08-13T20:06:56.105Z"
     },
     {
       "id": "green-energy-innovations",
@@ -42,7 +44,8 @@
       "painPointsSolved": "High energy costs, regulatory compliance, sustainability goals",
       "customerGoals": "Cost reduction, sustainability compliance, energy independence",
       "currentMarketingChannels": "Trade shows, industry publications, government contracts, referrals",
-      "marketingMessaging": "Power your future with sustainable energy solutions that pay for themselves"
+      "marketingMessaging": "Power your future with sustainable energy solutions that pay for themselves",
+      "updatedAt": "2025-08-13T20:06:56.105Z"
     }
   ]
 }

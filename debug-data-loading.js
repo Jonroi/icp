@@ -7,9 +7,9 @@ async function debugDataLoading() {
 
   try {
     // Test 1: Check if file exists
-    console.log('1. Checking if company-data.json exists...');
+    console.log('1. Checking if data/company-data.json exists...');
     try {
-      const stats = await fs.stat('./company-data.json');
+      const stats = await fs.stat('./data/company-data.json');
       console.log(`✅ File exists, size: ${stats.size} bytes`);
     } catch (error) {
       console.log('❌ File does not exist:', error.message);
@@ -17,8 +17,8 @@ async function debugDataLoading() {
     }
 
     // Test 2: Read and parse the file
-    console.log('\n2. Reading company-data.json...');
-    const fileContent = await fs.readFile('./company-data.json', 'utf-8');
+    console.log('\n2. Reading data/company-data.json...');
+    const fileContent = await fs.readFile('./data/company-data.json', 'utf-8');
     console.log('✅ File read successfully');
     console.log(`   Content length: ${fileContent.length} characters`);
 

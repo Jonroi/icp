@@ -21,6 +21,8 @@ export {
   type CompanySearchError,
 } from './error-types';
 
-// Export LangChain services
-export * from './langchain-tools';
-export * from './langchain-agent-service';
+// Note: Server-only LangChain services are intentionally not re-exported here
+// to avoid bundling them into client builds. Import them directly from their
+// files where needed on the server:
+// - '@/services/ai/langchain-agent-service'
+// - '@/services/ai/langchain-tools'

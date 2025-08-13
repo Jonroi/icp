@@ -9,7 +9,7 @@ A streamlined tool for generating Ideal Customer Profiles (ICPs) using AI analys
 - **Modular AI Assistant System**: Specialized AI helpers for different tasks with relevant prephrases
 - **ICP Profiles Display**: View and analyze AI-generated customer profiles
 - **Campaign Tools**: Create and research marketing campaigns based on ICPs
-- **Local AI Processing**: Uses Ollama (llama3.2:3b) - no external API costs!
+- **Local AI Processing**: Uses Ollama (llama3.2:3b) with LangChain + Vercel AI SDK streaming
 
 ## 🤖 AI Assistant System
 
@@ -78,8 +78,15 @@ npm run dev
 ### AI Setup
 
 1. **Install Ollama**: Download from [ollama.ai](https://ollama.ai)
-2. **Download Model**: `ollama pull llama3.2:3b`
+2. **Download Model**: `ollama pull llama3.2:3b-instruct-q4_K_M`
 3. **Start Ollama**: It should start automatically
+4. **Environment**: Create `.env.local`
+
+```text
+OPENAI_BASE_URL=http://localhost:11434/v1
+OPENAI_API_KEY=ollama
+OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
+```
 
 ## 📊 How It Works
 
@@ -176,7 +183,7 @@ Each tool has focused expertise and relevant prephrases:
 ## 🔧 Technical Details
 
 - **Frontend**: React + TypeScript + Tailwind CSS
-- **AI**: Local Ollama with llama3.2:3b model
+- **AI**: Local Ollama via OpenAI-compatible endpoint, LangChain agents/tools, Vercel AI SDK v3 streaming (`LangChainStream` + `useChat`)
 - **Storage**: Browser localStorage
 - **No External APIs**: Everything runs locally
 - **Modular Design**: Easy to extend with new AI assistants

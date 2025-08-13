@@ -53,9 +53,12 @@ export interface CompanyDataTable {
 }
 
 // File system storage implementation (PostgreSQL-ready)
+import path from 'path';
+
 class FileSystemCompanyDataService implements CompanyDataService {
   private data: OwnCompany = {} as OwnCompany;
-  private readonly FILE_PATH = './company-data.json';
+  private readonly DATA_DIR = path.join(process.cwd(), 'data');
+  private readonly FILE_PATH = path.join(this.DATA_DIR, 'company-data.json');
   private readonly TEST_USER_ID = 'test-user-123';
 
   // Field order for systematic completion
@@ -121,6 +124,9 @@ class FileSystemCompanyDataService implements CompanyDataService {
       // Only try to use fs in Node.js environment
       if (typeof window === 'undefined' && typeof require !== 'undefined') {
         const fs = require('fs').promises;
+        try {
+          await fs.mkdir(this.DATA_DIR, { recursive: true });
+        } catch (_) {}
 
         // Convert to PostgreSQL-ready format
         const dataRows: CompanyDataRow[] = Object.entries(this.data)
