@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Wand2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project-service';
-import { EnhancedAIAssistantButton } from '@/components/ui/enhanced-ai-assistant-button';
+import { AgentButton } from '@/components/agents/agent-button';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
@@ -47,14 +47,14 @@ export function ICPGenerator({
             Input your company information to generate Ideal Customer Personas.
           </CardDescription>
         </div>
-        <EnhancedAIAssistantButton
-          assistantType='icp-form-tool'
+        <AgentButton
+          agentId='company-profile-agent'
           size='sm'
           className='flex items-center gap-2'
-          currentFormData={ownCompany}
+          context={ownCompany}
           onFormUpdate={onOwnCompanyChange}>
           Fill with AI
-        </EnhancedAIAssistantButton>
+        </AgentButton>
       </CardHeader>
       <CardContent className='space-y-6'>
         <div className='space-y-2'>
