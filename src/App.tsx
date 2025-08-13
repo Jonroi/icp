@@ -31,7 +31,7 @@ export default function App() {
       <Header />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className='grid w-full grid-cols-4'>
+        <TabsList className='w-full'>
           <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
           <TabsTrigger value='demographics'>ICP Profiles</TabsTrigger>
           <TabsTrigger value='campaign-designer'>Campaign Designer</TabsTrigger>
