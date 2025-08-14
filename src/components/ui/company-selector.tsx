@@ -53,11 +53,7 @@ export function CompanySelector({
           const json = await resp.json();
           const list = (json.list || []) as Array<{ id: string; name: string }>;
           setCompanies(list);
-          const activeId = (json?.active?.id || '') as string;
-          if (!selectedCompanyId && activeId) {
-            setSelectedId(activeId);
-            onCompanyIdSelected?.(activeId);
-          }
+          // Do not auto-select active company on initial load
         }
       } catch (error) {
         console.error('Error loading companies:', error);
