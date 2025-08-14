@@ -127,24 +127,25 @@ export class DatabaseMigration {
   async runMigrations(): Promise<void> {
     const client = await this.db.getClient();
     try {
+      // Serialize migrations across concurrent requests using an advisory lock
+      const LOCK_KEY = 792347923; // arbitrary app-specific key
+      await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
       await client.query('BEGIN');
 
       // Read and execute schema.sql
       const fs = require('fs').promises;
-      const schemaPath = require('path').join(__dirname, 'schema.sql');
+      const path = require('path');
+      let schemaPath = path.join(__dirname, 'schema.sql');
+      try {
+        await fs.access(schemaPath);
+      } catch (_) {
+        // Fallback to repository path during Next.js runtime
+        schemaPath = path.join(process.cwd(), 'database', 'schema.sql');
+      }
       const schema = await fs.readFile(schemaPath, 'utf-8');
 
-      // Split by semicolon and execute each statement
-      const statements = schema
-        .split(';')
-        .map((stmt: string) => stmt.trim())
-        .filter((stmt: string) => stmt.length > 0 && !stmt.startsWith('--'));
-
-      for (const statement of statements) {
-        if (statement.trim()) {
-          await client.query(statement);
-        }
-      }
+      // Execute full schema in one go to preserve function bodies and triggers
+      await client.query(schema);
 
       await client.query('COMMIT');
       console.log('✅ Database migrations completed successfully');
@@ -153,6 +154,10 @@ export class DatabaseMigration {
       console.error('❌ Database migration failed:', error);
       throw error;
     } finally {
+      try {
+        const LOCK_KEY = 792347923;
+        await client.query('SELECT pg_advisory_unlock($1)', [LOCK_KEY]);
+      } catch (_) {}
       client.release();
     }
   }

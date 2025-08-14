@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/card';
 
 import { Copy, Download, Save } from 'lucide-react';
-import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
+// AI assistant removed during reset
 
 const campaignIdeas = [
   {
@@ -52,12 +52,9 @@ export function CampaignLibrary() {
             personalization builder.
           </CardDescription>
         </div>
-        <AIAssistantButton
-          assistantType='campaign-research-tool'
-          size='sm'
-          className='flex items-center gap-2'>
-          Research Campaigns
-        </AIAssistantButton>
+        <Button size='sm' className='flex items-center gap-2' disabled>
+          Research Campaigns (coming soon)
+        </Button>
       </CardHeader>
       <CardContent className='space-y-4'>
         {campaignIdeas.map((idea, index) => (

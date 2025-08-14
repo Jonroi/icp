@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Bot, Sparkles, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
-import { AgentButton } from '@/components/agents/agent-button';
+// Agent button removed during reset
 
 interface ICP {
   name: string;
@@ -53,13 +53,9 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
               View and manage your generated Ideal Customer Profiles
             </CardDescription>
           </div>
-          <AgentButton
-            agentId='icp-analyzer-agent'
-            size='sm'
-            className='flex items-center gap-2'
-            context={{ generatedICPs }}>
-            Analyze ICPs
-          </AgentButton>
+          <Button size='sm' className='flex items-center gap-2' disabled>
+            Analyze ICPs (coming soon)
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

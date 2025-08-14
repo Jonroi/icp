@@ -21,8 +21,4 @@ export {
   type CompanySearchError,
 } from './error-types';
 
-// Note: Server-only LangChain services are intentionally not re-exported here
-// to avoid bundling them into client builds. Import them directly from their
-// files where needed on the server:
-// - '@/services/ai/langchain-agent-service'
-// - '@/services/ai/langchain-tools'
+// Note: Chat/agent modules have been removed as part of the reset

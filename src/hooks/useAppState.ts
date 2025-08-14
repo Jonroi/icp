@@ -18,13 +18,10 @@ export function useAppState() {
   // AI service
   const aiService = useMemo(() => new AIService(), []);
 
-  // Load saved data on mount
+  // On mount: start with a clean UI state (no local or server preload)
   useEffect(() => {
-    const savedOwn = ProjectService.loadOwnCompany();
-    if (savedOwn) setOwnCompany(savedOwn);
-
-    const savedICPs = ProjectService.loadLastICPs();
-    if (savedICPs) setGeneratedICPs(savedICPs as unknown as ICP[]);
+    setOwnCompany({ name: '', website: '', social: '', location: '' });
+    setAdditionalContext('');
   }, []);
 
   // Helper function to build own company context
@@ -110,10 +107,7 @@ export function useAppState() {
     }
 
     try {
-      // Save to localStorage (for backward compatibility)
-      ProjectService.saveOwnCompany(company);
-
-      // Also save to API endpoint (for LangChain tools compatibility)
+      // Save to API endpoint (DB)
       const fieldsToSave = [
         'name',
         'location',
@@ -134,23 +128,89 @@ export function useAppState() {
         'customerGoals',
         'currentMarketingChannels',
         'marketingMessaging',
-      ];
+        'additionalContext',
+      ] as const;
 
       // Save each field to the API
       for (const field of fieldsToSave) {
-        if (company[field as keyof OwnCompany]) {
+        const v =
+          field === 'additionalContext'
+            ? company.additionalContext || additionalContext
+            : (company[field] as string | undefined);
+        if (v && v.trim() !== '') {
           await fetch('/api/company-data', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              field,
-              value: company[field as keyof OwnCompany],
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ field, value: v }),
           });
         }
       }
+
+      // Additionally, sync fields to the active company record if present
+      try {
+        const resp = await fetch('/api/company', { cache: 'no-store' });
+        if (resp.ok) {
+          const json = (await resp.json()) as {
+            success: boolean;
+            active?: { id?: string } | null;
+          };
+          const activeId = (json as unknown as { active?: { id?: string } })
+            .active?.id;
+          if (activeId) {
+            // Sync to active company record (exclude additionalContext)
+            for (const field of fieldsToSave.filter(
+              (f) => f !== 'additionalContext',
+            )) {
+              const value = company[field as keyof OwnCompany] as
+                | string
+                | undefined;
+              if (value && value.trim() !== '') {
+                await fetch('/api/company', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: activeId, field, value }),
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to sync to active company record:', e);
+      }
+
+      // Refresh UI state from server (no local caching) so that Additional Context appears immediately
+      try {
+        const refresh = await fetch('/api/company-data', { cache: 'no-store' });
+        if (refresh.ok) {
+          const json = await refresh.json();
+          const current = json?.data?.currentData as OwnCompany | undefined;
+          if (current) {
+            setOwnCompany({
+              name: current.name || '',
+              website: current.website || '',
+              social: current.social || '',
+              location: current.location || '',
+              industry: current.industry || '',
+              companySize: current.companySize || '',
+              targetMarket: current.targetMarket || '',
+              valueProposition: current.valueProposition || '',
+              mainOfferings: current.mainOfferings || '',
+              pricingModel: current.pricingModel || '',
+              uniqueFeatures: current.uniqueFeatures || '',
+              marketSegment: current.marketSegment || '',
+              competitiveAdvantages: current.competitiveAdvantages || '',
+              currentCustomers: current.currentCustomers || '',
+              successStories: current.successStories || '',
+              painPointsSolved: current.painPointsSolved || '',
+              customerGoals: current.customerGoals || '',
+              currentMarketingChannels: current.currentMarketingChannels || '',
+              marketingMessaging: current.marketingMessaging || '',
+              additionalContext: current.additionalContext || '',
+            });
+            setAdditionalContext(current.additionalContext || '');
+          }
+        }
+      } catch (_) {}
 
       alert(`Your company "${company.name}" saved successfully!`);
     } catch (error) {
@@ -183,9 +243,6 @@ export function useAppState() {
     };
 
     try {
-      // Clear localStorage
-      localStorage.removeItem('own-company');
-
       // Clear API storage
       await fetch('/api/company-data', {
         method: 'DELETE',
@@ -218,7 +275,10 @@ export function useAppState() {
       setError(null);
 
       const ownCompanyContext = buildOwnCompanyContext(ownCompany);
-      const combinedContext = [ownCompanyContext, additionalContext]
+      const combinedContext = [
+        ownCompanyContext,
+        ownCompany.additionalContext || additionalContext,
+      ]
         .filter((v) => Boolean(v && v.trim()))
         .join('\n\n');
 
@@ -228,7 +288,6 @@ export function useAppState() {
       // Generate ICPs based on own company data and additional context
       const icps = await aiService.generateICPs([], [], combinedContext);
       setGeneratedICPs(icps);
-      ProjectService.saveLastICPs(icps as unknown as ICP[]);
 
       console.log('ICPs generated successfully');
     } catch (error) {

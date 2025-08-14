@@ -1,6 +1,6 @@
 # Migration from Vite to Next.js
 
-This project has been successfully migrated from Vite to Next.js to better integrate with the Vercel AI SDK.
+This project has been successfully migrated from Vite to Next.js.
 
 ## Key Changes Made
 
@@ -21,13 +21,11 @@ This project has been successfully migrated from Vite to Next.js to better integ
 
 ### 3. API Routes
 
-- **New**: `app/api/chat/route.ts` - AI chat endpoint using Vercel AI SDK
 - **New**: `app/api/readability/route.ts` - Website readability endpoint
 
 ### 4. AI Integration
 
-- **Updated**: `src/services/ai/vercel-ai-service.ts` - Now uses Vercel AI SDK's `useChat` hook
-- **Updated**: Chat components now use streaming responses
+- Chat/assistant components and Vercel AI SDK usage have been removed in the reset
 
 ## Benefits of Next.js Migration
 
@@ -52,6 +50,7 @@ This project has been successfully migrated from Vite to Next.js to better integ
    ```
 
 3. **Build for Production**:
+
    ```bash
    npm run build
    npm start
@@ -59,14 +58,13 @@ This project has been successfully migrated from Vite to Next.js to better integ
 
 ## API Endpoints
 
-- **AI Chat**: `POST /api/chat` - Streaming AI responses
 - **Readability**: `GET /api/readability?url=<url>` - Website content extraction
 
 ## Environment Variables
 
 Make sure your `.env.local` file includes:
 
-```
+```bash
 OLLAMA_HOST=http://localhost:11434
 ```
 

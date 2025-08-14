@@ -1,175 +1,231 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { OwnCompany } from '@/services/project-service';
+import {
+  databaseManager,
+  getDatabaseConfig,
+  DatabaseMigration,
+} from '../../database/config';
 
 export interface StoredCompany extends OwnCompany {
   id: string;
   updatedAt: string;
 }
 
-interface CompaniesFile {
-  activeCompanyId: string | null;
-  companies: StoredCompany[];
+const CURRENT_USER_ID = process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
+
+let isDbInitialized = false;
+async function ensureDb(): Promise<void> {
+  if (isDbInitialized) return;
+  console.log('[DB] Initializing PostgreSQL connection (companies-service)');
+  await databaseManager.initialize(getDatabaseConfig());
+  const migrator = new DatabaseMigration();
+  console.log('[DB] Running migrations (companies-service)');
+  await migrator.runMigrations();
+  isDbInitialized = true;
+  console.log('[DB] Initialization complete (companies-service)');
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const COMPANIES_FILE = path.join(DATA_DIR, 'companies.json');
-
-async function readCompaniesFile(): Promise<CompaniesFile> {
-  try {
-    const raw = await fs.readFile(COMPANIES_FILE, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.companies)) {
-      return await seedIfEmpty();
-    }
-    return {
-      activeCompanyId: parsed.activeCompanyId ?? null,
-      companies: parsed.companies as StoredCompany[],
-    };
-  } catch (_) {
-    return await seedIfEmpty();
-  }
-}
-
-async function writeCompaniesFile(data: CompaniesFile): Promise<void> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (_) {}
-  await fs.writeFile(COMPANIES_FILE, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-async function seedIfEmpty(): Promise<CompaniesFile> {
-  const seeded: CompaniesFile = {
-    activeCompanyId: null,
-    companies: [
-      {
-        id: 'techflow-solutions',
-        name: 'TechFlow Solutions',
-        location: 'North America',
-        website: 'https://techflowsolutions.com',
-        social: 'https://linkedin.com/company/techflow-solutions',
-        industry: 'SaaS/Software',
-        companySize: 'Small Business (11-50 employees)',
-        targetMarket: 'Small to medium businesses',
-        valueProposition:
-          'Affordable custom software solutions with rapid delivery',
-        mainOfferings:
-          'Custom web applications, mobile apps, and business automation tools',
-        pricingModel: 'Project-based pricing with flexible payment plans',
-        uniqueFeatures:
-          '2-week MVP delivery, ongoing support, and agile development process',
-        marketSegment: 'B2B',
-        competitiveAdvantages:
-          'Lower costs than enterprise solutions, faster delivery, personalized service',
-        currentCustomers:
-          '15+ small businesses, 3 healthcare clinics, 2 retail chains',
-        successStories:
-          'Helped a retail chain increase online sales by 40% with custom e-commerce platform',
-        painPointsSolved:
-          'High software development costs, long development cycles, lack of customization',
-        customerGoals:
-          'Digital transformation, operational efficiency, competitive advantage',
-        currentMarketingChannels:
-          'LinkedIn, Google Ads, referrals, industry conferences',
-        marketingMessaging:
-          'Transform your business with custom software solutions that fit your budget and timeline',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: 'green-energy-innovations',
-        name: 'Green Energy Innovations',
-        location: 'Europe',
-        website: 'https://greenenergyinnovations.com',
-        social: 'https://linkedin.com/company/green-energy-innovations',
-        industry: 'Energy',
-        companySize: 'Medium Business (51-200 employees)',
-        targetMarket: 'Large corporations and government entities',
-        valueProposition:
-          'Sustainable energy solutions that reduce costs and environmental impact',
-        mainOfferings:
-          'Solar panel installations, energy storage systems, and smart grid solutions',
-        pricingModel: 'Tiered pricing',
-        uniqueFeatures:
-          'AI-powered energy optimization, 24/7 monitoring, carbon footprint tracking',
-        marketSegment: 'B2B',
-        competitiveAdvantages:
-          'Proven ROI, government incentives expertise, comprehensive warranty',
-        currentCustomers:
-          '25+ Fortune 500 companies, 10 government agencies, 50+ commercial buildings',
-        successStories:
-          'Reduced energy costs by 60% for a manufacturing facility while achieving carbon neutrality',
-        painPointsSolved:
-          'High energy costs, regulatory compliance, sustainability goals',
-        customerGoals:
-          'Cost reduction, sustainability compliance, energy independence',
-        currentMarketingChannels:
-          'Trade shows, industry publications, government contracts, referrals',
-        marketingMessaging:
-          'Power your future with sustainable energy solutions that pay for themselves',
-        updatedAt: new Date().toISOString(),
-      },
-    ],
-  };
-
-  try {
-    // Create file only if it does not exist or is invalid
-    await writeCompaniesFile(seeded);
-  } catch (_) {}
-  return seeded;
+interface CompanyDbRow {
+  id: string;
+  name: string;
+  location: string | null;
+  website: string | null;
+  social: string | null;
+  industry: string | null;
+  company_size: string | null;
+  target_market: string | null;
+  value_proposition: string | null;
+  main_offerings: string | null;
+  pricing_model: string | null;
+  unique_features: string | null;
+  market_segment: string | null;
+  competitive_advantages: string | null;
+  current_customers: string | null;
+  success_stories: string | null;
+  pain_points_solved: string | null;
+  customer_goals: string | null;
+  current_marketing_channels: string | null;
+  marketing_messaging: string | null;
+  reviews: string | null;
+  linkedin_data: string | null;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export const companiesService = {
   async listCompanies(): Promise<Pick<StoredCompany, 'id' | 'name'>[]> {
-    const file = await readCompaniesFile();
-    return file.companies.map((c) => ({ id: c.id, name: c.name }));
+    await ensureDb();
+    console.log('[DB] Listing companies from Postgres');
+    const result = await databaseManager.query(
+      'SELECT id::text AS id, name FROM companies ORDER BY name',
+    );
+    return result.rows as Array<{ id: string; name: string }>;
   },
 
   async getActiveCompany(): Promise<StoredCompany | null> {
-    const file = await readCompaniesFile();
-    if (!file.activeCompanyId) return null;
-    return file.companies.find((c) => c.id === file.activeCompanyId) || null;
+    await ensureDb();
+    console.log('[DB] Fetching active company for user');
+    const res = await databaseManager.query(
+      `SELECT c.*, c.id::text AS id
+			 FROM user_active_company u
+			 JOIN companies c ON c.id = u.company_id
+			 WHERE u.user_id = $1`,
+      [CURRENT_USER_ID],
+    );
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0] as CompanyDbRow;
+    const mapped: StoredCompany = {
+      id: row.id,
+      name: row.name || '',
+      website: row.website || '',
+      social: row.social || '',
+      location: row.location || '',
+      industry: row.industry || '',
+      companySize: row.company_size || '',
+      targetMarket: row.target_market || '',
+      valueProposition: row.value_proposition || '',
+      mainOfferings: row.main_offerings || '',
+      pricingModel: row.pricing_model || '',
+      uniqueFeatures: row.unique_features || '',
+      marketSegment: row.market_segment || '',
+      competitiveAdvantages: row.competitive_advantages || '',
+      currentCustomers: row.current_customers || '',
+      successStories: row.success_stories || '',
+      painPointsSolved: row.pain_points_solved || '',
+      customerGoals: row.customer_goals || '',
+      currentMarketingChannels: row.current_marketing_channels || '',
+      marketingMessaging: row.marketing_messaging || '',
+      updatedAt:
+        row.updated_at instanceof Date
+          ? row.updated_at.toISOString()
+          : new Date().toISOString(),
+    };
+    return mapped;
   },
 
   async selectCompany(id: string): Promise<StoredCompany | null> {
-    const file = await readCompaniesFile();
-    const found = file.companies.find((c) => c.id === id) || null;
-    file.activeCompanyId = found ? id : null;
-    await writeCompaniesFile(file);
-    return found;
+    await ensureDb();
+    console.log(`[DB] Setting active company: ${id}`);
+    // Set active
+    await databaseManager.query(
+      `INSERT INTO user_active_company (user_id, company_id, updated_at)
+			 VALUES ($1, $2, NOW())
+			 ON CONFLICT (user_id)
+			 DO UPDATE SET company_id = EXCLUDED.company_id, updated_at = NOW()`,
+      [CURRENT_USER_ID, id],
+    );
+    // Return selected
+    const res = await databaseManager.query(
+      'SELECT * FROM companies WHERE id = $1',
+      [id],
+    );
+    if (res.rows.length === 0) return null;
+    const row = res.rows[0] as CompanyDbRow;
+    const mapped: StoredCompany = {
+      id: row.id,
+      name: row.name || '',
+      website: row.website || '',
+      social: row.social || '',
+      location: row.location || '',
+      industry: row.industry || '',
+      companySize: row.company_size || '',
+      targetMarket: row.target_market || '',
+      valueProposition: row.value_proposition || '',
+      mainOfferings: row.main_offerings || '',
+      pricingModel: row.pricing_model || '',
+      uniqueFeatures: row.unique_features || '',
+      marketSegment: row.market_segment || '',
+      competitiveAdvantages: row.competitive_advantages || '',
+      currentCustomers: row.current_customers || '',
+      successStories: row.success_stories || '',
+      painPointsSolved: row.pain_points_solved || '',
+      customerGoals: row.customer_goals || '',
+      currentMarketingChannels: row.current_marketing_channels || '',
+      marketingMessaging: row.marketing_messaging || '',
+      updatedAt:
+        row.updated_at instanceof Date
+          ? row.updated_at.toISOString()
+          : new Date().toISOString(),
+    };
+    return mapped;
   },
 
   async createCompany(
     partial: Partial<OwnCompany> & { name: string },
   ): Promise<StoredCompany> {
-    const file = await readCompaniesFile();
-    const id = `company-${Date.now()}`;
-    const newCompany: StoredCompany = {
-      id,
-      name: partial.name,
-      website: partial.website || '',
-      social: partial.social || '',
-      location: partial.location || '',
-      industry: partial.industry || '',
-      companySize: partial.companySize || '',
-      targetMarket: partial.targetMarket || '',
-      valueProposition: partial.valueProposition || '',
-      mainOfferings: partial.mainOfferings || '',
-      pricingModel: partial.pricingModel || '',
-      uniqueFeatures: partial.uniqueFeatures || '',
-      marketSegment: partial.marketSegment || '',
-      competitiveAdvantages: partial.competitiveAdvantages || '',
-      currentCustomers: partial.currentCustomers || '',
-      successStories: partial.successStories || '',
-      painPointsSolved: partial.painPointsSolved || '',
-      customerGoals: partial.customerGoals || '',
-      currentMarketingChannels: partial.currentMarketingChannels || '',
-      marketingMessaging: partial.marketingMessaging || '',
-      updatedAt: new Date().toISOString(),
+    await ensureDb();
+    console.log(`[DB] Creating company: ${partial.name}`);
+    const res = await databaseManager.query(
+      `INSERT INTO companies (
+			  name, location, website, social, industry, company_size, target_market,
+			  value_proposition, main_offerings, pricing_model, unique_features,
+			  market_segment, competitive_advantages, current_customers,
+			  success_stories, pain_points_solved, customer_goals,
+			  current_marketing_channels, marketing_messaging, created_at, updated_at
+			) VALUES (
+			  $1,$2,$3,$4,$5,$6,$7,
+			  $8,$9,$10,$11,
+			  $12,$13,$14,
+			  $15,$16,$17,
+			  $18,$19, NOW(), NOW()
+			) RETURNING *`,
+      [
+        partial.name,
+        partial.location || '',
+        partial.website || '',
+        partial.social || '',
+        partial.industry || '',
+        partial.companySize || '',
+        partial.targetMarket || '',
+        partial.valueProposition || '',
+        partial.mainOfferings || '',
+        partial.pricingModel || '',
+        partial.uniqueFeatures || '',
+        partial.marketSegment || '',
+        partial.competitiveAdvantages || '',
+        partial.currentCustomers || '',
+        partial.successStories || '',
+        partial.painPointsSolved || '',
+        partial.customerGoals || '',
+        partial.currentMarketingChannels || '',
+        partial.marketingMessaging || '',
+      ],
+    );
+    const row = res.rows[0] as CompanyDbRow;
+    const created: StoredCompany = {
+      id: row.id,
+      name: row.name || '',
+      website: row.website || '',
+      social: row.social || '',
+      location: row.location || '',
+      industry: row.industry || '',
+      companySize: row.company_size || '',
+      targetMarket: row.target_market || '',
+      valueProposition: row.value_proposition || '',
+      mainOfferings: row.main_offerings || '',
+      pricingModel: row.pricing_model || '',
+      uniqueFeatures: row.unique_features || '',
+      marketSegment: row.market_segment || '',
+      competitiveAdvantages: row.competitive_advantages || '',
+      currentCustomers: row.current_customers || '',
+      successStories: row.success_stories || '',
+      painPointsSolved: row.pain_points_solved || '',
+      customerGoals: row.customer_goals || '',
+      currentMarketingChannels: row.current_marketing_channels || '',
+      marketingMessaging: row.marketing_messaging || '',
+      updatedAt:
+        row.updated_at instanceof Date
+          ? row.updated_at.toISOString()
+          : new Date().toISOString(),
     };
-    file.companies.push(newCompany);
-    file.activeCompanyId = id;
-    await writeCompaniesFile(file);
-    return newCompany;
+    // Set active for current user
+    await databaseManager.query(
+      `INSERT INTO user_active_company (user_id, company_id, updated_at)
+			 VALUES ($1, $2, NOW())
+			 ON CONFLICT (user_id)
+			 DO UPDATE SET company_id = EXCLUDED.company_id, updated_at = NOW()`,
+      [CURRENT_USER_ID, created.id],
+    );
+    return created;
   },
 
   async updateCompanyField(
@@ -177,14 +233,69 @@ export const companiesService = {
     field: keyof OwnCompany,
     value: string,
   ): Promise<StoredCompany> {
-    const file = await readCompaniesFile();
-    const idx = file.companies.findIndex((c) => c.id === id);
-    if (idx === -1) {
-      throw new Error('Company not found');
-    }
-    (file.companies[idx] as unknown as Record<string, unknown>)[field] = value;
-    file.companies[idx].updatedAt = new Date().toISOString();
-    await writeCompaniesFile(file);
-    return file.companies[idx];
+    await ensureDb();
+    // Map TS field to DB column
+    const fieldMap: Record<string, string> = {
+      name: 'name',
+      location: 'location',
+      website: 'website',
+      social: 'social',
+      industry: 'industry',
+      companySize: 'company_size',
+      targetMarket: 'target_market',
+      valueProposition: 'value_proposition',
+      mainOfferings: 'main_offerings',
+      pricingModel: 'pricing_model',
+      uniqueFeatures: 'unique_features',
+      marketSegment: 'market_segment',
+      competitiveAdvantages: 'competitive_advantages',
+      currentCustomers: 'current_customers',
+      successStories: 'success_stories',
+      painPointsSolved: 'pain_points_solved',
+      customerGoals: 'customer_goals',
+      currentMarketingChannels: 'current_marketing_channels',
+      marketingMessaging: 'marketing_messaging',
+      reviews: 'reviews',
+      linkedInData: 'linkedin_data',
+    };
+    const column = fieldMap[field as string];
+    if (!column) throw new Error('Unsupported field');
+    console.log(`[DB] Updating company field: id=${id}, column=${column}`);
+    await databaseManager.query(
+      `UPDATE companies SET ${column} = $2, updated_at = NOW() WHERE id = $1`,
+      [id, value],
+    );
+    const res = await databaseManager.query(
+      'SELECT * FROM companies WHERE id = $1',
+      [id],
+    );
+    const row = res.rows[0] as CompanyDbRow;
+    const updated: StoredCompany = {
+      id: row.id,
+      name: row.name || '',
+      website: row.website || '',
+      social: row.social || '',
+      location: row.location || '',
+      industry: row.industry || '',
+      companySize: row.company_size || '',
+      targetMarket: row.target_market || '',
+      valueProposition: row.value_proposition || '',
+      mainOfferings: row.main_offerings || '',
+      pricingModel: row.pricing_model || '',
+      uniqueFeatures: row.unique_features || '',
+      marketSegment: row.market_segment || '',
+      competitiveAdvantages: row.competitive_advantages || '',
+      currentCustomers: row.current_customers || '',
+      successStories: row.success_stories || '',
+      painPointsSolved: row.pain_points_solved || '',
+      customerGoals: row.customer_goals || '',
+      currentMarketingChannels: row.current_marketing_channels || '',
+      marketingMessaging: row.marketing_messaging || '',
+      updatedAt:
+        row.updated_at instanceof Date
+          ? row.updated_at.toISOString()
+          : new Date().toISOString(),
+    };
+    return updated;
   },
 };

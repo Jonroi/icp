@@ -10,21 +10,12 @@ export { ICPProfiles } from './icp/ICPProfiles';
 export { LocationSelector } from './ui/location-selector';
 export { CONTINENTS, COUNTRIES_BY_REGION } from './ui/location-data';
 export { OwnCompanyForm } from './icp/OwnCompanyForm';
+export { CompanyNameSelector } from './ui/company-name-selector';
 
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
 
 // UI utilities
-export { ChatPanel } from './ui/chat-panel';
-export { SpecializedChat } from './ui/specialized-chat';
-export { AIAssistantButton } from './ui/ai-assistant-button';
-export { EnhancedAIAssistantButton } from './ui/enhanced-ai-assistant-button';
-export { AI_ASSISTANTS } from './ui/ai-assistants-config';
-export { FloatingChat } from './ui/floating-chat';
-export { CompanyNameSelector } from './ui/company-name-selector';
 
-// Export new agent components
-export { AgentButton } from './agents/agent-button';
-export { AgentChat } from './agents/agent-chat';
-export { agentManager } from './agents/agent-manager';
+// Note: Chat and agent components removed as part of reset

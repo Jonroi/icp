@@ -9,17 +9,15 @@ import {
 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Sparkles, Wand2, Save } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project-service';
-import { AgentButton } from '@/components/agents/agent-button';
+// Agent button removed during reset
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
-  additionalContext: string;
   isLoading: boolean;
   error: string | null;
-  onAdditionalContextChange: (context: string) => void;
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => Promise<void>;
   onResetOwnCompany?: () => Promise<void>;
@@ -28,10 +26,8 @@ interface ICPGeneratorProps {
 
 export function ICPGenerator({
   ownCompany,
-  additionalContext,
   isLoading,
   error,
-  onAdditionalContextChange,
   onOwnCompanyChange,
   onSaveOwnCompany,
   onResetOwnCompany,
@@ -49,20 +45,34 @@ export function ICPGenerator({
             Input your company information to generate Ideal Customer Personas.
           </CardDescription>
         </div>
-        <AgentButton
-          agentId='company-profile-agent'
-          size='sm'
-          className='flex items-center gap-2'
-          context={ownCompany}
-          onFormUpdate={onOwnCompanyChange}>
-          Fill with AI
-        </AgentButton>
+        <div className='flex items-center gap-2'>
+          <Button
+            size='sm'
+            className='flex items-center gap-2'
+            onClick={async () => {
+              try {
+                if (onSaveOwnCompany && ownCompany) {
+                  await onSaveOwnCompany(ownCompany);
+                }
+              } catch (error) {
+                console.error('Error saving company data:', error);
+              }
+            }}
+            disabled={isLoading}>
+            <Save className='h-4 w-4' />
+            Save
+          </Button>
+          <Button size='sm' className='flex items-center gap-2' disabled>
+            Fill with AI (coming soon)
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className='space-y-6'>
         <div className='space-y-2'>
           <OwnCompanyForm
             company={ownCompany || { name: '', website: '', social: '' }}
             onChange={(field, value) => onOwnCompanyChange?.(field, value)}
+            onSaveCompany={onSaveOwnCompany}
             onReset={async () => {
               if (onResetOwnCompany) {
                 await onResetOwnCompany();
@@ -71,20 +81,7 @@ export function ICPGenerator({
           />
         </div>
 
-        <div className='space-y-2'>
-          <Label htmlFor='additional-context'>Additional Context</Label>
-          <Textarea
-            id='additional-context'
-            placeholder='Any additional information about your target market, ideal customers, or business goals...'
-            rows={4}
-            value={additionalContext}
-            onChange={(e) => onAdditionalContextChange(e.target.value)}
-          />
-          <p className='text-xs text-muted-foreground'>
-            Describe your ideal customers, target market characteristics, or any
-            specific insights about your audience.
-          </p>
-        </div>
+        {/* Additional Context removed */}
 
         <div className='flex flex-wrap gap-2'>
           <Button

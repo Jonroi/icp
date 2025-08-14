@@ -9,9 +9,8 @@ import {
   SelectValue,
 } from './select';
 import { Button } from './button';
-import { companiesService } from '@/services/companies-service';
 import type { OwnCompany } from '@/services/project-service';
-import { Building2, Loader2, Plus, Save } from 'lucide-react';
+import { Loader2, Plus, Save } from 'lucide-react';
 
 interface CompanySelectorProps {
   value: string;
@@ -31,7 +30,6 @@ export function CompanySelector({
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
     [],
   );
-  const [savedCompanies, setSavedCompanies] = useState<OwnCompany[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -43,19 +41,12 @@ export function CompanySelector({
       try {
         setIsLoadingCompanies(true);
 
-        // Load companies from server file (seeded + user)
+        // Load companies from database
         const resp = await fetch('/api/company', { cache: 'no-store' });
         if (resp.ok) {
           const json = await resp.json();
           const list = (json.list || []) as Array<{ id: string; name: string }>;
           setCompanies(list);
-        }
-
-        // Load saved companies from localStorage
-        const saved = localStorage.getItem('saved-companies');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          setSavedCompanies(parsed);
         }
       } catch (error) {
         console.error('Error loading companies:', error);
@@ -75,20 +66,8 @@ export function CompanySelector({
       return;
     }
 
-    if (companyId === 'custom') {
-      setIsCreatingNew(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
-
-      // Check if it's a saved company
-      const savedCompany = savedCompanies.find((c) => c.id === companyId);
-      if (savedCompany) {
-        onCompanySelect(savedCompany);
-        return;
-      }
 
       // Ask server to select and mirror fields, then fetch current form data to populate UI
       await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
@@ -99,6 +78,14 @@ export function CompanySelector({
         const data = await stateResp.json();
         onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
       }
+      // Force refresh after mirror to ensure Additional Context and fields show immediately
+      try {
+        const refresh = await fetch('/api/company-data', { cache: 'no-store' });
+        if (refresh.ok) {
+          const d = await refresh.json();
+          onCompanySelect(d?.data?.currentData || ({} as OwnCompany));
+        }
+      } catch (_) {}
     } catch (error) {
       console.error('Error loading company data:', error);
     } finally {
@@ -107,42 +94,28 @@ export function CompanySelector({
   };
 
   const handleSaveNewCompany = async () => {
-    if (!newCompanyName.trim() || !onSaveCompany) return;
+    if (!newCompanyName.trim()) return;
 
     try {
-      const newCompany: OwnCompany = {
-        id: `company-${Date.now()}`,
-        name: newCompanyName.trim(),
-        location: '',
-        website: '',
-        social: '',
-        industry: '',
-        companySize: '',
-        targetMarket: '',
-        valueProposition: '',
-        mainOfferings: '',
-        pricingModel: '',
-        uniqueFeatures: '',
-        marketSegment: '',
-        competitiveAdvantages: '',
-        currentCustomers: '',
-        successStories: '',
-        painPointsSolved: '',
-        customerGoals: '',
-        currentMarketingChannels: '',
-        marketingMessaging: '',
-      };
-
-      await onSaveCompany(newCompany);
-
-      // Add to saved companies
-      const updatedSaved = [...savedCompanies, newCompany];
-      setSavedCompanies(updatedSaved);
-      localStorage.setItem('saved-companies', JSON.stringify(updatedSaved));
-
-      // Select the new company
-      onCompanySelect(newCompany);
-
+      // Create company in DB
+      const resp = await fetch('/api/company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCompanyName.trim() }),
+      });
+      if (!resp.ok) throw new Error('Failed to create company');
+      // Refresh list
+      const listResp = await fetch('/api/company', { cache: 'no-store' });
+      if (listResp.ok) {
+        const json = await listResp.json();
+        setCompanies((json.list || []) as Array<{ id: string; name: string }>);
+      }
+      // Since create sets active, pull current form data
+      const stateResp = await fetch('/api/company-data');
+      if (stateResp.ok) {
+        const data = await stateResp.json();
+        onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
+      }
       // Reset form
       setNewCompanyName('');
       setIsCreatingNew(false);
@@ -198,21 +171,8 @@ export function CompanySelector({
                   Create New Company
                 </SelectItem>
 
-                {savedCompanies.length > 0 && (
-                  <>
-                    <div className='px-2 py-1.5 text-sm font-semibold text-muted-foreground'>
-                      Your Companies
-                    </div>
-                    {savedCompanies.map((company) => (
-                      <SelectItem key={company.id} value={company.id || ''}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-
                 <div className='px-2 py-1.5 text-sm font-semibold text-muted-foreground'>
-                  Test Companies
+                  Companies
                 </div>
                 {companies.map((company) => (
                   <SelectItem key={company.id} value={company.id || ''}>

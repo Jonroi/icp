@@ -1,0 +1,40 @@
+[
+    {
+        "id": 1,
+        "name": "SaaS B2B – Mid-Market Marketing Manager",
+        "sector": "Software-as-a-Service (SaaS)",
+        "business_model": "B2B",
+        "description": "Marketing manager at mid-sized tech company (50–200 employees) in NA/EU, overseeing digital campaigns.",
+        "needs_pain_points": [
+            "Cost-effective marketing automation",
+            "Improve lead generation ROI",
+            "Limited marketing budget",
+            "Proving marketing’s value to execs"
+        ],
+        "usage_by_company_size": {
+            "small": "Target pain points with free trials and personal outreach.",
+            "mid": "Segment campaigns by industry and use webinars for engagement.",
+            "large": "Dedicated sales teams, emphasize scalability and integration."
+        },
+        "update_tips": "Analyze CRM data quarterly; adjust for new marketing channels or regulations."
+    },
+    {
+        "id": 2,
+        "name": "SaaS B2B – Enterprise Security-Focused CIO",
+        "sector": "Software/Cloud Services",
+        "business_model": "B2B",
+        "description": "CIO/CISO at large enterprise (5,000+ employees) in regulated industry like finance or healthcare.",
+        "needs_pain_points": [
+            "Secure, compliant cloud solutions",
+            "Data privacy compliance",
+            "Preventing cyberattacks",
+            "Legacy system integration"
+        ],
+        "usage_by_company_size": {
+            "small": "Highlight niche innovations; gain trust via certifications.",
+            "mid": "Account-based sales, show industry-specific case studies.",
+            "large": "Executive briefings, full-service integration and compliance solutions."
+        },
+        "update_tips": "Update with changing threat landscape and regulations; monitor cyber trends."
+    }
+]

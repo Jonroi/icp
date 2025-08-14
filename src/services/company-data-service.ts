@@ -53,19 +53,40 @@ export interface CompanyDataTable {
 }
 
 // File system storage implementation (PostgreSQL-ready)
-import path from 'path';
+// Database integration
+import {
+  databaseManager,
+  getDatabaseConfig,
+  DatabaseMigration,
+} from '../../database/config';
+
+const CURRENT_USER_ID =
+  process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
+
+async function ensureDatabaseInitialized(): Promise<void> {
+  // Try a lightweight probe; if it fails, (re)initialize and migrate
+  try {
+    await databaseManager.query('SELECT 1');
+    return;
+  } catch (_) {}
+  console.log('[DB] Initializing PostgreSQL connection');
+  await databaseManager.initialize(getDatabaseConfig());
+  const migrator = new DatabaseMigration();
+  console.log('[DB] Running migrations');
+  await migrator.runMigrations();
+  console.log('[DB] Initialization complete');
+}
 
 class FileSystemCompanyDataService implements CompanyDataService {
   private data: OwnCompany = {} as OwnCompany;
-  private readonly DATA_DIR = path.join(process.cwd(), 'data');
-  private readonly FILE_PATH = path.join(this.DATA_DIR, 'company-data.json');
-  private readonly TEST_USER_ID = 'test-user-123';
+  private readonly TEST_USER_ID = CURRENT_USER_ID;
 
   // Field order for systematic completion
   private readonly fieldOrder: (keyof OwnCompany)[] = [
     'name',
     'location',
     'website',
+    'social',
     'industry',
     'companySize',
     'targetMarket',
@@ -118,96 +139,23 @@ class FileSystemCompanyDataService implements CompanyDataService {
     };
   }
 
-  // Save data to file system (PostgreSQL-ready format)
-  async saveToFile(): Promise<void> {
-    try {
-      // Only try to use fs in Node.js environment
-      if (typeof window === 'undefined' && typeof require !== 'undefined') {
-        const fs = require('fs').promises;
-        try {
-          await fs.mkdir(this.DATA_DIR, { recursive: true });
-        } catch (_) {}
+  // No-op in PostgreSQL mode (kept for interface compatibility)
+  async saveToFile(): Promise<void> {}
 
-        // Convert to PostgreSQL-ready format
-        const dataRows: CompanyDataRow[] = Object.entries(this.data)
-          .filter(([_, value]) => value && value.trim() !== '')
-          .map(([field, value]) => ({
-            id: `${this.TEST_USER_ID}-${field}`,
-            user_id: this.TEST_USER_ID,
-            field_name: field as keyof OwnCompany,
-            field_value: value,
-            created_at: new Date(),
-            updated_at: new Date(),
-            version: 1,
-          }));
-
-        const dataToSave = {
-          user_id: this.TEST_USER_ID,
-          data_rows: dataRows,
-          lastUpdated: new Date().toISOString(),
-          version: '1.0',
-          // Keep legacy format for backward compatibility
-          legacy_data: this.data,
-        };
-
-        await fs.writeFile(this.FILE_PATH, JSON.stringify(dataToSave, null, 2));
-        console.log(
-          `✅ Company data saved to ${this.FILE_PATH} (PostgreSQL-ready format)`,
-        );
-      } else {
-        console.log(
-          'File system operations not available in browser environment',
-        );
-      }
-    } catch (error) {
-      console.warn('Failed to save company data to file:', error);
-    }
-  }
-
-  // Load data from file system (PostgreSQL-ready format)
-  async loadFromFile(): Promise<void> {
-    try {
-      // Only try to use fs in Node.js environment
-      if (typeof window === 'undefined' && typeof require !== 'undefined') {
-        const fs = require('fs').promises;
-        const fileContent = await fs.readFile(this.FILE_PATH, 'utf-8');
-        const parsed = JSON.parse(fileContent);
-
-        // Handle both new PostgreSQL format and legacy format
-        if (parsed.data_rows && Array.isArray(parsed.data_rows)) {
-          // New PostgreSQL-ready format
-          this.data = {} as OwnCompany;
-          for (const row of parsed.data_rows) {
-            this.data[row.field_name as keyof OwnCompany] = row.field_value;
-          }
-          console.log(
-            `✅ Company data loaded from ${this.FILE_PATH} (PostgreSQL format)`,
-          );
-        } else if (parsed.legacy_data) {
-          // Legacy format
-          this.data = parsed.legacy_data;
-          console.log(
-            `✅ Company data loaded from ${this.FILE_PATH} (legacy format)`,
-          );
-        } else if (parsed.data) {
-          // Old format
-          this.data = parsed.data;
-          console.log(
-            `✅ Company data loaded from ${this.FILE_PATH} (old format)`,
-          );
-        }
-      } else {
-        console.log(
-          'File system operations not available in browser environment',
-        );
-      }
-    } catch (error) {
-      console.warn('Failed to load company data from file:', error);
-    }
-  }
+  // No-op in PostgreSQL mode (data is stored in DB)
+  async loadFromFile(): Promise<void> {}
 
   async getFieldValue(field: keyof OwnCompany): Promise<string | undefined> {
-    return this.data[field];
+    await ensureDatabaseInitialized();
+    console.log(`[DB] Read company_data field: ${String(field)}`);
+    const result = await databaseManager.query(
+      'SELECT field_value FROM company_data WHERE user_id = $1 AND field_name = $2',
+      [this.TEST_USER_ID, field as string],
+    );
+    if (result.rows.length > 0) {
+      return result.rows[0].field_value as string;
+    }
+    return undefined;
   }
 
   async isFieldFilled(field: keyof OwnCompany): Promise<boolean> {
@@ -215,8 +163,23 @@ class FileSystemCompanyDataService implements CompanyDataService {
   }
 
   async getNextUnfilledField(): Promise<keyof OwnCompany | null> {
+    await ensureDatabaseInitialized();
+    // Fetch all fields in one query for efficiency
+    const result = await databaseManager.query(
+      'SELECT field_name, field_value FROM company_data WHERE user_id = $1',
+      [this.TEST_USER_ID],
+    );
+    const filledSet = new Set<string>();
+    for (const row of result.rows as Array<{
+      field_name: string;
+      field_value: string;
+    }>) {
+      if (row.field_value && row.field_value.trim() !== '') {
+        filledSet.add(row.field_name);
+      }
+    }
     for (const field of this.fieldOrder) {
-      if (!(await this.isFieldFilled(field))) {
+      if (!filledSet.has(field)) {
         return field;
       }
     }
@@ -228,25 +191,184 @@ class FileSystemCompanyDataService implements CompanyDataService {
     total: number;
     percentage: number;
   }> {
-    const filled = (await this.getCurrentData()).filledFields.length;
+    await ensureDatabaseInitialized();
+    console.log('[DB] Calculating completion progress');
+    const result = await databaseManager.query(
+      `SELECT COUNT(*)::int AS filled
+       FROM company_data
+       WHERE user_id = $1 AND field_value != ''`,
+      [this.TEST_USER_ID],
+    );
+    const filled = (result.rows[0]?.filled as number) || 0;
     const total = this.fieldOrder.length;
     const percentage = Math.round((filled / total) * 100);
-
     return { filled, total, percentage };
   }
 
   async resetData(): Promise<void> {
-    this.data = {} as OwnCompany;
-    await this.saveToFile();
+    await ensureDatabaseInitialized();
+    console.log('[DB] Deleting all company_data rows for user');
+    await databaseManager.query('DELETE FROM company_data WHERE user_id = $1', [
+      this.TEST_USER_ID,
+    ]);
   }
 
   async exportForICP(): Promise<OwnCompany> {
-    return { ...this.data };
+    const state = await this.getCurrentData();
+    return { ...state.currentData };
   }
 }
 
-// Singleton instance
-export const companyDataService = new FileSystemCompanyDataService();
+class PostgreSQLCompanyDataService implements CompanyDataService {
+  private readonly TEST_USER_ID = CURRENT_USER_ID;
+
+  private readonly fieldOrder: (keyof OwnCompany)[] = [
+    'name',
+    'location',
+    'website',
+    'social',
+    'industry',
+    'companySize',
+    'targetMarket',
+    'valueProposition',
+    'mainOfferings',
+    'pricingModel',
+    'uniqueFeatures',
+    'marketSegment',
+    'competitiveAdvantages',
+    'currentCustomers',
+    'successStories',
+    'painPointsSolved',
+    'customerGoals',
+    'currentMarketingChannels',
+    'marketingMessaging',
+  ];
+
+  async getCurrentData(): Promise<CompanyDataState> {
+    await ensureDatabaseInitialized();
+    console.log('[DB] Fetching current company_data');
+    const result = await databaseManager.query(
+      'SELECT field_name, field_value FROM company_data WHERE user_id = $1',
+      [this.TEST_USER_ID],
+    );
+
+    const data = {} as OwnCompany;
+    for (const row of result.rows as Array<{
+      field_name: string;
+      field_value: string;
+    }>) {
+      (data as Record<string, string>)[row.field_name] = row.field_value;
+    }
+
+    const filledFields = this.fieldOrder.filter(
+      (field) => (data as Record<string, string>)[field]?.trim() !== '',
+    );
+    const nextField = await this.getNextUnfilledField();
+
+    return {
+      currentData: data,
+      filledFields,
+      nextField,
+      isComplete: filledFields.length === this.fieldOrder.length,
+      lastUpdated: new Date(),
+    };
+  }
+
+  async updateField(
+    field: keyof OwnCompany,
+    value: string,
+  ): Promise<FormFieldUpdate> {
+    await ensureDatabaseInitialized();
+    console.log(`[DB] Upserting company_data field: ${String(field)}`);
+    const result = await databaseManager.query(
+      `INSERT INTO company_data (user_id, field_name, field_value, created_at, updated_at, version)
+       VALUES ($1, $2, $3, NOW(), NOW(), 1)
+       ON CONFLICT (user_id, field_name)
+       DO UPDATE SET field_value = EXCLUDED.field_value,
+                     updated_at = NOW(),
+                     version = company_data.version + 1
+       RETURNING updated_at`,
+      [this.TEST_USER_ID, field as string, value],
+    );
+    const updatedAt: Date = result.rows[0].updated_at as Date;
+    return { field, value, timestamp: updatedAt };
+  }
+
+  async getFieldValue(field: keyof OwnCompany): Promise<string | undefined> {
+    await ensureDatabaseInitialized();
+    console.log(`[DB] Read company_data field: ${String(field)}`);
+    const result = await databaseManager.query(
+      'SELECT field_value FROM company_data WHERE user_id = $1 AND field_name = $2',
+      [this.TEST_USER_ID, field as string],
+    );
+    if (result.rows.length > 0) return result.rows[0].field_value as string;
+    return undefined;
+  }
+
+  async isFieldFilled(field: keyof OwnCompany): Promise<boolean> {
+    const value = await this.getFieldValue(field);
+    return !!(value && value.trim() !== '');
+  }
+
+  async getNextUnfilledField(): Promise<keyof OwnCompany | null> {
+    await ensureDatabaseInitialized();
+    const result = await databaseManager.query(
+      'SELECT field_name, field_value FROM company_data WHERE user_id = $1',
+      [this.TEST_USER_ID],
+    );
+    const filledSet = new Set<string>();
+    for (const row of result.rows as Array<{
+      field_name: string;
+      field_value: string;
+    }>) {
+      if (row.field_value && row.field_value.trim() !== '')
+        filledSet.add(row.field_name);
+    }
+    for (const field of this.fieldOrder) {
+      if (!filledSet.has(field)) return field;
+    }
+    return null;
+  }
+
+  async getCompletionProgress(): Promise<{
+    filled: number;
+    total: number;
+    percentage: number;
+  }> {
+    await ensureDatabaseInitialized();
+    console.log('[DB] Calculating completion progress');
+    const result = await databaseManager.query(
+      `SELECT COUNT(*)::int AS filled
+       FROM company_data
+       WHERE user_id = $1 AND field_value != ''`,
+      [this.TEST_USER_ID],
+    );
+    const filled = (result.rows[0]?.filled as number) || 0;
+    const total = this.fieldOrder.length;
+    const percentage = Math.round((filled / total) * 100);
+    return { filled, total, percentage };
+  }
+
+  async resetData(): Promise<void> {
+    await ensureDatabaseInitialized();
+    console.log('[DB] Deleting all company_data rows for user');
+    await databaseManager.query('DELETE FROM company_data WHERE user_id = $1', [
+      this.TEST_USER_ID,
+    ]);
+  }
+
+  async exportForICP(): Promise<OwnCompany> {
+    const state = await this.getCurrentData();
+    return { ...state.currentData };
+  }
+
+  // Compatibility no-ops
+  async saveToFile(): Promise<void> {}
+  async loadFromFile(): Promise<void> {}
+}
+
+// Singleton instance (PostgreSQL-backed)
+export const companyDataService = new PostgreSQLCompanyDataService();
 
 // PostgreSQL implementation (for future use)
 /*

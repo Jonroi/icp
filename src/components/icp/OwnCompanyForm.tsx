@@ -19,18 +19,20 @@ interface OwnCompanyFormProps {
   company: OwnCompany;
   onChange: (field: keyof OwnCompany, value: string) => void;
   onReset?: () => void;
+  onSaveCompany?: (company: OwnCompany) => Promise<void>;
 }
 
 export function OwnCompanyForm({
   company,
   onChange,
   onReset,
+  onSaveCompany,
 }: OwnCompanyFormProps) {
   // Handle bulk company selection
   const handleCompanySelect = (selectedCompany: OwnCompany) => {
     // Update all fields at once
     Object.entries(selectedCompany).forEach(([field, value]) => {
-      onChange(field as keyof OwnCompany, value);
+      onChange(field as keyof OwnCompany, value as string);
     });
   };
 
@@ -168,6 +170,7 @@ export function OwnCompanyForm({
               value={company.name}
               onChange={onChange}
               onCompanySelect={handleCompanySelect}
+              onSaveCompany={onSaveCompany}
             />
           </div>
 

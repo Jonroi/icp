@@ -62,7 +62,7 @@ App.tsx
 │   ├── CampaignDesigner (Campaign generation)
 │   └── CampaignLibrary (Campaign storage)
 ├── Dialogs (Save/Load projects)
-└── FloatingChat (persistent bottom-right chat assistant)
+└── (chat assistant removed)
 ```
 
 ## 🧠 AI Service Architecture
@@ -75,11 +75,7 @@ App.tsx
 - API calls to local Ollama instance
 - Response parsing and validation
 
-#### **chatgpt-client.ts**
-
-- Handles communication with ChatGPT API
-- Alternative AI service for testing
-- Response parsing and validation
+#### (Chat/assistant modules removed)
 
 #### **icp-generator.ts**
 
@@ -186,7 +182,7 @@ App.tsx
 │   ├── SaveProjectDialog
 │   ├── LoadProjectDialog
 │   └── ICPPopup
-└── FloatingChat (persistent)
+└── (chat assistant removed)
 ```
 
 ### Communication Patterns
@@ -199,7 +195,7 @@ App.tsx
 
 ### Service Responsibilities
 
-- **AI Services**: Handle all AI-related operations (Ollama + ChatGPT)
+- **AI Services**: Handle AI-related operations (Ollama only)
 - **Business Services**: Handle data persistence and external APIs
 - **Project Service**: Handle project data persistence
 - **Reviews Service**: Handle review processing

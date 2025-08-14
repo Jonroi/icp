@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Copy, Download, ImageIcon, Save } from 'lucide-react';
-import { AIAssistantButton } from '@/components/ui/ai-assistant-button';
+// AI assistant removed during reset
 
 interface GeneratedCampaign {
   adCopy: string;
@@ -47,12 +47,9 @@ export function CampaignDesigner({}: CampaignDesignerProps) {
             Generate a full campaign based on your ICP.
           </CardDescription>
         </div>
-        <AIAssistantButton
-          assistantType='campaign-creation-tool'
-          size='sm'
-          className='flex items-center gap-2'>
-          Create Campaign
-        </AIAssistantButton>
+        <Button size='sm' className='flex items-center gap-2' disabled>
+          Create Campaign (coming soon)
+        </Button>
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='space-y-2'>
