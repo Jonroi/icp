@@ -1,23 +1,15 @@
-import type {
-  ICP,
-  CompetitorData,
-  CompetitorAnalysis,
-  CustomerReview,
-} from './types';
+import type { ICP, CustomerReview } from './types';
 import { ICPGenerator } from './icp-generator';
-import { CompetitorAnalyzer } from './competitor-analyzer';
 import { ReviewAnalyzer } from './review-analyzer';
 import { WebsiteScraper } from './website-scraper';
 
 export class AIService {
   private icpGenerator: ICPGenerator;
-  private competitorAnalyzer: CompetitorAnalyzer;
   private reviewAnalyzer: ReviewAnalyzer;
   private websiteScraper: WebsiteScraper;
 
   constructor() {
     this.icpGenerator = new ICPGenerator();
-    this.competitorAnalyzer = new CompetitorAnalyzer();
     this.reviewAnalyzer = new ReviewAnalyzer();
     this.websiteScraper = new WebsiteScraper();
   }
@@ -35,25 +27,11 @@ export class AIService {
 
   // Generate ICP profiles
   async generateICPs(
-    competitors: CompetitorData[],
-    reviews: CustomerReview[],
     additionalContext: string = '',
+    reviews: CustomerReview[] = [],
   ): Promise<ICP[]> {
-    return this.icpGenerator.generateICPs(
-      competitors,
-      reviews,
-      additionalContext,
-    );
+    return this.icpGenerator.generateICPs(additionalContext, reviews);
   }
 
-  // Generate competitor analysis
-  async generateCompetitorAnalysis(
-    competitor: CompetitorData,
-    websiteContent: string,
-  ): Promise<CompetitorAnalysis> {
-    return this.competitorAnalyzer.generateCompetitorAnalysis(
-      competitor,
-      websiteContent,
-    );
-  }
+  // Competitor analysis removed
 }
