@@ -18,6 +18,9 @@ interface CompanySelectorProps {
   onCompanySelect: (company: OwnCompany) => void;
   onSaveCompany?: (company: OwnCompany) => Promise<void>;
   className?: string;
+  onCompanyIdSelected?: (id: string) => void;
+  selectedCompanyId?: string;
+  allowCreate?: boolean;
 }
 
 export function CompanySelector({
@@ -25,6 +28,9 @@ export function CompanySelector({
   onChange,
   onCompanySelect,
   onSaveCompany,
+  onCompanyIdSelected,
+  selectedCompanyId,
+  allowCreate = true,
   className = '',
 }: CompanySelectorProps) {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
@@ -34,6 +40,7 @@ export function CompanySelector({
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [selectedId, setSelectedId] = useState<string>('');
 
   // Load available companies on component mount
   useEffect(() => {
@@ -47,6 +54,12 @@ export function CompanySelector({
           const json = await resp.json();
           const list = (json.list || []) as Array<{ id: string; name: string }>;
           setCompanies(list);
+          // Preselect active company if provided by server
+          const activeId = (json?.active?.id || '') as string;
+          if (!selectedCompanyId && activeId) {
+            setSelectedId(activeId);
+            onCompanyIdSelected?.(activeId);
+          }
         }
       } catch (error) {
         console.error('Error loading companies:', error);
@@ -58,10 +71,15 @@ export function CompanySelector({
     loadCompanies();
   }, []);
 
+  useEffect(() => {
+    if (selectedCompanyId) setSelectedId(selectedCompanyId);
+  }, [selectedCompanyId]);
+
   const handleCompanySelect = async (companyId: string) => {
     if (!companyId) return;
 
     if (companyId === 'new') {
+      if (!allowCreate) return;
       setIsCreatingNew(true);
       return;
     }
@@ -73,6 +91,8 @@ export function CompanySelector({
       await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
         cache: 'no-store',
       });
+      if (onCompanyIdSelected) onCompanyIdSelected(companyId);
+      setSelectedId(companyId);
       const stateResp = await fetch('/api/company-data');
       if (stateResp.ok) {
         const data = await stateResp.json();
@@ -104,6 +124,7 @@ export function CompanySelector({
         body: JSON.stringify({ name: newCompanyName.trim() }),
       });
       if (!resp.ok) throw new Error('Failed to create company');
+      const created = await resp.json();
       // Refresh list
       const listResp = await fetch('/api/company', { cache: 'no-store' });
       if (listResp.ok) {
@@ -116,6 +137,14 @@ export function CompanySelector({
         const data = await stateResp.json();
         onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
       }
+      try {
+        const id = (created?.company?.id ||
+          created?.company?.id?.toString?.()) as string | undefined;
+        if (id) {
+          onCompanyIdSelected?.(id);
+          setSelectedId(id);
+        }
+      } catch (_) {}
       // Reset form
       setNewCompanyName('');
       setIsCreatingNew(false);
@@ -133,7 +162,7 @@ export function CompanySelector({
         </span>
       </Label>
 
-      {isCreatingNew ? (
+      {allowCreate && isCreatingNew ? (
         <div className='flex gap-2'>
           <Input
             placeholder='Enter company name'
@@ -160,16 +189,25 @@ export function CompanySelector({
         <div className='flex gap-2'>
           <div className='flex-1'>
             <Select
+              value={selectedId}
               onValueChange={handleCompanySelect}
               disabled={isLoading || isLoadingCompanies}>
               <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Select or create a company' />
+                <SelectValue
+                  placeholder={
+                    allowCreate
+                      ? 'Select or create a company'
+                      : 'Select a company'
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='new' className='flex items-center gap-2'>
-                  <Plus className='h-4 w-4' />
-                  Create New Company
-                </SelectItem>
+                {allowCreate && (
+                  <SelectItem value='new' className='flex items-center gap-2'>
+                    <Plus className='h-4 w-4' />
+                    Create New Company
+                  </SelectItem>
+                )}
 
                 <div className='px-2 py-1.5 text-sm font-semibold text-muted-foreground'>
                   Companies
