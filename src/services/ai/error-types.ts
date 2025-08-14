@@ -184,51 +184,11 @@ export class InputValidator {
   }
 
   static validateICPGenerationInput(
-    competitors: any[],
+    _competitors: unknown[],
     additionalContext: string,
   ): ValidationResult {
     const errors: AIServiceError[] = [];
     const warnings: string[] = [];
-
-    // Allow empty competitors array for simplified ICP generation
-    if (!competitors) {
-      competitors = [];
-    }
-
-    if (competitors.length === 0) {
-      warnings.push(
-        'No competitors provided - generating ICPs based on company data only',
-      );
-    }
-
-    if (competitors && competitors.length > 6) {
-      warnings.push('More than 6 competitors may reduce analysis quality');
-    }
-
-    let validCompetitors = 0;
-    competitors?.forEach((competitor, index) => {
-      const nameValidation = this.validateCompanyName(competitor.name);
-      if (nameValidation.isValid) {
-        validCompetitors++;
-      } else {
-        errors.push({
-          code: 'INVALID_COMPETITOR_DATA',
-          message: `Competitor ${index + 1}: ${
-            nameValidation.errors[0]?.message
-          }`,
-          timestamp: new Date(),
-        });
-      }
-    });
-
-    // Only require valid competitors if competitors are provided
-    if (competitors.length > 0 && validCompetitors === 0) {
-      errors.push({
-        code: 'NO_VALID_COMPETITORS',
-        message: 'No valid competitors found',
-        timestamp: new Date(),
-      });
-    }
 
     if (additionalContext && additionalContext.length > 2000) {
       warnings.push('Additional context is very long and may be truncated');
