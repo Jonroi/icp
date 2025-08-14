@@ -36,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_company_data_updated_at ON company_data(updated_a
 CREATE TABLE IF NOT EXISTS icp_profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company_id UUID REFERENCES companies(id) ON DELETE SET NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     profile_data JSONB NOT NULL,
@@ -44,8 +45,13 @@ CREATE TABLE IF NOT EXISTS icp_profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Ensure company_id exists for older installations
+ALTER TABLE icp_profiles
+  ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id) ON DELETE SET NULL;
+
 -- Indexes for ICP profiles
 CREATE INDEX IF NOT EXISTS idx_icp_profiles_user_id ON icp_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_icp_profiles_company_id ON icp_profiles(company_id);
 CREATE INDEX IF NOT EXISTS idx_icp_profiles_created_at ON icp_profiles(created_at);
 
 -- Campaign data table (for future campaign features)
