@@ -2,162 +2,73 @@
 
 ## 🏗️ System Overview
 
-The ICP Builder is a React-based application that uses AI-powered analysis to generate Ideal Customer Profiles (ICPs) from real customer reviews and competitor data. The system is built with TypeScript, Vite, and uses Ollama for local LLM processing.
+ICP Builder is a Next.js (App Router) application that generates Ideal Customer Profiles (ICPs) from company data and optional reviews using a local LLM (Ollama). Data is persisted in PostgreSQL.
 
 ## 📁 Project Structure
 
 ```text
+app/
+├── api/
+│   ├── company/        # Company CRUD + active selection + mirroring to company_data
+│   ├── company-data/   # Key-value store for the working form data
+│   ├── icp/            # ICP generation & retrieval endpoints
+│   └── (readability removed)
 src/
 ├── components/          # React components
-│   ├── ui/             # Reusable UI components (shadcn/ui)
+│   ├── ui/             # Reusable UI components
 │   ├── layout/         # Layout components
 │   ├── dialogs/        # Dialog components
 │   ├── icp/            # ICP-related components
 │   ├── campaign/       # Campaign components
-│   ├── TestICPGeneration.tsx  # ICP generation testing
-│   ├── TestChatGPT.tsx        # ChatGPT testing component
 │   └── index.ts        # Component exports
-├── services/           # Business logic and API services
-│   ├── ai/             # AI services
-│   │   ├── agents/     # AI agents
-│   │   ├── types.ts    # TypeScript interfaces
-│   │   ├── ollama-client.ts
-│   │   ├── chatgpt-client.ts
-│   │   ├── icp-generator.ts
-│   │   ├── competitor-analyzer.ts
-│   │   ├── review-analyzer.ts
-│   │   ├── website-scraper.ts
-│   │   ├── ai-service.ts
-│   │   ├── index.ts    # AI services exports
-│   │   └── README.md   # AI services documentation
-│   ├── ai.ts           # AI service re-export
-│   ├── company-search-service.ts
-│   ├── project-service.ts
-│   ├── reviews-service.ts
+├── services/           # Business logic and DB services
+│   ├── ai/             # AI services (Ollama client, ICP generation, review analysis)
+│   ├── companies-service.ts
+│   ├── company-data-service.ts
+│   ├── icp-profiles-service.ts
 │   └── index.ts        # Service exports
 ├── hooks/              # Custom React hooks
 │   └── useAppState.ts  # Centralized application state
-├── utils/              # Utility functions
 ├── lib/                # Shared utilities
-├── App.tsx             # Main application component
-└── main.tsx            # Application entry point
+└── App.tsx             # Main application component used by app/page.tsx
 ```
 
 ## 🔄 Data Flow
 
-### User Input Flow
-
 ```text
-User Input → Components → useAppState → AI Services → Ollama LLM → Results
+User Input → UI Components → useAppState → REST APIs → Services → PostgreSQL
+                                    ↘︎ AIService → Ollama → ICPs → DB
 ```
 
 ### Component Communication
 
 ```typescript
 App.tsx
-├── Header (Project management)
+├── Header
 ├── Tabs
-│   ├── ICPGenerator (Own Company + Competitors + Additional Context)
-│   ├── ICPProfiles (Results display + TestICPGeneration)
-│   ├── CampaignDesigner (Campaign generation)
-│   └── CampaignLibrary (Campaign storage)
-├── Dialogs (Save/Load projects)
-└── (chat assistant removed)
+│   ├── ICPGenerator (company form + save + generate)
+│   ├── ICPProfiles (lists ICPs for active company)
+│   ├── CampaignDesigner
+│   └── CampaignLibrary
 ```
 
 ## 🧠 AI Service Architecture
 
-### Core Services
+### AI Services
 
-#### **ollama-client.ts**
-
-- Handles communication with Ollama LLM
-- API calls to local Ollama instance
-- Response parsing and validation
-
-#### (Chat/assistant modules removed)
-
-#### **icp-generator.ts**
-
-- Main ICP generation logic
-- Prompt engineering for ICP generation
-- Response parsing and validation
-
-#### **competitor-analyzer.ts**
-
-- Analyzes competitor websites and data
-- Website content extraction
-- Market positioning analysis
-
-#### **review-analyzer.ts**
-
-- Processes customer reviews
-- Review sentiment analysis
-- Demographic data extraction
-
-#### **ai-service.ts**
-
-- Main orchestrator for AI operations
-- Service coordination and error handling
-
-### Service Dependencies
-
-```text
-ai-service.ts (Orchestrator)
-├── ollama-client.ts (LLM Communication)
-├── chatgpt-client.ts (ChatGPT Communication)
-├── icp-generator.ts (ICP Generation)
-├── competitor-analyzer.ts (Competitor Analysis)
-├── review-analyzer.ts (Review Processing)
-└── website-scraper.ts (Content Extraction)
-```
+- `ollama-client.ts`: HTTP client to local Ollama (`/api/generate`), optional system prompts
+- `review-analyzer.ts`: Lightweight NLP for reviews (keywords/heuristics)
+- `icp-generator.ts`: Instruction Framework flow to select attributes and synthesize profiles
+- `ai-service.ts`: Thin orchestrator exposing scrape/analyze/generate methods
 
 ## 📊 State Management
 
-### Global State Structure
+### App State Highlights
 
-```typescript
-interface AppState {
-  // Own Company
-  ownCompany: { name: string; website: string; social: string };
-  ownCompanyStatus: { success: boolean; message: string } | null;
-  isFetchingOwnCompany: boolean;
-  showOwnCompanyDropdown: boolean;
-
-  // Competitor Management
-  competitors: Competitor[];
-  savedCompetitors: string[];
-  showCompetitorDropdown: Record<number, boolean>;
-
-  // Context and Input
-  additionalContext: string; // merged with own company info for generation
-
-  // AI Processing State
-  isLoading: boolean;
-  error: string | null;
-
-  // Company Information (per-competitor)
-  isFetchingCompanyInfo: number | null;
-  companyInfoStatus: Record<number, { success: boolean; message: string }>;
-
-  // Data Processing
-  isFetchingData: number | null;
-  reviewsStatus: Record<number, { success: boolean; message: string }>;
-
-  // Generated Results
-  generatedICPs: ICP[];
-  generatedCampaign: Campaign | null;
-
-  // Project Management
-  projectName: string;
-  savedProjects: string[];
-  showSaveDialog: boolean;
-  showLoadDialog: boolean;
-
-  // UI State
-  showICPPopup: boolean;
-}
-```
+- `ownCompany` (UI state; persisted via `/api/company-data` and mirrored to `companies` when active)
+- `activeCompanyId` (resolved via `/api/company`)
+- `generatedICPs` (client cache; authoritative store in DB)
+- `isLoading`, `error`
 
 ### State Management Flow
 
@@ -209,20 +120,21 @@ Components → useAppState → Services → External APIs
 
 ## 🗄️ Data Persistence
 
-### Local Storage Strategy
+PostgreSQL schema (`database/schema.sql`) includes:
 
-- **Project Data**: Browser localStorage (includes `ownCompany`)
-- **Competitor Data**: Browser localStorage (per saved competitor)
-- **Own Company**: Browser localStorage key `own-company`
-- **Generated ICPs**: Application state (memory)
+- `users` (seeded with `TEST_USER_ID`)
+- `company_data` (key-value fields, progress helpers)
+- `companies` and `user_active_company` (active selection)
+- `icp_profiles` (JSONB profile storage)
+- `campaigns` (future)
 
 ## 🔒 Security & Performance
 
 ### Security Measures
 
-- **Input Validation**: TypeScript interfaces and runtime validation
-- **Error Handling**: Graceful degradation and user feedback
-- **Data Protection**: Local storage only, no external data storage
+- **Server-side DB access** only; client uses API routes
+- **Advisory-lock migrations** to avoid races
+- **Env-configured connections**; SSL in production
 
 ### Performance Optimization
 
@@ -230,28 +142,24 @@ Components → useAppState → Services → External APIs
 - **State Optimization**: Selective updates and debouncing
 - **Bundle Optimization**: Code splitting and tree shaking
 
-## 🧪 Testing Strategy
+## 🧪 Testing & Dev Tips
 
-### Testing Approach
-
-- **Component Testing**: Unit tests for individual components
-- **Service Testing**: Mock services for external dependencies
-- **AI Testing**: Response validation and error scenarios
-- **Test Components**: TestICPGeneration and TestChatGPT for AI testing
+- Verify DB connectivity and seeded user (`TEST_USER_ID`)
+- Ensure Ollama is running and model is pulled
+- Use `/api/company` to create/select active company before ICP generation
 
 ## 🔄 Deployment
 
 ### Build Process
 
 ```text
-Source Code → TypeScript Compilation → Vite Build → Static Assets
+Source Code → TypeScript/Next → next build → .next output
 ```
 
 ### Deployment Strategy
 
-- **Static Hosting**: Vercel, Netlify, or similar
-- **Local AI**: User's local Ollama instance
-- **Environment**: Environment variables for configuration
+- **Next.js** deploy with provisioned PostgreSQL
+- **Local AI**: Requires Ollama on the host with model pulled
 
 ## 🎯 Architecture Principles
 
