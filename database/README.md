@@ -6,9 +6,11 @@ This directory contains the PostgreSQL database setup for the ICP Builder applic
 
 The application uses PostgreSQL with the following main tables:
 
-- **`users`** - User authentication and profiles
-- **`company_data`** - Individual company field values (key-value pairs)
-- **`icp_profiles`** - Generated Ideal Customer Profiles
+- **`users`** - Seeded test user for development (`TEST_USER_ID`)
+- **`company_data`** - Per-user key-value store for the working form data
+- **`companies`** - Companies you can select/create
+- **`user_active_company`** - Active company per user
+- **`icp_profiles`** - Generated ICP profiles (JSONB) linked to company
 - **`campaigns`** - Marketing campaigns (future feature)
 
 ## 🚀 Quick Setup
@@ -62,7 +64,7 @@ psql -h localhost -U icp_user -d icp_builder -f database/schema.sql
 
 ### 4. Environment Variables
 
-Create a `.env` file in your project root:
+Create a `.env.local` file in your project root:
 
 ```env
 # Database Configuration
@@ -75,23 +77,27 @@ DB_SSL=false
 DB_MAX_CONNECTIONS=20
 DB_IDLE_TIMEOUT=30000
 DB_CONNECTION_TIMEOUT=2000
+
+# Logical user used by the app (seeded)
+TEST_USER_ID=11111111-1111-1111-1111-111111111111
 ```
 
 ## 📊 Database Structure
 
 ### Company Data Table
 
-The `company_data` table uses a key-value structure for flexibility:
+The `company_data` table uses a key-value structure for flexibility and is unique on `(user_id, field_name)`:
 
 ```sql
 CREATE TABLE company_data (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    field_name VARCHAR(100),  -- e.g., 'name', 'location', 'industry'
-    field_value TEXT,         -- The actual value
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    version INTEGER
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    field_name VARCHAR(100) NOT NULL,
+    field_value TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    version INTEGER DEFAULT 1,
+    UNIQUE(user_id, field_name)
 );
 ```
 
@@ -104,18 +110,18 @@ CREATE TABLE company_data (
 
 ### Sample Data
 
-The schema includes sample data for testing:
+The schema seeds a development user and example data:
 
 ```sql
 -- Test user
 INSERT INTO users (id, email, name) VALUES
-    ('test-user-123'::UUID, 'test@example.com', 'Test User');
+    ('11111111-1111-1111-1111-111111111111'::UUID, 'test@example.com', 'Test User')
+ON CONFLICT (id) DO NOTHING;
 
--- Sample company data
+-- Sample company data (excerpt)
 INSERT INTO company_data (user_id, field_name, field_value) VALUES
-    ('test-user-123'::UUID, 'name', 'Test Company'),
-    ('test-user-123'::UUID, 'location', 'Test Location'),
-    -- ... more fields
+    ('11111111-1111-1111-1111-111111111111'::UUID, 'name', 'Test Company'),
+    ('11111111-1111-1111-1111-111111111111'::UUID, 'location', 'Test Location');
 ```
 
 ## 🔧 Database Utilities

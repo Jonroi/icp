@@ -6,7 +6,6 @@ export { AIService } from './ai-service';
 export { ICPGenerator } from './icp-generator';
 export { ReviewAnalyzer } from './review-analyzer';
 export { ReviewAgent } from './review-agent';
-export { WebsiteScraper } from './website-scraper';
 export { OllamaClient } from './ollama-client';
 
 // Export error handling
