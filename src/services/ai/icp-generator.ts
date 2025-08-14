@@ -311,9 +311,9 @@ export class ICPGenerator {
           .map((e) => e.message)
           .join(', ')}`,
         {
-          competitorCount: competitors.length,
+          competitorCount: 0,
           reviewCount: reviews.length,
-          hasAdditionalContext: additionalContext.length > 0,
+          hasAdditionalContext: false,
           validationErrors: validation.errors,
         },
       );
@@ -1155,7 +1155,7 @@ ${sourceInfo}
 
   // New method to generate ICPs using centralized company data
   async generateICPFromStoredData(
-    competitors: CompetitorData[] = [],
+    _competitors: never[] = [],
     customerReviews: CustomerReview[] = [],
   ): Promise<ICP[]> {
     try {
@@ -1188,11 +1188,7 @@ ${sourceInfo}
       }
 
       // Use the existing method with the stored data
-      return await this.generateICPs(
-        competitors,
-        customerReviews,
-        JSON.stringify(companyData.currentData),
-      );
+      return await this.generateICPs(customerReviews);
     } catch (error) {
       throw AIServiceErrorFactory.createICPGenerationError(
         'ICP_GENERATION_FAILED',

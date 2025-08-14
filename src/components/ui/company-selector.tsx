@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from './input';
 import { Label } from './label';
 import {
@@ -48,13 +48,11 @@ export function CompanySelector({
       try {
         setIsLoadingCompanies(true);
 
-        // Load companies from database
         const resp = await fetch('/api/company', { cache: 'no-store' });
         if (resp.ok) {
           const json = await resp.json();
           const list = (json.list || []) as Array<{ id: string; name: string }>;
           setCompanies(list);
-          // Preselect active company if provided by server
           const activeId = (json?.active?.id || '') as string;
           if (!selectedCompanyId && activeId) {
             setSelectedId(activeId);
@@ -69,49 +67,54 @@ export function CompanySelector({
     };
 
     loadCompanies();
-  }, []);
+  }, [onCompanyIdSelected, selectedCompanyId]);
 
   useEffect(() => {
     if (selectedCompanyId) setSelectedId(selectedCompanyId);
   }, [selectedCompanyId]);
 
-  const handleCompanySelect = async (companyId: string) => {
-    if (!companyId) return;
+  const handleCompanySelect = useCallback(
+    async (companyId: string) => {
+      if (!companyId) return;
 
-    if (companyId === 'new') {
-      if (!allowCreate) return;
-      setIsCreatingNew(true);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
-      // Ask server to select and mirror fields, then fetch current form data to populate UI
-      await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
-        cache: 'no-store',
-      });
-      if (onCompanyIdSelected) onCompanyIdSelected(companyId);
-      setSelectedId(companyId);
-      const stateResp = await fetch('/api/company-data');
-      if (stateResp.ok) {
-        const data = await stateResp.json();
-        onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
+      if (companyId === 'new') {
+        if (!allowCreate) return;
+        setIsCreatingNew(true);
+        return;
       }
-      // Force refresh after mirror to ensure Additional Context and fields show immediately
+
       try {
-        const refresh = await fetch('/api/company-data', { cache: 'no-store' });
-        if (refresh.ok) {
-          const d = await refresh.json();
-          onCompanySelect(d?.data?.currentData || ({} as OwnCompany));
+        setIsLoading(true);
+
+        // Ask server to select and mirror fields, then fetch current form data to populate UI
+        await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
+          cache: 'no-store',
+        });
+        if (onCompanyIdSelected) onCompanyIdSelected(companyId);
+        setSelectedId(companyId);
+        const stateResp = await fetch('/api/company-data');
+        if (stateResp.ok) {
+          const data = await stateResp.json();
+          onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
         }
-      } catch (_) {}
-    } catch (error) {
-      console.error('Error loading company data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        // Force refresh after mirror to ensure Additional Context and fields show immediately
+        try {
+          const refresh = await fetch('/api/company-data', {
+            cache: 'no-store',
+          });
+          if (refresh.ok) {
+            const d = await refresh.json();
+            onCompanySelect(d?.data?.currentData || ({} as OwnCompany));
+          }
+        } catch (_) {}
+      } catch (error) {
+        console.error('Error loading company data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [allowCreate, onCompanyIdSelected, onCompanySelect],
+  );
 
   const handleSaveNewCompany = async () => {
     if (!newCompanyName.trim()) return;

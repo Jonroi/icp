@@ -252,21 +252,21 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
       [this.TEST_USER_ID],
     );
 
-    const data = {} as OwnCompany;
+    const data = {} as unknown as Record<string, string>;
     for (const row of result.rows as Array<{
       field_name: string;
       field_value: string;
     }>) {
-      (data as Record<string, string>)[row.field_name] = row.field_value;
+      data[row.field_name] = row.field_value;
     }
 
     const filledFields = this.fieldOrder.filter(
-      (field) => (data as Record<string, string>)[field]?.trim() !== '',
+      (field) => data[field as string]?.trim() !== '',
     );
     const nextField = await this.getNextUnfilledField();
 
     return {
-      currentData: data,
+      currentData: data as unknown as OwnCompany,
       filledFields,
       nextField,
       isComplete: filledFields.length === this.fieldOrder.length,

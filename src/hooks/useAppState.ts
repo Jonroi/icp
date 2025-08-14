@@ -311,13 +311,11 @@ export function useAppState() {
       });
 
       setOwnCompany(emptyCompany);
-      setAdditionalContext('');
       alert('Form has been reset. All fields have been cleared.');
     } catch (error) {
       console.error('Error resetting company data:', error);
       // Still clear the form even if API call fails
       setOwnCompany(emptyCompany);
-      setAdditionalContext('');
       alert('Form has been reset. All fields have been cleared.');
     }
   };
