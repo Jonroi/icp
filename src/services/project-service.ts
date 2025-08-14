@@ -86,38 +86,15 @@ export interface DemographicsAnalysis {
   sourceBreakdown: { [key: string]: number };
 }
 
-export interface CompetitorAnalysis {
-  name: string;
-  strengths: string[];
-  weaknesses: string[];
-  opportunities: string[];
-  threats: string[];
-  marketPosition: string;
-}
-
 export interface ProjectData {
   projectName: string;
   ownCompany?: OwnCompany;
-  competitors: Competitor[];
   additionalContext: string;
   generatedICPs: GeneratedICP[];
   generatedCampaign: GeneratedCampaign | null;
   reviews: unknown[];
   demographicsAnalysis: unknown | null;
-  competitorAnalysis: unknown[];
   savedAt: string;
-}
-
-export interface Competitor {
-  name: string;
-  website: string;
-  social: string;
-  facebook?: string;
-  twitter?: string;
-  instagram?: string;
-  reviews?: string;
-  location?: string; // New field for location selection
-  linkedInData?: string; // LinkedIn insights and data
 }
 
 export class ProjectService {}

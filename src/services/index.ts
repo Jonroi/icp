@@ -2,7 +2,6 @@
 export {
   ProjectService,
   type ProjectData,
-  type Competitor,
   type OwnCompany,
 } from './project-service';
 
@@ -17,3 +16,6 @@ export * from './company-data-service';
 
 // AI services
 export * from './ai';
+
+// ICP profiles
+export * from './icp-profiles-service';
