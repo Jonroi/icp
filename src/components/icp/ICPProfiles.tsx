@@ -7,6 +7,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Bot, Sparkles, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
+import { CompanySelector } from '@/components/ui/company-selector';
+import type { OwnCompany } from '@/services/project-service';
+import type { StoredICPProfile } from '@/services';
+import { useEffect, useState } from 'react';
 // Agent button removed during reset
 
 interface ICP {
@@ -37,9 +41,55 @@ interface ICP {
 
 interface ICPProfilesProps {
   generatedICPs: ICP[];
+  activeCompanyId?: string;
+  onCompanyIdChange?: (id: string) => void;
 }
 
-export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
+export function ICPProfiles({
+  generatedICPs,
+  activeCompanyId,
+  onCompanyIdChange,
+}: ICPProfilesProps) {
+  const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
+  const [companyName, setCompanyName] = useState<string>('');
+  const [profiles, setProfiles] = useState<StoredICPProfile[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (activeCompanyId) setCompanyId(activeCompanyId);
+  }, [activeCompanyId]);
+
+  useEffect(() => {
+    const loadActive = async () => {
+      try {
+        const resp = await fetch('/api/company', { cache: 'no-store' });
+        if (resp.ok) {
+          const data = await resp.json();
+          const active = data?.active;
+          if (active) {
+            if (!companyId) setCompanyId(active.id || '');
+            setCompanyName(active.name || '');
+          }
+        }
+      } catch (_) {}
+    };
+    if (!companyName) loadActive();
+  }, [companyId, companyName]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!companyId) return;
+      const resp = await fetch(
+        `/api/icp?companyId=${encodeURIComponent(companyId)}`,
+        { cache: 'no-store' },
+      );
+      if (resp.ok) {
+        const json = await resp.json();
+        setProfiles(json?.profiles || []);
+      }
+    };
+    load();
+  }, [companyId]);
   return (
     <Card className='mt-4'>
       <CardHeader>
@@ -53,26 +103,87 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
               View and manage your generated Ideal Customer Profiles
             </CardDescription>
           </div>
-          <Button size='sm' className='flex items-center gap-2' disabled>
-            Analyze ICPs (coming soon)
-          </Button>
+          <div className='flex items-center gap-2'>
+            <CompanySelector
+              value={companyName}
+              onChange={() => {}}
+              onCompanySelect={(c: OwnCompany) => {
+                setCompanyName(c?.name || '');
+              }}
+              onCompanyIdSelected={(id) => {
+                setCompanyId(id);
+                onCompanyIdChange?.(id);
+              }}
+              selectedCompanyId={companyId}
+              allowCreate={false}
+              className='min-w-[260px]'
+            />
+            <Button size='sm' className='flex items-center gap-2' disabled>
+              Analyze ICPs (coming soon)
+            </Button>
+            <Button
+              size='sm'
+              variant='destructive'
+              className='flex items-center gap-2'
+              disabled={!companyId || isDeleting}
+              onClick={async () => {
+                if (!companyId) return;
+                try {
+                  setIsDeleting(true);
+                  await fetch(
+                    `/api/icp?companyId=${encodeURIComponent(companyId)}`,
+                    {
+                      method: 'DELETE',
+                    },
+                  );
+                  // Refresh list
+                  const resp = await fetch(
+                    `/api/icp?companyId=${encodeURIComponent(companyId)}`,
+                    {
+                      cache: 'no-store',
+                    },
+                  );
+                  if (resp.ok) {
+                    const json = await resp.json();
+                    setProfiles(json?.profiles || []);
+                  } else {
+                    setProfiles([]);
+                  }
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}>
+              <Trash2 className='h-4 w-4' /> Delete All
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        {generatedICPs.length > 0 ? (
+        {profiles.length > 0 || generatedICPs.length > 0 ? (
           <div className='space-y-4'>
             <h3 className='font-semibold'>
-              Generated ICPs ({generatedICPs.length})
+              Generated ICPs ({profiles.length || generatedICPs.length})
             </h3>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              {generatedICPs.map((icp, index) => (
-                <Card key={index} className='bg-muted/30'>
+              {(profiles.length > 0
+                ? profiles
+                : generatedICPs.map(
+                    (g, i) =>
+                      ({
+                        id: `${i}`,
+                        profileData: g,
+                      } as unknown as StoredICPProfile),
+                  )
+              ).map((p) => (
+                <Card key={p.id} className='bg-muted/30'>
                   <CardHeader className='pb-3'>
-                    <CardTitle className='text-2xl'>ICP: {icp.name}</CardTitle>
+                    <CardTitle className='text-2xl'>
+                      ICP: {p.profileData.name}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className='space-y-4'>
                     <p className='text-sm text-muted-foreground line-clamp-4'>
-                      {icp.description}
+                      {p.profileData.description}
                     </p>
                     <div className='flex items-center gap-2'>
                       <Button className='flex-1' variant='default'>
@@ -90,7 +201,18 @@ export function ICPProfiles({ generatedICPs }: ICPProfilesProps) {
                       <Button
                         variant='destructive'
                         size='icon'
-                        aria-label='Delete'>
+                        aria-label='Delete'
+                        onClick={async () => {
+                          try {
+                            await fetch(
+                              `/api/icp?id=${encodeURIComponent(p.id)}`,
+                              { method: 'DELETE' },
+                            );
+                            setProfiles((prev) =>
+                              prev.filter((x) => x.id !== p.id),
+                            );
+                          } catch (_) {}
+                        }}>
                         <Trash2 className='h-4 w-4' />
                       </Button>
                     </div>
