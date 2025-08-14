@@ -26,11 +26,8 @@ export class AIService {
   }
 
   // Generate ICP profiles
-  async generateICPs(
-    additionalContext: string = '',
-    reviews: CustomerReview[] = [],
-  ): Promise<ICP[]> {
-    return this.icpGenerator.generateICPs(additionalContext, reviews);
+  async generateICPs(reviews: CustomerReview[] = []): Promise<ICP[]> {
+    return this.icpGenerator.generateICPs(reviews);
   }
 
   // Competitor analysis removed

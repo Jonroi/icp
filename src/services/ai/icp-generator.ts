@@ -286,11 +286,8 @@ export class ICPGenerator {
   /**
    * Enhanced ICP generation implementing the Instruction Framework
    */
-  async generateICPs(
-    additionalContext: string = '',
-    reviews: CustomerReview[] = [],
-  ): Promise<ICP[]> {
-    return this.generateApifyBasedICPs(reviews, additionalContext);
+  async generateICPs(reviews: CustomerReview[] = []): Promise<ICP[]> {
+    return this.generateApifyBasedICPs(reviews);
   }
 
   /**
@@ -298,21 +295,14 @@ export class ICPGenerator {
    */
   async generateApifyBasedICPs(
     reviews: CustomerReview[] = [],
-    additionalContext: string = '',
     dataSources?: ApifyDataSource[],
   ): Promise<ApifyBasedICP[]> {
     console.log(`🎯 Starting Instruction Framework ICP generation:`);
     console.log(`   📝 Reviews: ${reviews.length}`);
     console.log(`   📊 Apify Data Sources: ${dataSources?.length || 0}`);
-    console.log(
-      `   📋 Additional context: ${additionalContext ? 'Yes' : 'No'}`,
-    );
 
     // Validate input data
-    const validation = InputValidator.validateICPGenerationInput(
-      [],
-      additionalContext,
-    );
+    const validation = InputValidator.validateICPGenerationInput([], '');
 
     if (!validation.isValid) {
       const error = AIServiceErrorFactory.createICPGenerationError(
@@ -338,7 +328,7 @@ export class ICPGenerator {
     try {
       // Step 1: Determine Context (B2B or B2C)
       console.log(`🔍 Determining B2B/B2C context...`);
-      const context = await this.determineContext(reviews, additionalContext);
+      const context = await this.determineContext(reviews, '');
       console.log(
         `   📊 Context: ${context.type} (confidence: ${context.confidence}%)`,
       );
@@ -351,7 +341,6 @@ export class ICPGenerator {
       console.log(`📊 Analyzing data with ${context.type} attributes...`);
       const analysis = await this.analyzeDataWithAttributes(
         reviews,
-        additionalContext,
         attributeSet,
         context,
       );
@@ -383,14 +372,14 @@ export class ICPGenerator {
    */
   private async determineContext(
     reviews: CustomerReview[],
-    additionalContext: string,
+    _additionalContext: string,
   ): Promise<ICPContext> {
     const prompt = `Analyze the following data to determine if this is a B2B or B2C context:
 Reviews: ${reviews
       .slice(0, 5)
       .map((r) => r.text)
       .join('\n')}
-Additional Context: ${additionalContext}
+Additional Context: N/A
 
 B2B Indicators:
 - Company names, business websites, enterprise solutions
@@ -463,7 +452,6 @@ Respond with JSON:
    */
   private async analyzeDataWithAttributes(
     reviews: CustomerReview[],
-    additionalContext: string,
     attributeSet: string[],
     context: ICPContext,
   ): Promise<Record<string, unknown>> {
@@ -477,7 +465,7 @@ Respond with JSON:
     const prompt = this.buildInstructionFrameworkPrompt(
       competitorInfo,
       reviewTexts,
-      additionalContext,
+      '',
       attributeSet,
       context,
       reviewAnalysis as unknown as Record<string, unknown>,

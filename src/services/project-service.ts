@@ -41,7 +41,7 @@ export interface OwnCompany {
   location?: string; // Target market location (where your customers are located)
   reviews?: string; // Customer reviews for the company
   linkedInData?: string; // LinkedIn insights and data
-  additionalContext?: string; // Extra context stored on server
+  // additional context removed
 
   // Enhanced business information for better ICP data
   industry?: string; // Industry/sector the company operates in
@@ -89,7 +89,7 @@ export interface DemographicsAnalysis {
 export interface ProjectData {
   projectName: string;
   ownCompany?: OwnCompany;
-  additionalContext: string;
+  // removed additionalContext from project data
   generatedICPs: GeneratedICP[];
   generatedCampaign: GeneratedCampaign | null;
   reviews: unknown[];
