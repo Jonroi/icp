@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card';
 
 import { Copy, Download, Save } from 'lucide-react';
+import Image from 'next/image';
 // AI assistant removed during reset
 
 const campaignIdeas = [
@@ -74,11 +75,14 @@ export function CampaignLibrary() {
               <div className='space-y-2'>
                 <h4 className='font-semibold'>Image Suggestion</h4>
                 <div className='flex items-center gap-4 mt-2'>
-                  <img
+                  <Image
                     src={`https://placehold.co/200x120.png`}
                     alt='Generated Ad'
+                    width={200}
+                    height={120}
                     className='rounded-md'
                     data-ai-hint={idea.imageHint}
+                    unoptimized
                   />
                   <p className='text-sm'>{idea.imageSuggestion}</p>
                 </div>
