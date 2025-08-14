@@ -3,7 +3,9 @@ import { companyDataService } from '@/services/company-data-service';
 
 export async function GET(_request: NextRequest) {
   try {
-    console.log('[API] GET /api/company-data → Fetching company data from Postgres');
+    console.log(
+      '[API] GET /api/company-data → Fetching company data from Postgres',
+    );
     const state = await companyDataService.getCurrentData();
     const progress = await companyDataService.getCompletionProgress();
 
@@ -54,7 +56,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[API] POST /api/company-data → Update field in Postgres: ${field}`);
+    console.log(
+      `[API] POST /api/company-data → Update field in Postgres: ${field}`,
+    );
     const update = await companyDataService.updateField(field as never, value);
 
     return NextResponse.json({
@@ -75,7 +79,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(_request: NextRequest) {
   try {
-    console.log('[API] DELETE /api/company-data → Reset company data in Postgres');
+    console.log(
+      '[API] DELETE /api/company-data → Reset company data in Postgres',
+    );
     await companyDataService.resetData();
     return NextResponse.json({
       success: true,
