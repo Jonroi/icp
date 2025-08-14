@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AIService, type ICP } from '@/services/ai';
+import type { StoredICPProfile } from '@/services';
 import { ProjectService, type OwnCompany } from '@/services/project-service';
 
 export function useAppState() {
   // Basic state for ICP generation
-  const [additionalContext, setAdditionalContext] = useState<string>('');
+  // Removed additionalContext
   const [ownCompany, setOwnCompany] = useState<OwnCompany>({
     name: '',
     website: '',
@@ -12,6 +13,7 @@ export function useAppState() {
     location: '',
   });
   const [generatedICPs, setGeneratedICPs] = useState<ICP[]>([]);
+  const [activeCompanyId, setActiveCompanyId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,6 @@ export function useAppState() {
   // On mount: start with a clean UI state (no local or server preload)
   useEffect(() => {
     setOwnCompany({ name: '', website: '', social: '', location: '' });
-    setAdditionalContext('');
   }, []);
 
   // Helper function to build own company context
@@ -128,15 +129,11 @@ export function useAppState() {
         'customerGoals',
         'currentMarketingChannels',
         'marketingMessaging',
-        'additionalContext',
       ] as const;
 
       // Save each field to the API
       for (const field of fieldsToSave) {
-        const v =
-          field === 'additionalContext'
-            ? company.additionalContext || additionalContext
-            : (company[field] as string | undefined);
+        const v = company[field] as string | undefined;
         if (v && v.trim() !== '') {
           await fetch('/api/company-data', {
             method: 'POST',
@@ -157,10 +154,9 @@ export function useAppState() {
           const activeId = (json as unknown as { active?: { id?: string } })
             .active?.id;
           if (activeId) {
-            // Sync to active company record (exclude additionalContext)
-            for (const field of fieldsToSave.filter(
-              (f) => f !== 'additionalContext',
-            )) {
+            setActiveCompanyId(activeId);
+            // Sync to active company record
+            for (const field of fieldsToSave) {
               const value = company[field as keyof OwnCompany] as
                 | string
                 | undefined;
@@ -205,9 +201,7 @@ export function useAppState() {
               customerGoals: current.customerGoals || '',
               currentMarketingChannels: current.currentMarketingChannels || '',
               marketingMessaging: current.marketingMessaging || '',
-              additionalContext: current.additionalContext || '',
             });
-            setAdditionalContext(current.additionalContext || '');
           }
         }
       } catch (_) {}
@@ -217,6 +211,71 @@ export function useAppState() {
       console.error('Error saving company data:', error);
       alert('Error saving company data. Please try again.');
     }
+  };
+
+  // Persist current ownCompany fields to the server without UI alerts
+  const persistOwnCompanyToServer = async (company: OwnCompany) => {
+    const fieldsToSave = [
+      'name',
+      'location',
+      'website',
+      'social',
+      'industry',
+      'companySize',
+      'targetMarket',
+      'valueProposition',
+      'mainOfferings',
+      'pricingModel',
+      'uniqueFeatures',
+      'marketSegment',
+      'competitiveAdvantages',
+      'currentCustomers',
+      'successStories',
+      'painPointsSolved',
+      'customerGoals',
+      'currentMarketingChannels',
+      'marketingMessaging',
+    ] as const;
+
+    // Save each field to the API
+    for (const field of fieldsToSave) {
+      const v = company[field] as string | undefined;
+      if (v && v.trim() !== '') {
+        await fetch('/api/company-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ field, value: v }),
+        });
+      }
+    }
+
+    // Sync to active company record if present
+    try {
+      const resp = await fetch('/api/company', { cache: 'no-store' });
+      if (resp.ok) {
+        const json = (await resp.json()) as {
+          success: boolean;
+          active?: { id?: string } | null;
+        };
+        const activeId = (json as unknown as { active?: { id?: string } })
+          .active?.id;
+        if (activeId) {
+          setActiveCompanyId(activeId);
+          for (const field of fieldsToSave) {
+            const value = company[field as keyof OwnCompany] as
+              | string
+              | undefined;
+            if (value && value.trim() !== '') {
+              await fetch('/api/company', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: activeId, field, value }),
+              });
+            }
+          }
+        }
+      }
+    } catch (_) {}
   };
 
   const resetOwnCompany = async () => {
@@ -274,41 +333,56 @@ export function useAppState() {
       setIsLoading(true);
       setError(null);
 
-      const ownCompanyContext = buildOwnCompanyContext(ownCompany);
-      const combinedContext = [
-        ownCompanyContext,
-        ownCompany.additionalContext || additionalContext,
-      ]
-        .filter((v) => Boolean(v && v.trim()))
-        .join('\n\n');
+      const combinedContext = buildOwnCompanyContext(ownCompany);
 
       console.log('Generating ICPs with own company data');
       console.log('Additional context:', combinedContext);
 
       // Generate ICPs based on own company data and additional context
-      const icps = await aiService.generateICPs([], [], combinedContext);
+      // Persist current form values to server before generation
+      await persistOwnCompanyToServer(ownCompany);
+
+      // Use server to generate and persist under active company
+      // Ensure we have a company id
+      let companyId = activeCompanyId;
+      if (!companyId) {
+        try {
+          const resp = await fetch('/api/company', { cache: 'no-store' });
+          if (resp.ok) {
+            const data = await resp.json();
+            companyId = data?.active?.id || '';
+            if (companyId) setActiveCompanyId(companyId);
+          }
+        } catch (_) {}
+      }
+
+      const resp = await fetch('/api/icp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId }),
+      });
+      const out = (await resp.json().catch(() => ({}))) as {
+        success: boolean;
+        profiles: StoredICPProfile[];
+        error?: string;
+      };
+      if (!resp.ok || out?.success === false) {
+        throw new Error(
+          out?.error || `ICP generation failed (HTTP ${resp.status})`,
+        );
+      }
+      const icps: ICP[] = (out.profiles || []).map((p) => p.profileData);
       setGeneratedICPs(icps);
 
       console.log('ICPs generated successfully');
     } catch (error) {
       console.error('Error generating ICPs:', error);
-      let errorMessage =
-        'Failed to generate ICPs. Please make sure Ollama is running and the llama3.2:3b model is installed.';
-
-      if (error instanceof Error && 'code' in error) {
-        const customError = error as { code: string; message: string };
-        switch (customError.code) {
-          case 'LLM_UNAVAILABLE':
-            errorMessage =
-              'Ollama LLM is not available. Please make sure Ollama is running and the llama3.2:3b model is installed.';
-            break;
-          default:
-            errorMessage = `Error: ${customError.message}`;
-        }
-      }
-
-      setError(errorMessage);
-      alert(errorMessage);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'ICP generation failed';
+      setError(message);
+      alert(message);
     } finally {
       setIsLoading(false);
     }
@@ -317,8 +391,8 @@ export function useAppState() {
   return {
     // State
     ownCompany,
-    additionalContext,
     generatedICPs,
+    activeCompanyId,
     isLoading,
     error,
 
@@ -326,7 +400,7 @@ export function useAppState() {
     saveOwnCompany,
     resetOwnCompany,
     onOwnCompanyChange: handleOwnCompanyChange,
-    setAdditionalContext,
     generateICPs: handleGenerateICPs,
+    setActiveCompanyId,
   };
 }
