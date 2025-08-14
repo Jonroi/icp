@@ -24,6 +24,7 @@ export interface ICP {
   preferredChannels: string[];
 }
 
+// CompetitorData removed from active use; keep for backward compatibility
 export interface CompetitorData {
   name: string;
   website: string;

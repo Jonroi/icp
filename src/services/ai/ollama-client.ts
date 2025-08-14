@@ -6,8 +6,14 @@ export class OllamaClient {
   private static instance: OllamaClient | null = null;
 
   private constructor(model: string = 'llama3.2:3b-instruct-q4_K_M') {
-    this.ollamaUrl = 'http://localhost:11434/api/generate';
-    this.model = model;
+    const envModel =
+      (typeof process !== 'undefined' && process.env?.OLLAMA_MODEL) ||
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OLLAMA_MODEL);
+    const envUrl =
+      (typeof process !== 'undefined' && process.env?.OLLAMA_URL) ||
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OLLAMA_URL);
+    this.ollamaUrl = (envUrl || 'http://localhost:11434') + '/api/generate';
+    this.model = envModel || model;
     console.log(`🤖 OllamaClient initialized with model: ${this.model}`);
   }
 
