@@ -1,15 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@mozilla/readability', 'jsdom'],
-  },
+  experimental: {},
   async rewrites() {
-    return [
-      {
-        source: '/api/read',
-        destination: '/api/readability',
-      },
-    ];
+    return [];
   },
 };
 
