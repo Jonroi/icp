@@ -1,6 +1,5 @@
 import type {
   ICP,
-  CompetitorData,
   CustomerReview,
   ApifyBasedICP,
   ApifyDataSource,
@@ -288,24 +287,21 @@ export class ICPGenerator {
    * Enhanced ICP generation implementing the Instruction Framework
    */
   async generateICPs(
-    competitors: CompetitorData[],
-    reviews: CustomerReview[],
     additionalContext: string = '',
+    reviews: CustomerReview[] = [],
   ): Promise<ICP[]> {
-    return this.generateApifyBasedICPs(competitors, reviews, additionalContext);
+    return this.generateApifyBasedICPs(reviews, additionalContext);
   }
 
   /**
    * Enhanced ICP generation that implements the Instruction Framework
    */
   async generateApifyBasedICPs(
-    competitors: CompetitorData[],
-    reviews: CustomerReview[],
+    reviews: CustomerReview[] = [],
     additionalContext: string = '',
     dataSources?: ApifyDataSource[],
   ): Promise<ApifyBasedICP[]> {
     console.log(`🎯 Starting Instruction Framework ICP generation:`);
-    console.log(`   🏢 Competitors: ${competitors.length}`);
     console.log(`   📝 Reviews: ${reviews.length}`);
     console.log(`   📊 Apify Data Sources: ${dataSources?.length || 0}`);
     console.log(
@@ -314,7 +310,7 @@ export class ICPGenerator {
 
     // Validate input data
     const validation = InputValidator.validateICPGenerationInput(
-      competitors,
+      [],
       additionalContext,
     );
 
@@ -342,11 +338,7 @@ export class ICPGenerator {
     try {
       // Step 1: Determine Context (B2B or B2C)
       console.log(`🔍 Determining B2B/B2C context...`);
-      const context = await this.determineContext(
-        competitors,
-        reviews,
-        additionalContext,
-      );
+      const context = await this.determineContext(reviews, additionalContext);
       console.log(
         `   📊 Context: ${context.type} (confidence: ${context.confidence}%)`,
       );
@@ -358,7 +350,6 @@ export class ICPGenerator {
       // Step 3: Analyze Data
       console.log(`📊 Analyzing data with ${context.type} attributes...`);
       const analysis = await this.analyzeDataWithAttributes(
-        competitors,
         reviews,
         additionalContext,
         attributeSet,
@@ -391,13 +382,10 @@ export class ICPGenerator {
    * Step 1: Determine Context (B2B or B2C)
    */
   private async determineContext(
-    competitors: CompetitorData[],
     reviews: CustomerReview[],
     additionalContext: string,
   ): Promise<ICPContext> {
     const prompt = `Analyze the following data to determine if this is a B2B or B2C context:
-
-Competitors: ${competitors.map((c) => `${c.name} (${c.website})`).join('\n')}
 Reviews: ${reviews
       .slice(0, 5)
       .map((r) => r.text)
@@ -421,11 +409,22 @@ Respond with JSON:
   "type": "B2B" or "B2C",
   "confidence": 0-100,
   "reasoning": "explanation of your decision"
-}`;
+  }`;
 
     try {
       const response = await this.ollamaClient.generateResponse(prompt);
-      const context = JSON.parse(response);
+      let context: any;
+      try {
+        context = JSON.parse(response);
+      } catch (_) {
+        const s = response.indexOf('{');
+        const e = response.lastIndexOf('}');
+        if (s !== -1 && e > s) {
+          context = JSON.parse(response.substring(s, e + 1));
+        } else {
+          throw new SyntaxError('LLM did not return JSON');
+        }
+      }
       return {
         type: context.type === 'B2B' ? 'B2B' : 'B2C',
         confidence: Math.min(100, Math.max(0, context.confidence || 50)),
@@ -463,15 +462,12 @@ Respond with JSON:
    * Step 3: Analyze Data with Attributes
    */
   private async analyzeDataWithAttributes(
-    competitors: CompetitorData[],
     reviews: CustomerReview[],
     additionalContext: string,
     attributeSet: string[],
     context: ICPContext,
   ): Promise<Record<string, unknown>> {
-    const competitorInfo = competitors
-      .map((c) => `${c.name} (${c.website})`)
-      .join('\n');
+    const competitorInfo = 'N/A';
     const reviewTexts = reviews.map((r) => r.text).join('\n');
 
     // Enhanced review analysis
@@ -489,7 +485,30 @@ Respond with JSON:
     );
 
     const response = await this.ollamaClient.generateResponse(prompt);
-    return JSON.parse(response);
+    // Try to coerce to JSON when the model returns prefixed prose or bullet lists
+    const cleaned = this.extractLikelyJsonBlock(response);
+    return JSON.parse(cleaned);
+  }
+
+  private extractLikelyJsonBlock(response: string): string {
+    // Prefer the longest balanced JSON object/array block
+    const firstCurly = response.indexOf('{');
+    const firstBracket = response.indexOf('[');
+    let start = -1;
+    if (firstCurly !== -1 && firstBracket !== -1)
+      start = Math.min(firstCurly, firstBracket);
+    else start = Math.max(firstCurly, firstBracket);
+    if (start === -1) throw new SyntaxError('LLM did not return JSON');
+    const lastCurly = response.lastIndexOf('}');
+    const lastBracket = response.lastIndexOf(']');
+    const end = Math.max(lastCurly, lastBracket);
+    if (end <= start) throw new SyntaxError('LLM did not return JSON');
+    // Remove common Markdown/bullet prefixes that break JSON, like "- key: value"
+    const slice = response
+      .substring(start, end + 1)
+      .replace(/^[\s\-\*]+/gm, '')
+      .replace(/(\w+)\s*:\s*([\w\-]+)(\s|$)/g, '"$1": "$2"$3');
+    return slice.trim();
   }
 
   /**
