@@ -81,7 +81,7 @@ export function ICPGenerator({
           />
         </div>
 
-        {/* Additional Context removed */}
+        {/* Additional context section removed */}
 
         <div className='flex flex-wrap gap-2'>
           <Button
