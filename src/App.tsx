@@ -12,17 +12,17 @@ export default function App() {
   const {
     // State
     ownCompany,
-    additionalContext,
     generatedICPs,
     isLoading,
     error,
+    activeCompanyId,
 
     // Actions
     onOwnCompanyChange,
     saveOwnCompany,
     resetOwnCompany,
-    setAdditionalContext,
     generateICPs,
+    setActiveCompanyId,
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<string>('icp-generator');
@@ -44,10 +44,8 @@ export default function App() {
         <TabsContent value='icp-generator'>
           <ICPGenerator
             ownCompany={ownCompany}
-            additionalContext={additionalContext}
             isLoading={isLoading}
             error={error}
-            onAdditionalContextChange={setAdditionalContext}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
             onResetOwnCompany={resetOwnCompany}
@@ -60,7 +58,11 @@ export default function App() {
         </TabsContent>
 
         <TabsContent value='demographics'>
-          <ICPProfiles generatedICPs={generatedICPs} />
+          <ICPProfiles
+            generatedICPs={generatedICPs}
+            activeCompanyId={activeCompanyId}
+            onCompanyIdChange={setActiveCompanyId}
+          />
         </TabsContent>
 
         <TabsContent value='campaign-designer'>
