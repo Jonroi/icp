@@ -5,7 +5,7 @@ export class OllamaClient {
   private model: string;
   private static instance: OllamaClient | null = null;
 
-  private constructor(model: string = 'llama3.2:3b-instruct-q4_K_M') {
+  private constructor(model: string = 'llama3.2:3b') {
     const envModel =
       (typeof process !== 'undefined' && process.env?.OLLAMA_MODEL) ||
       (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OLLAMA_MODEL);

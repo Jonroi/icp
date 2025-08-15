@@ -1438,6 +1438,33 @@ export class ICPGenerator {
   private determineBusinessModel(companyData: any): 'B2B' | 'B2C' | 'B2B2C' {
     const targetMarket = companyData.targetMarket?.toLowerCase() || '';
     const marketSegment = companyData.marketSegment?.toLowerCase() || '';
+    const industry = companyData.industry?.toLowerCase() || '';
+
+    // Check for manufacturing/industrial indicators
+    const manufacturingIndicators = [
+      'manufacturing',
+      'industrial',
+      'automotive',
+      'aerospace',
+      'defense',
+      'heavy industry',
+      'factory',
+      'production',
+      'machinery',
+      'equipment',
+    ];
+
+    // If it's manufacturing/industrial, it's almost always B2B
+    if (
+      manufacturingIndicators.some(
+        (indicator) =>
+          industry.includes(indicator) ||
+          targetMarket.includes(indicator) ||
+          marketSegment.includes(indicator),
+      )
+    ) {
+      return 'B2B';
+    }
 
     const b2bIndicators = [
       'business',
@@ -1446,22 +1473,35 @@ export class ICPGenerator {
       'organization',
       'professional',
       'industry',
+      'corporate',
+      'commercial',
+      'b2b',
+      'business-to-business',
     ];
+
     const b2cIndicators = [
       'consumer',
       'individual',
       'personal',
       'customer',
       'user',
+      'retail',
+      'end-user',
+      'b2c',
+      'business-to-consumer',
     ];
 
     const hasB2B = b2bIndicators.some(
       (indicator) =>
-        targetMarket.includes(indicator) || marketSegment.includes(indicator),
+        targetMarket.includes(indicator) ||
+        marketSegment.includes(indicator) ||
+        industry.includes(indicator),
     );
     const hasB2C = b2cIndicators.some(
       (indicator) =>
-        targetMarket.includes(indicator) || marketSegment.includes(indicator),
+        targetMarket.includes(indicator) ||
+        marketSegment.includes(indicator) ||
+        industry.includes(indicator),
     );
 
     if (hasB2B && hasB2C) return 'B2B2C';
@@ -1611,238 +1651,92 @@ Example: ["startup_innovator", "tech_startup", "saas_startup"]
   }
 
   /**
-   * Generate ICP profile from selected template using a simpler approach
+   * Generate ICP profile from selected template using a single efficient call
    */
   private async generateICPFromTemplate(
     companyData: any,
     template: any,
     businessModel: string,
   ): Promise<ICP> {
-    // Generate ICP in parts to avoid complex JSON parsing issues
     const icpId = `icp_${Date.now()}_${Math.random()
       .toString(36)
       .substr(2, 9)}`;
 
-    // Generate segments
-    console.log(`🎯 Generating segments for company: ${companyData.name}`);
-    const segmentsPrompt = `Based on this company data and template, provide 2-3 relevant customer segments for ${template.name}:
+    console.log(`🎯 Generating complete ICP for template: ${template.name}`);
 
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Target Market: ${companyData.targetMarket}
+    const prompt = `Generate a complete ICP profile for ${
+      template.name
+    } based on this company data:
+
+Company: ${companyData.name || 'Unknown Company'}
+Industry: ${companyData.industry || 'Technology'}
+Target Market: ${companyData.targetMarket || 'Businesses'}
+Value Proposition: ${companyData.valueProposition || 'Software solutions'}
+Main Offerings: ${companyData.mainOfferings || 'Software services'}
+Pricing Model: ${companyData.pricingModel || 'Subscription-based'}
+
 Template: ${template.name} - ${template.description}
 
-Respond with ONLY a comma-separated list of segments, no additional text.
-Example: "Startup Founders, Tech Entrepreneurs, Small Business Owners"`;
+Generate the following in a single response, separated by "---":
 
-    const segmentsResponse = await this.ollamaClient.generateResponse(
-      segmentsPrompt,
-    );
-    const segments = segmentsResponse
-      .split(',')
+SEGMENTS: 2-3 customer segments (comma-separated)
+PAINS: 3-4 pain points (comma-separated)  
+JOBS: 3-4 jobs to be done (comma-separated)
+OUTCOMES: 3-4 desired outcomes (comma-separated)
+TRIGGERS: 3-4 buying triggers (comma-separated)
+OBJECTIONS: 3-4 common objections (comma-separated)
+VALUE_PROP: 1 sentence value proposition
+FEATURES: 3 unique features (comma-separated)
+ADVANTAGES: 3 competitive advantages (comma-separated)
+CHANNELS: 3 go-to-market channels (comma-separated)
+MESSAGES: 3 key messages (comma-separated)
+CONTENT: 3 content ideas (comma-separated)
+
+Example format:
+SEGMENTS: Startup Founders, Tech Entrepreneurs, Small Business Owners
+PAINS: High operational costs, Limited scalability, Complex compliance
+---`;
+
+    const response = await this.ollamaClient.generateResponse(prompt);
+
+    // Parse the response
+    const sections = response
+      .split('---')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
-    // Generate pains
-    console.log(`🎯 Generating pains for company: ${companyData.name}`);
-    const painsPrompt = `Based on this company data and template, identify 3-4 specific pain points for ${template.name}:
+    const parseSection = (section: string, prefix: string): string[] => {
+      const lines = section.split('\n');
+      const targetLine = lines.find((line) => line.startsWith(prefix));
+      if (!targetLine) return [];
+      return targetLine
+        .replace(prefix, '')
+        .trim()
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    };
 
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Value Proposition: ${companyData.valueProposition}
-Template: ${template.name} - ${template.description}
+    const parseSingleSection = (section: string, prefix: string): string => {
+      const lines = section.split('\n');
+      const targetLine = lines.find((line) => line.startsWith(prefix));
+      if (!targetLine) return '';
+      return targetLine.replace(prefix, '').trim();
+    };
 
-Respond with ONLY a comma-separated list of pain points, no additional text.
-Example: "High operational costs, Limited scalability, Complex compliance requirements"`;
-
-    const painsResponse = await this.ollamaClient.generateResponse(painsPrompt);
-    const pains = painsResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate jobs to be done
-    const jobsPrompt = `Based on this company data and template, identify 3-4 jobs to be done for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Main Offerings: ${companyData.mainOfferings}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of jobs, no additional text.
-Example: "Reduce operational costs, Scale business efficiently, Ensure compliance"`;
-
-    const jobsResponse = await this.ollamaClient.generateResponse(jobsPrompt);
-    const jobs = jobsResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate desired outcomes
-    const outcomesPrompt = `Based on this company data and template, identify 3-4 desired outcomes for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Customer Goals: ${companyData.customerGoals}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of outcomes, no additional text.
-Example: "Increased efficiency, Cost savings, Improved compliance"`;
-
-    const outcomesResponse = await this.ollamaClient.generateResponse(
-      outcomesPrompt,
-    );
-    const outcomes = outcomesResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate buying triggers
-    const triggersPrompt = `Based on this company data and template, identify 3-4 buying triggers for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of triggers, no additional text.
-Example: "New business expansion, Regulatory changes, Technology upgrades"`;
-
-    const triggersResponse = await this.ollamaClient.generateResponse(
-      triggersPrompt,
-    );
-    const triggers = triggersResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate common objections
-    const objectionsPrompt = `Based on this company data and template, identify 3-4 common objections for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Pricing Model: ${companyData.pricingModel}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of objections, no additional text.
-Example: "High upfront costs, Implementation complexity, ROI uncertainty"`;
-
-    const objectionsResponse = await this.ollamaClient.generateResponse(
-      objectionsPrompt,
-    );
-    const objections = objectionsResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate value proposition
-    const valuePropPrompt = `Based on this company data and template, create a value proposition for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Value Proposition: ${companyData.valueProposition}
-Unique Features: ${companyData.uniqueFeatures}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY the value proposition sentence, no additional text.`;
-
-    const valuePropResponse = await this.ollamaClient.generateResponse(
-      valuePropPrompt,
-    );
-    const valueProp = valuePropResponse.trim();
-
-    // Generate unique features
-    const featuresPrompt = `Based on this company data and template, identify 3 unique features for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Unique Features: ${companyData.uniqueFeatures}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of features, no additional text.
-Example: "AI-powered optimization, 24/7 monitoring, Custom integrations"`;
-
-    const featuresResponse = await this.ollamaClient.generateResponse(
-      featuresPrompt,
-    );
-    const features = featuresResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate competitive advantages
-    const advantagesPrompt = `Based on this company data and template, identify 3 competitive advantages for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Competitive Advantages: ${companyData.competitiveAdvantages}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of advantages, no additional text.
-Example: "Proven ROI, Industry expertise, Comprehensive support"`;
-
-    const advantagesResponse = await this.ollamaClient.generateResponse(
-      advantagesPrompt,
-    );
-    const advantages = advantagesResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate go-to-market channels
-    const channelsPrompt = `Based on this company data and template, identify 3 go-to-market channels for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Current Marketing Channels: ${companyData.currentMarketingChannels}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of channels, no additional text.
-Example: "LinkedIn advertising, Industry events, Referral programs"`;
-
-    const channelsResponse = await this.ollamaClient.generateResponse(
-      channelsPrompt,
-    );
-    const channels = channelsResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate messages
-    const messagesPrompt = `Based on this company data and template, identify 3 key messages for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Marketing Messaging: ${companyData.marketingMessaging}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of messages, no additional text.
-Example: "Reduce costs by 30%, Improve efficiency, Scale your business"`;
-
-    const messagesResponse = await this.ollamaClient.generateResponse(
-      messagesPrompt,
-    );
-    const messages = messagesResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Generate content ideas
-    const contentPrompt = `Based on this company data and template, identify 3 content ideas for ${template.name}:
-
-Company: ${companyData.name}
-Industry: ${companyData.industry}
-Template: ${template.name} - ${template.description}
-
-Respond with ONLY a comma-separated list of content ideas, no additional text.
-Example: "Case studies, Webinars, Industry reports"`;
-
-    const contentResponse = await this.ollamaClient.generateResponse(
-      contentPrompt,
-    );
-    const content = contentResponse
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    // Extract data from response
+    const segments = parseSection(response, 'SEGMENTS:');
+    const pains = parseSection(response, 'PAINS:');
+    const jobs = parseSection(response, 'JOBS:');
+    const outcomes = parseSection(response, 'OUTCOMES:');
+    const triggers = parseSection(response, 'TRIGGERS:');
+    const objections = parseSection(response, 'OBJECTIONS:');
+    const valueProp = parseSingleSection(response, 'VALUE_PROP:');
+    const features = parseSection(response, 'FEATURES:');
+    const advantages = parseSection(response, 'ADVANTAGES:');
+    const channels = parseSection(response, 'CHANNELS:');
+    const messages = parseSection(response, 'MESSAGES:');
+    const content = parseSection(response, 'CONTENT:');
 
     // Create the ICP object
     const icp: ICP = {
@@ -1851,9 +1745,12 @@ Example: "Case studies, Webinars, Industry reports"`;
       business_model: businessModel as 'B2B' | 'B2C' | 'B2B2C',
       meta: {
         generated_at: new Date().toISOString(),
-        source_company: companyData.name,
+        source_company: companyData.name || 'Unknown Company',
       },
-      segments: segments,
+      segments:
+        segments.length > 0
+          ? segments
+          : ['Business Professionals', 'Industry Leaders'],
       fit_definition: {
         company_attributes: {
           industries: [companyData.industry || 'Technology'],
@@ -1871,16 +1768,40 @@ Example: "Case studies, Webinars, Industry reports"`;
         ],
       },
       needs_pain_goals: {
-        pains: pains,
-        jobs_to_be_done: jobs,
-        desired_outcomes: outcomes,
+        pains:
+          pains.length > 0
+            ? pains
+            : ['Operational inefficiency', 'High costs', 'Complex processes'],
+        jobs_to_be_done:
+          jobs.length > 0
+            ? jobs
+            : ['Optimize operations', 'Reduce costs', 'Improve efficiency'],
+        desired_outcomes:
+          outcomes.length > 0
+            ? outcomes
+            : ['Increased efficiency', 'Cost savings', 'Better performance'],
       },
-      buying_triggers: triggers,
-      common_objections: objections,
+      buying_triggers:
+        triggers.length > 0
+          ? triggers
+          : ['Business expansion', 'Technology upgrade', 'Cost pressure'],
+      common_objections:
+        objections.length > 0
+          ? objections
+          : ['High upfront costs', 'Implementation time', 'ROI uncertainty'],
       value_prop_alignment: {
-        value_prop: valueProp,
-        unique_features: features,
-        competitive_advantages: advantages,
+        value_prop:
+          valueProp ||
+          companyData.valueProposition ||
+          'Comprehensive business solutions',
+        unique_features:
+          features.length > 0
+            ? features
+            : ['AI-powered', 'Cloud-based', 'Scalable'],
+        competitive_advantages:
+          advantages.length > 0
+            ? advantages
+            : ['Proven ROI', 'Industry expertise', '24/7 support'],
       },
       offerings_pricing: {
         main_offerings: companyData.mainOfferings
@@ -1890,9 +1811,18 @@ Example: "Case studies, Webinars, Industry reports"`;
         packaging_notes: 'Flexible pricing options, Custom enterprise plans',
       },
       go_to_market: {
-        primary_channels: channels,
-        messages: messages,
-        content_ideas: content,
+        primary_channels:
+          channels.length > 0
+            ? channels
+            : ['LinkedIn', 'Industry events', 'Referrals'],
+        messages:
+          messages.length > 0
+            ? messages
+            : ['Increase efficiency', 'Reduce costs', 'Scale your business'],
+        content_ideas:
+          content.length > 0
+            ? content
+            : ['Case studies', 'Webinars', 'Industry reports'],
       },
       fit_scoring: {
         score: 85,
