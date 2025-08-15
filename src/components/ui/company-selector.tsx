@@ -289,10 +289,6 @@ export function CompanySelector({
           )}
         </div>
       )}
-
-      <p className='text-xs text-muted-foreground'>
-        Select an existing company or create a new one to get started.
-      </p>
     </div>
   );
 }
