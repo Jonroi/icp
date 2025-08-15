@@ -10,7 +10,7 @@ import {
 } from './select';
 import { Button } from './button';
 import type { OwnCompany } from '@/services/project-service';
-import { Loader2, Plus, Save } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 
 interface CompanySelectorProps {
   value: string;
@@ -21,6 +21,8 @@ interface CompanySelectorProps {
   onCompanyIdSelected?: (id: string) => void;
   selectedCompanyId?: string;
   allowCreate?: boolean;
+  allowDelete?: boolean;
+  onCompanyDeleted?: () => void;
 }
 
 export function CompanySelector({
@@ -31,7 +33,9 @@ export function CompanySelector({
   onCompanyIdSelected,
   selectedCompanyId,
   allowCreate = true,
+  allowDelete = true,
   className = '',
+  onCompanyDeleted,
 }: CompanySelectorProps) {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
     [],
@@ -39,6 +43,7 @@ export function CompanySelector({
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
   const [selectedId, setSelectedId] = useState<string>('');
 
@@ -152,6 +157,53 @@ export function CompanySelector({
     }
   };
 
+  const handleDeleteCompany = async () => {
+    if (
+      !selectedId ||
+      !confirm(
+        'Are you sure you want to delete this company? This will also delete all associated ICP profiles and cannot be undone.',
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+
+      // Delete company and all associated data
+      const resp = await fetch(
+        `/api/company?id=${encodeURIComponent(selectedId)}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!resp.ok) {
+        throw new Error('Failed to delete company');
+      }
+
+      // Refresh companies list
+      const listResp = await fetch('/api/company', { cache: 'no-store' });
+      if (listResp.ok) {
+        const json = await listResp.json();
+        setCompanies((json.list || []) as Array<{ id: string; name: string }>);
+      }
+
+      // Clear selection
+      setSelectedId('');
+      onCompanyIdSelected?.('');
+      onCompanySelect({} as OwnCompany);
+
+      // Notify parent component
+      onCompanyDeleted?.();
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      alert('Failed to delete company. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className={`space-y-2 ${className}`}>
       <Label htmlFor='company-selector'>
@@ -219,6 +271,19 @@ export function CompanySelector({
               </SelectContent>
             </Select>
           </div>
+
+          {selectedId && allowDelete && (
+            <Button
+              onClick={handleDeleteCompany}
+              disabled={isDeleting || isLoading || isLoadingCompanies}
+              variant='destructive'
+              size='sm'
+              className='flex items-center gap-2'>
+              <Trash2 className='h-4 w-4' />
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          )}
+
           {(isLoading || isLoadingCompanies) && (
             <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
           )}
