@@ -18,45 +18,22 @@ import {
 import { CompanySelector } from '@/components/ui/company-selector';
 import type { OwnCompany } from '@/services/project-service';
 import type { StoredICPProfile } from '@/services';
+import type { ICP } from '@/services/ai/types';
 import { useEffect, useState } from 'react';
 // Agent button removed during reset
-
-interface ICP {
-  name: string;
-  description: string;
-  demographics: {
-    age: string;
-    gender: string;
-    location: string;
-    income: string;
-    education: string;
-  };
-  psychographics: {
-    interests: string[];
-    values: string[];
-    lifestyle: string;
-    painPoints: string[];
-  };
-  behavior: {
-    onlineHabits: string[];
-    purchasingBehavior: string;
-    brandPreferences: string[];
-  };
-  goals: string[];
-  challenges: string[];
-  preferredChannels: string[];
-}
 
 interface ICPProfilesProps {
   generatedICPs: ICP[];
   activeCompanyId?: string;
   onCompanyIdChange?: (id: string) => void;
+  onGenerateMore?: () => Promise<void>;
 }
 
 export function ICPProfiles({
   generatedICPs,
   activeCompanyId,
   onCompanyIdChange,
+  onGenerateMore,
 }: ICPProfilesProps) {
   const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
   const [companyName, setCompanyName] = useState<string>('');
@@ -132,14 +109,10 @@ export function ICPProfiles({
             className='flex items-center gap-2 h-10'
             disabled={!companyId || isGeneratingMore}
             onClick={async () => {
-              if (!companyId) return;
+              if (!companyId || !onGenerateMore) return;
               try {
                 setIsGeneratingMore(true);
-                await fetch('/api/icp', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ companyId }),
-                });
+                await onGenerateMore();
                 await refreshProfiles(companyId);
               } finally {
                 setIsGeneratingMore(false);
@@ -199,7 +172,7 @@ export function ICPProfiles({
                     <div className='flex items-center justify-between'>
                       <div>
                         <CardTitle className='text-xl'>
-                          {p.profileData.icp_name || p.profileData.name}
+                          {p.profileData.icp_name}
                         </CardTitle>
                         <p className='text-sm text-muted-foreground'>
                           {p.profileData.business_model} •{' '}

@@ -61,58 +61,12 @@ Return JSON array only: [{"isValid": boolean, "reason": "short explanation"}, ..
         reason: v.reason || '',
       }));
     } catch (parseError) {
-      console.warn('Failed to parse LLM validation response:', parseError);
-      // Enhanced fallback with better heuristics
-      return blocks.map((b) => {
-        b.toLowerCase();
-
-        // Strong indicators this is NOT a review
-        const negativeIndicators = [
-          /^\[.*\]\(.*\)$/, // Markdown links
-          /^(home|about|contact|login|search|menu|categories)$/i,
-          /(privacy policy|terms|cookie|legal|help\.trustpilot\.com)/i,
-          /insurance agency in|travel agency in|furniture store|bank in|payment service/i,
-          /companies can ask for reviews|automatic invitations|labeled verified/i,
-          /^https?:\/\//, // URLs
-          /^\d+(\.\d+)?\s*(stars?|\/5|rating)/i, // Just ratings
-        ];
-
-        if (negativeIndicators.some((pattern) => pattern.test(b))) {
-          return { isValid: false, reason: 'navigation-or-metadata' };
-        }
-
-        // Positive indicators this IS a review
-        const hasPersonalLanguage = /\b(I|my|we|our)\b/i.test(b);
-        const hasExperienceWords =
-          /(order|delivery|service|support|experience|received|shipped|arrived|customer|staff|team|driver|package)\b/i.test(
-            b,
-          );
-        const hasEmotionalLanguage =
-          /(good|bad|excellent|terrible|satisfied|disappointed|frustrated|happy|helpful|poor|great|awful)\b/i.test(
-            b,
-          );
-        const hasTimeReference =
-          /\b(day|week|month|year|yesterday|ago|last|recent)\b/i.test(b);
-        const hasSentenceStructure =
-          /[.!?]/.test(b) && b.split(/\s+/).length >= 10;
-
-        const score = [
-          hasPersonalLanguage,
-          hasExperienceWords,
-          hasEmotionalLanguage,
-          hasTimeReference,
-          hasSentenceStructure,
-        ].filter(Boolean).length;
-
-        const isValid = score >= 3 && b.length >= 80;
-
-        return {
-          isValid,
-          reason: isValid
-            ? `heuristic-score-${score}/5`
-            : 'insufficient-review-indicators',
-        };
-      });
+      console.error('Failed to parse LLM validation response:', parseError);
+      throw new Error(
+        `Failed to parse review validation response: ${
+          parseError instanceof Error ? parseError.message : 'Unknown error'
+        }`,
+      );
     }
   }
 }

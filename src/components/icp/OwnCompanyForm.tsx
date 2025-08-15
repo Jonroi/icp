@@ -47,32 +47,7 @@ export function OwnCompanyForm({
         console.error('Error resetting form:', error);
       }
     } else {
-      // Fallback: clear all fields manually
-      const emptyCompany: OwnCompany = {
-        name: '',
-        location: '',
-        website: '',
-        social: '',
-        industry: '',
-        companySize: '',
-        targetMarket: '',
-        valueProposition: '',
-        mainOfferings: '',
-        pricingModel: '',
-        uniqueFeatures: '',
-        marketSegment: '',
-        competitiveAdvantages: '',
-        currentCustomers: '',
-        successStories: '',
-        painPointsSolved: '',
-        customerGoals: '',
-        currentMarketingChannels: '',
-        marketingMessaging: '',
-      };
-
-      Object.entries(emptyCompany).forEach(([field, value]) => {
-        onChange(field as keyof OwnCompany, value);
-      });
+      throw new Error('Form reset handler is required but not provided');
     }
   };
   // Predefined options for dropdowns

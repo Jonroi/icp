@@ -1579,8 +1579,11 @@ Respond with JSON array of template IDs (e.g., ["startup_innovator", "tech_start
     } catch (error) {
       console.error('Failed to parse template selection:', error);
       console.error('Raw response:', response);
-      // Fallback: return first 3 templates
-      return availableTemplates.slice(0, 3);
+      throw new Error(
+        `Failed to parse template selection: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
   }
 
@@ -1771,64 +1774,11 @@ IMPORTANT: All content must be in English. Generate detailed, actionable insight
       console.error('Failed to parse ICP response:', error);
       console.error('Raw response:', response);
 
-      // Return a fallback ICP
-      return this.createFallbackICP(businessModel);
+      throw new Error(
+        `Failed to parse ICP response: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
     }
-  }
-
-  /**
-   * Create fallback ICP when parsing fails
-   */
-  private createFallbackICP(businessModel: string): ICP {
-    return {
-      icp_id: `fallback_${Date.now()}`,
-      icp_name: 'Fallback ICP Profile',
-      business_model: businessModel as 'B2B' | 'B2C' | 'B2B2C',
-      meta: {
-        generated_at: new Date().toISOString(),
-        source_company: 'Unknown',
-      },
-      segments: ['General Market'],
-      fit_definition: {
-        company_attributes: {
-          industries: ['General Industries'],
-          company_sizes: ['All Sizes'],
-          geographies: ['Global'],
-        },
-      },
-      needs_pain_goals: {
-        pains: ['General operational challenges'],
-        jobs_to_be_done: ['Core business functions'],
-        desired_outcomes: ['Improved efficiency and growth'],
-      },
-      buying_triggers: ['Business need identification'],
-      common_objections: ['Price and implementation concerns'],
-      value_prop_alignment: {
-        value_prop: 'General business value proposition',
-        unique_features: ['Core product features'],
-        competitive_advantages: ['Standard market advantages'],
-      },
-      offerings_pricing: {
-        main_offerings: ['Standard product offerings'],
-        pricing_model: 'Standard pricing model',
-      },
-      go_to_market: {
-        primary_channels: ['Standard marketing channels'],
-        messages: ['General value messaging'],
-        content_ideas: ['Standard content types'],
-      },
-      fit_scoring: {
-        score: 50,
-        score_breakdown: {
-          industry_fit: 50,
-          size_fit: 50,
-          geo_fit: 50,
-          pain_alignment: 50,
-          goal_alignment: 50,
-        },
-      },
-      abm_tier: 'Tier 3',
-      confidence: 'low',
-    };
   }
 }
