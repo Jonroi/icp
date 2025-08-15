@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const state = await companyDataService.getCurrentData();
     const currentData = state.currentData || {};
     const ai = new AIService();
-    const icps = await ai.generateICPs([]);
+    const icps = await ai.generateICPs(currentData);
 
     // Persist profiles under company
     const saved = await icpProfilesService.saveProfilesForCompany(
