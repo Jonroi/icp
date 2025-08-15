@@ -1,15 +1,15 @@
-// Project service
-export {
-  ProjectService,
-  type ProjectData,
-  type OwnCompany,
-} from './project-service';
-
-// Company data service
-export * from './company-data-service';
-
-// AI services
+// AI Services
 export * from './ai';
 
-// ICP profiles
+// Company Services
+export * from './companies-service';
+export * from './company-data-service';
+
+// ICP Services
 export * from './icp-profiles-service';
+
+// Project Services
+export * from './project-service';
+
+// Redis Service
+export * from './redis-service';

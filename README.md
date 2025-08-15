@@ -1,230 +1,289 @@
-# ICP Builder - AI-Powered Customer Profile Generator
+# ICP Builder
 
-Generate comprehensive Ideal Customer Profiles (ICPs) from your company data using a local LLM (Ollama) and store results in PostgreSQL.
+A modern React/TypeScript application that generates Ideal Customer Profiles (ICPs) using AI analysis. Built with Next.js, tRPC, PostgreSQL, and Redis for optimal performance and type safety.
 
 ## 🚀 Features
 
-- **Advanced ICP Generation**: Generate detailed Ideal Customer Profiles with comprehensive business insights
-- **140+ ICP Template Library**: AI selects 3 best-fitting ICP types from dozens of variations
-- **Multi-Segment ICPs**: Automatically creates B2B, B2C, and B2B2C profiles based on company data analysis
-- **Intelligent Template Selection**: LLM analyzes company data and selects most relevant ICP templates
-- **Step-by-Step Generation**: Robust ICP generation using 12 separate LLM calls to avoid JSON parsing issues
-- **Comprehensive Business Intelligence**: Includes buying triggers, objections, pain points, go-to-market strategies, and fit scoring
-- **Company Management**: Create/select companies with persistent storage in PostgreSQL
-- **ICP Profiles Library**: View and manage ICPs per company with delete functionality
-- **Campaign Designer**: Create marketing campaigns based on ICP profiles
-- **Campaign Library**: Browse and manage campaign templates
-- **Local AI Processing**: Uses Ollama model locally; no external LLM calls
-- **Robust Error Handling**: Comprehensive error recovery and user feedback
+- **AI-Powered ICP Generation**: Uses Ollama LLM for intelligent customer profile creation
+- **Type-Safe API**: Full end-to-end type safety with tRPC
+- **Redis Caching**: High-performance caching for companies, ICPs, and application state
+- **PostgreSQL Database**: Robust data persistence with proper schema management
+- **Step-by-Step Generation**: Reliable AI response parsing with individual component generation
+- **Company Management**: Create, update, and manage multiple companies
+- **Campaign Design**: Design marketing campaigns based on generated ICPs
+- **Modern UI**: Built with Radix UI primitives and Tailwind CSS
 
-## 🏃‍♂️ Quick Start
+## 🏗️ Architecture
+
+### Tech Stack
+
+- **Frontend**: React 18, TypeScript, Next.js 14
+- **Backend**: tRPC, Node.js
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **AI**: Ollama (local LLM)
+- **UI**: Radix UI, Tailwind CSS
+- **State Management**: React Query + tRPC
+
+### Key Components
+
+- **tRPC Routers**: Type-safe API endpoints for companies, ICPs, and data management
+- **Redis Service**: Caching layer for performance optimization
+- **AI Service**: Step-by-step ICP generation with robust error handling
+- **Database Layer**: PostgreSQL with proper schema and migrations
+
+## 📦 Installation
 
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+
-- Ollama installed locally
+- Docker & Docker Compose
+- PostgreSQL (or use Docker)
+- Redis (or use Docker)
 
-### Installation
+### Quick Start with Docker
 
-```bash
-git clone <repository-url>
-cd icp
-npm install
-npm run dev
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd icp
+   ```
+
+2. **Start infrastructure services**
+
+   ```bash
+   docker-compose up -d postgres redis
+   ```
+
+3. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+4. **Set up environment variables**
+   Create `.env.local`:
+
+   ```env
+   DATABASE_URL=postgresql://icp_user:icp_password@localhost:5432/icp_builder
+   REDIS_URL=redis://localhost:6379
+   NODE_ENV=development
+   ```
+
+5. **Run database migrations**
+
+   ```bash
+   npm run db:migrate
+   ```
+
+6. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+### Manual Setup
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Set up PostgreSQL**
+
+   - Create database: `icp_builder`
+   - Run schema: `database/schema.sql`
+
+3. **Set up Redis**
+
+   - Install Redis locally or use cloud service
+   - Update `REDIS_URL` in environment variables
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+## 🔧 Development
+
+### Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── icp/            # ICP-related components
+│   ├── campaign/       # Campaign components
+│   ├── ui/             # Reusable UI components
+│   └── providers/      # Context providers
+├── server/             # tRPC server
+│   ├── routers/        # API route handlers
+│   └── trpc.ts         # tRPC configuration
+├── services/           # Business logic
+│   ├── ai/             # AI/LLM services
+│   └── redis-service.ts # Redis caching
+├── hooks/              # Custom React hooks
+└── lib/                # Utilities and configurations
 ```
 
-### Environment
+### Key Features
 
-Create `.env.local` (adjust values as needed):
+#### tRPC API Endpoints
+
+- `company.*` - Company management (CRUD operations)
+- `companyData.*` - Form data management
+- `icp.*` - ICP generation and management
+
+#### Redis Caching Strategy
+
+- **Company Cache**: 1-hour TTL for company data
+- **ICP Cache**: 2-hour TTL for generated profiles
+- **State Cache**: 24-hour TTL for application state
+- **Session Cache**: 30-minute TTL for user sessions
+
+#### AI Processing
+
+- **Step-by-Step Generation**: Individual ICP components generated separately
+- **Robust Error Handling**: No fallback patterns, explicit error throwing
+- **Type Safety**: Full TypeScript support throughout the pipeline
+
+## 🚀 Usage
+
+### 1. Company Setup
+
+1. Navigate to "ICP Generator" tab
+2. Fill in your company information
+3. Save the company data
+
+### 2. ICP Generation
+
+1. Select your company from the dropdown
+2. Click "Generate ICPs"
+3. Wait for AI processing (typically 30-60 seconds)
+4. View generated profiles in "ICP Profiles" tab
+
+### 3. Campaign Design
+
+1. Use generated ICPs to design targeted campaigns
+2. Access campaign templates and ideas
+3. Export campaign data
+
+## 🔍 API Documentation
+
+### Company Endpoints
+
+```typescript
+// List all companies
+trpc.company.list.query();
+
+// Get company by ID
+trpc.company.getById.query({ id: string });
+
+// Create company
+trpc.company.create.mutate(companyData);
+
+// Update company field
+trpc.company.updateField.mutate({ id, field, value });
+
+// Delete company
+trpc.company.delete.mutate({ id: string });
+```
+
+### ICP Endpoints
+
+```typescript
+// Generate ICPs
+trpc.icp.generate.mutate({ companyId: string });
+
+// Get ICPs by company
+trpc.icp.getByCompany.query({ companyId: string });
+
+// Get all ICPs (active company)
+trpc.icp.getAll.query();
+
+// Generate more ICPs
+trpc.icp.generateMore.mutate({ companyId: string });
+```
+
+## 🛠️ Development Commands
+
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+
+# Database
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database with sample data
+
+# Type checking
+npm run type-check       # Run TypeScript type checking
+npm run lint             # Run ESLint
+
+# Docker
+docker-compose up -d     # Start all services
+docker-compose down      # Stop all services
+```
+
+## 🔧 Configuration
+
+### Environment Variables
 
 ```env
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=icp_builder
-DB_USER=icp_user
-DB_PASSWORD=your_password
-DB_SSL=false
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/icp_builder
 
-# Logical user used by the app (seeded in schema.sql)
-TEST_USER_ID=11111111-1111-1111-1111-111111111111
+# Redis
+REDIS_URL=redis://localhost:6379
 
-# Ollama (server-side)
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
-
-# Ollama (browser usage where needed)
-NEXT_PUBLIC_OLLAMA_URL=http://localhost:11434
-NEXT_PUBLIC_OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
+# Development
+NODE_ENV=development
 ```
 
-### AI Setup
+### Redis Configuration
 
-1. Install Ollama from `https://ollama.ai`
-2. Pull the model: `ollama pull llama3.2:3b-instruct-q4_K_M`
-3. Ensure Ollama is running (`ollama serve`)
+- **Default TTL**: 1 hour for companies, 2 hours for ICPs
+- **Persistence**: AOF (Append Only File) enabled
+- **Connection**: Automatic retry with failover support
 
-### Database Setup
+## 🚨 Error Handling
 
-The app will run migrations automatically on first DB access using `database/schema.sql`.
+The application follows strict error handling principles:
 
-Alternatively, you can run it manually:
+- **No Fallback Patterns**: Explicit error throwing instead of graceful degradation
+- **Type Safety**: Full TypeScript coverage prevents runtime errors
+- **Validation**: Zod schemas validate all inputs
+- **Logging**: Comprehensive error logging for debugging
 
-```bash
-psql -h localhost -U icp_user -d icp_builder -f database/schema.sql
-```
+## 🔒 Security & Performance
 
-## 📊 How It Works
+- **Type Safety**: End-to-end type safety with tRPC
+- **Input Validation**: Zod schema validation on all inputs
+- **Caching**: Redis-based caching for improved performance
+- **Database**: Prepared statements and proper indexing
+- **Error Handling**: No sensitive data in error messages
 
-1. **Fill Company Details**: Enter your company information in the ICP Generator tab
-2. **Save Company Data**: Company data is automatically saved to the database
-3. **Generate ICPs**: Click "Generate ICP" to trigger AI analysis
-4. **AI Analysis Process**:
-   - Determines business model (B2B/B2C/B2B2C)
-   - Analyzes company data against 140+ ICP templates
-   - Selects 3 best-fitting ICP types using 6 criteria:
-     - Industry Alignment
-     - Company Size Fit
-     - Target Market Match
-     - Value Proposition Alignment
-     - Business Model Compatibility
-     - Market Segment Relevance
-5. **Step-by-Step ICP Generation**: Each ICP is created using 12 separate LLM calls:
-   - Customer segments
-   - Pain points and challenges
-   - Jobs to be done
-   - Desired outcomes
-   - Buying triggers
-   - Common objections
-   - Value proposition
-   - Unique features
-   - Competitive advantages
-   - Go-to-market channels
-   - Key messages
-   - Content ideas
-6. **Comprehensive ICP Profiles**: Each ICP includes:
-   - Fit definition (industries, company sizes, buyer personas)
-   - Needs/pain/goals analysis
-   - Buying triggers and common objections
-   - Value proposition alignment
-   - Go-to-market strategy
-   - Fit scoring (0-100) with ABM tiering
-7. **View Results**: Switch to ICP Profiles tab to view generated profiles
+## 🤝 Contributing
 
-## 🏗️ Project Structure
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-```text
-icp/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   │   ├── company/       # Company management
-│   │   ├── company-data/  # Company data storage
-│   │   └── icp/          # ICP generation
-│   ├── globals.css       # Global styles
-│   ├── layout.tsx        # Root layout
-│   └── page.tsx          # Main page
-├── database/             # Database schema and config
-│   ├── config.ts         # Database connection
-│   └── schema.sql        # PostgreSQL schema
-├── src/
-│   ├── components/       # React components
-│   │   ├── campaign/     # Campaign components
-│   │   ├── icp/         # ICP components
-│   │   ├── layout/      # Layout components
-│   │   └── ui/          # UI components
-│   ├── hooks/           # React hooks
-│   ├── lib/             # Utility libraries
-│   └── services/        # Business logic
-│       ├── ai/          # AI services
-│       └── ...          # Other services
-└── package.json         # Dependencies
-```
+## 📄 License
 
-## 🎯 Key Components
+This project is licensed under the MIT License.
 
-- **ICPGenerator**: Company input form and ICP generation trigger
-- **ICPProfiles**: Displays and manages ICPs for selected company
-- **CompanySelector**: Dropdown for company selection and creation
-- **CampaignDesigner/CampaignLibrary**: Campaign tooling (UI)
+## 🆘 Support
 
-## 🤖 AI Processing
+For support and questions:
 
-- **Local LLM**: Uses Ollama with `llama3.2:3b-instruct-q4_K_M` model
-- **Step-by-Step Generation**: 12 separate LLM calls per ICP to avoid JSON parsing issues
-- **Template Selection**: AI-driven selection of 3 best-fitting ICP types
-- **Error Recovery**: Robust error handling with retry logic and fallback values
-- **Performance**: ~30-60 seconds per ICP profile generation
+- Check the documentation
+- Review existing issues
+- Create a new issue with detailed information
 
-### Technical Implementation
+---
 
-- **OllamaClient**: Singleton-pattern LLM communication
-- **ICPGenerator**: Main logic for ICP generation with step-by-step approach
-- **Error Handling**: Comprehensive error recovery and user feedback
-- **Response Parsing**: Simple comma-separated outputs instead of complex JSON
-
-## 🔧 API Endpoints
-
-- `/api/company`
-  - `GET` → List companies and current active company
-  - `GET?id=...` → Select active company and load data
-  - `POST` → Create a new company
-  - `PATCH` → Update company or set as active
-- `/api/company-data`
-  - `GET` → Current company form data
-  - `POST` → Save form field data
-  - `DELETE` → Reset form data
-- `/api/icp`
-  - `POST` → Generate ICPs for active company
-  - `GET?companyId=...` → List ICPs for a company
-  - `DELETE?id=...` → Delete specific ICP
-  - `DELETE?companyId=...` → Delete all ICPs for a company
-
-## 📋 ICP Template Categories
-
-### B2B Templates (70 variations)
-
-- **Startup Companies** (20): Tech Startup, SaaS Startup, AI Startup, etc.
-- **Small-Medium Businesses** (20): SMB Optimizer, E-commerce SMB, etc.
-- **Mid-Market Companies** (15): Mid-Market Scale, Mid-Market Digital, etc.
-- **Enterprise Companies** (20): Enterprise Transformer, Enterprise Security, etc.
-- **Industry-Specific** (25): Healthcare, Financial Services, Manufacturing, etc.
-
-### B2C Templates (70 variations)
-
-- **Demographic Segments** (15): Young Professional, Millennial, Gen Z, etc.
-- **Lifestyle Segments** (20): Tech Enthusiast, Fitness Enthusiast, etc.
-- **Behavioral Segments** (20): Online Shopper, Early Adopter, etc.
-- **Specialized Segments** (15): Environmental Conscious, Luxury Consumer, etc.
-
-### B2B2C Templates (25 variations)
-
-- **Platform Partners** (10): Marketplace Seller, Platform Partner, etc.
-- **Hybrid Businesses** (15): Small Retailer, Consultant, Freelancer, etc.
-
-## 💡 Usage Tips
-
-- Fill in comprehensive company details for better ICP generation
-- ICPs are tied to specific companies - switch companies to view different results
-- Use the ICP Profiles tab to manage and delete generated profiles
-- Generated ICPs provide actionable insights for marketing and sales teams
-- The "Generate More" button creates additional ICP profiles for the same company
-
-## 🔧 Tech Stack
-
-- **Frontend**: Next.js (App Router) + React + TypeScript + Tailwind CSS
-- **AI**: Local Ollama via custom client with step-by-step generation
-- **Database**: PostgreSQL with automatic migrations
-- **State Management**: Centralized React hooks
-- **UI Components**: Radix UI primitives with custom styling
-
-## 🛡️ Security & Privacy
-
-- **Local AI Processing**: All LLM processing happens locally with Ollama
-- **No External API Calls**: No data sent to external AI services
-- **Database Security**: PostgreSQL with proper access controls
-- **Input Validation**: All user inputs are validated
-
-## 📝 License
-
-MIT License
+**Built with ❤️ using modern web technologies**

@@ -5,10 +5,11 @@ import { ICPGenerator } from '@/components/icp/ICPGenerator';
 import { ICPProfiles } from '@/components/icp/ICPProfiles';
 import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
 import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
+import { TRPCProvider } from '@/components/providers/TRPCProvider';
 
 import { useAppState } from '@/hooks/useAppState';
 
-export default function App() {
+function AppContent() {
   const {
     // State
     ownCompany,
@@ -82,5 +83,13 @@ export default function App() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <TRPCProvider>
+      <AppContent />
+    </TRPCProvider>
   );
 }

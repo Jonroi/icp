@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: icp_postgres
+    environment:
+      POSTGRES_DB: icp_builder
+      POSTGRES_USER: icp_user
+      POSTGRES_PASSWORD: icp_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - icp_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: icp_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - icp_network
+    command: redis-server --appendonly yes
+
+  # Ollama LLM (optional - for local AI processing)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: icp_ollama
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - icp_network
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  icp_network:
+    driver: bridge

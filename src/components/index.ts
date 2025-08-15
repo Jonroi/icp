@@ -4,12 +4,39 @@ export { Header } from './layout/Header';
 // ICP components
 export { ICPGenerator } from './icp/ICPGenerator';
 export { ICPProfiles } from './icp/ICPProfiles';
-export { LocationSelector } from './ui/location-selector';
-export { CONTINENTS, COUNTRIES_BY_REGION } from './ui/location-data';
 export { OwnCompanyForm } from './icp/OwnCompanyForm';
 
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
 
-// Note: Unused components removed as part of cleanup
+// Dialog components
+export { LoadProjectDialog } from './dialogs/LoadProjectDialog';
+export { SaveProjectDialog } from './dialogs/SaveProjectDialog';
+
+// UI components
+export { Button } from './ui/button';
+export {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card';
+export { CardToolbar } from './ui/card-toolbar';
+export { Input } from './ui/input';
+export { Label } from './ui/label';
+export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+export { Textarea } from './ui/textarea';
+export { CompanySelector } from './ui/company-selector';
+export { LocationSelector } from './ui/location-selector';
+
+// Providers
+export { TRPCProvider } from './providers/TRPCProvider';
