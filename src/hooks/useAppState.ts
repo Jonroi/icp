@@ -390,6 +390,16 @@ export function useAppState() {
     }
   };
 
+  // Handle company deletion
+  const handleCompanyDeleted = () => {
+    // Clear generated ICPs when company is deleted
+    setGeneratedICPs([]);
+    // Clear active company ID
+    setActiveCompanyId('');
+    // Reset form data
+    setOwnCompany({ name: '', website: '', social: '', location: '' });
+  };
+
   return {
     // State
     ownCompany,
@@ -404,5 +414,6 @@ export function useAppState() {
     onOwnCompanyChange: handleOwnCompanyChange,
     generateICPs: handleGenerateICPs,
     setActiveCompanyId,
+    onCompanyDeleted: handleCompanyDeleted,
   };
 }

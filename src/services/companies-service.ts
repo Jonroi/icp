@@ -10,7 +10,8 @@ export interface StoredCompany extends OwnCompany {
   updatedAt: string;
 }
 
-const CURRENT_USER_ID = process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
+const CURRENT_USER_ID =
+  process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
 
 let isDbInitialized = false;
 async function ensureDb(): Promise<void> {
@@ -297,5 +298,19 @@ export const companiesService = {
           : new Date().toISOString(),
     };
     return updated;
+  },
+
+  async deleteCompany(id: string): Promise<void> {
+    await ensureDb();
+    console.log(`[DB] Deleting company: ${id}`);
+
+    // First, remove from user_active_company if this company is active
+    await databaseManager.query(
+      'DELETE FROM user_active_company WHERE company_id = $1',
+      [id],
+    );
+
+    // Then delete the company
+    await databaseManager.query('DELETE FROM companies WHERE id = $1', [id]);
   },
 };
