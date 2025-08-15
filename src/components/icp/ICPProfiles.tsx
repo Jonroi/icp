@@ -40,6 +40,7 @@ export function ICPProfiles({
   const [profiles, setProfiles] = useState<StoredICPProfile[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
 
   useEffect(() => {
     if (activeCompanyId) setCompanyId(activeCompanyId);
@@ -63,12 +64,17 @@ export function ICPProfiles({
   }, [companyId, companyName]);
 
   const refreshProfiles = async (id: string) => {
-    const resp = await fetch(`/api/icp?companyId=${encodeURIComponent(id)}`, {
-      cache: 'no-store',
-    });
-    if (resp.ok) {
-      const json = await resp.json();
-      setProfiles(json?.profiles || []);
+    try {
+      setIsLoadingProfiles(true);
+      const resp = await fetch(`/api/icp?companyId=${encodeURIComponent(id)}`, {
+        cache: 'no-store',
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        setProfiles(json?.profiles || []);
+      }
+    } finally {
+      setIsLoadingProfiles(false);
     }
   };
 
@@ -104,6 +110,7 @@ export function ICPProfiles({
             allowCreate={false}
             allowDelete={false}
             className='min-w-[260px]'
+            hideLoadingSpinner={true}
           />
           <Button
             className='flex items-center gap-2 h-10'
@@ -151,7 +158,16 @@ export function ICPProfiles({
         </div>
       </CardHeader>
       <CardContent>
-        {profiles.length > 0 || generatedICPs.length > 0 ? (
+        {isLoadingProfiles || isGeneratingMore ? (
+          <div className='flex items-center justify-center py-12'>
+            <div className='flex items-center gap-3'>
+              <Loader2 className='h-6 w-6 animate-spin text-primary' />
+              <span className='text-muted-foreground'>
+                {isGeneratingMore ? 'Generating new ICP profiles...' : 'Loading ICP profiles...'}
+              </span>
+            </div>
+          </div>
+        ) : profiles.length > 0 || generatedICPs.length > 0 ? (
           <div className='space-y-4'>
             <h3 className='font-semibold'>
               Generated ICPs ({profiles.length || generatedICPs.length})

@@ -23,6 +23,7 @@ interface CompanySelectorProps {
   allowCreate?: boolean;
   allowDelete?: boolean;
   onCompanyDeleted?: () => void;
+  hideLoadingSpinner?: boolean;
 }
 
 export function CompanySelector({
@@ -36,6 +37,7 @@ export function CompanySelector({
   allowDelete = true,
   className = '',
   onCompanyDeleted,
+  hideLoadingSpinner = false,
 }: CompanySelectorProps) {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
     [],
@@ -284,7 +286,7 @@ export function CompanySelector({
             </Button>
           )}
 
-          {(isLoading || isLoadingCompanies) && (
+          {(isLoading || isLoadingCompanies) && !hideLoadingSpinner && (
             <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
           )}
         </div>
