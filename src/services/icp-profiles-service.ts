@@ -36,7 +36,7 @@ export const icpProfilesService = {
     await ensureDb();
     const inserted: StoredICPProfile[] = [];
     for (const p of profiles) {
-      const confidenceLevel = (p as ApifyBasedICP).confidence || 'medium';
+      const confidenceLevel = p.confidence || 'medium';
       const res = await databaseManager.query(
         `INSERT INTO icp_profiles (user_id, company_id, name, description, profile_data, confidence_level, created_at, updated_at)
 				 VALUES ($1, $2, $3, $4, $5::jsonb, $6, NOW(), NOW())
@@ -44,8 +44,8 @@ export const icpProfilesService = {
         [
           CURRENT_USER_ID,
           companyId,
-          p.name,
-          p.description,
+          p.icp_name,
+          p.segments?.join(', ') || 'ICP Profile',
           JSON.stringify(p),
           confidenceLevel,
         ],

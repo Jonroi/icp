@@ -357,6 +357,14 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
     ]);
   }
 
+  async deleteCompanyData(companyId: string): Promise<void> {
+    await ensureDatabaseInitialized();
+    console.log(`[DB] Deleting company_data for company: ${companyId}`);
+    // Note: company_data is user-specific, not company-specific
+    // This method is kept for interface consistency but doesn't need company-specific logic
+    await this.resetData();
+  }
+
   async exportForICP(): Promise<OwnCompany> {
     const state = await this.getCurrentData();
     return { ...state.currentData };
