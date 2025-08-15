@@ -98,7 +98,7 @@ export function CompanySelector({
           const data = await stateResp.json();
           onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
         }
-        // Force refresh after mirror to ensure Additional Context and fields show immediately
+        // Force refresh after mirror to ensure all fields show immediately
         try {
           const refresh = await fetch('/api/company-data', {
             cache: 'no-store',

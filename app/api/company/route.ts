@@ -38,8 +38,6 @@ export async function GET(req: NextRequest) {
           'customerGoals',
           'currentMarketingChannels',
           'marketingMessaging',
-          'reviews',
-          'linkedInData',
         ];
         for (const k of keys) {
           const v = (active as unknown as Record<string, unknown>)[k];

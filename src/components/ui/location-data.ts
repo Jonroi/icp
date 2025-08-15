@@ -1,27 +1,35 @@
-// Continent and region data (removed global icons)
+// Market regions and continents for ICP analysis
 export const CONTINENTS = [
-  { value: 'Global', label: 'Global', description: 'Worldwide search' },
+  {
+    value: 'Global',
+    label: 'Global Markets',
+    description: 'Worldwide market presence',
+  },
   {
     value: 'North America',
     label: 'North America',
-    description: 'US, Canada, Mexico',
+    description: 'US, Canada, Mexico markets',
   },
-  { value: 'Europe', label: 'Europe', description: 'European Union & UK' },
+  {
+    value: 'Europe',
+    label: 'European Markets',
+    description: 'EU & UK markets',
+  },
   {
     value: 'Asia Pacific',
-    label: 'Asia Pacific',
-    description: 'Asia & Oceania',
+    label: 'Asia Pacific Markets',
+    description: 'Asia & Oceania markets',
   },
   {
     value: 'Latin America',
-    label: 'Latin America',
-    description: 'South & Central America',
+    label: 'Latin American Markets',
+    description: 'South & Central America markets',
   },
-  { value: 'Africa', label: 'Africa', description: 'African countries' },
+  { value: 'Africa', label: 'African Markets', description: 'African markets' },
   {
     value: 'Middle East',
-    label: 'Middle East',
-    description: 'Middle Eastern countries',
+    label: 'Middle Eastern Markets',
+    description: 'Middle Eastern markets',
   },
 ];
 

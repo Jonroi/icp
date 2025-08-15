@@ -84,34 +84,9 @@ export class DataManager {
    */
   static async setTestData(): Promise<void> {
     try {
-      const testData: OwnCompany = {
-        name: 'Test Company',
-        location: 'Test Location',
-        website: 'https://testcompany.com',
-        social: 'https://linkedin.com/company/testcompany',
-        industry: 'Technology',
-        companySize: '10-50 employees',
-        targetMarket: 'Small businesses',
-        valueProposition: 'Affordable tech solutions',
-        mainOfferings: 'Web development services',
-        pricingModel: 'Subscription-based',
-        uniqueFeatures: '24/7 support',
-        marketSegment: 'SMB market',
-        competitiveAdvantages: 'Lower pricing',
-        currentCustomers: '50+ small businesses',
-        successStories: 'Increased client revenue by 30%',
-        painPointsSolved: 'High development costs',
-        customerGoals: 'Digital transformation',
-        currentMarketingChannels: 'Social media, email',
-        marketingMessaging: 'Affordable tech for small business',
-      };
-
-      // Update each field
-      for (const [field, value] of Object.entries(testData)) {
-        await companyDataService.updateField(field as keyof OwnCompany, value);
-      }
-
-      console.log('✅ Test data set successfully');
+      console.log(
+        '⚠️ Test data functionality removed - all data now comes from server',
+      );
     } catch (error) {
       console.error('❌ Failed to set test data:', error);
     }

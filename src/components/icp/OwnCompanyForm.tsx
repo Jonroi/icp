@@ -178,9 +178,10 @@ export function OwnCompanyForm({
           </div>
 
           <div className='w-48 space-y-2'>
-            <Label htmlFor='own-company-location'>Location</Label>
+            <Label htmlFor='own-company-location'>Primary Market</Label>
             <LocationSelector
-              value={company.location || 'Global'}
+              key={`location-${company.location || ''}`}
+              value={company.location || ''}
               onValueChange={(value) => onChange('location', value)}
               className='w-full'
             />
@@ -189,8 +190,8 @@ export function OwnCompanyForm({
 
         <div className='space-y-2'>
           <p className='text-xs text-muted-foreground'>
-            Company name and location is required. Fill all fields for better
-            results.
+            Company name and primary market are required. Fill all fields for
+            better results.
           </p>
         </div>
       </div>

@@ -114,8 +114,7 @@ export function CompanyNameSelector({
         )}
       </div>
       <p className='text-xs text-muted-foreground'>
-        Enter your company name or select a test company to fill all fields
-        automatically.
+        Enter your company name or select an existing company to load its data.
       </p>
     </div>
   );

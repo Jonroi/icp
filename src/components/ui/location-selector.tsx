@@ -16,9 +16,9 @@ interface LocationSelectorProps {
 }
 
 export function LocationSelector({
-  value = 'Global',
+  value = '',
   onValueChange,
-  placeholder = 'Select location',
+  placeholder = 'Select market location',
   className = 'w-48',
   showLabel = false,
   labelText = 'Location',
@@ -62,6 +62,9 @@ export function LocationSelector({
   // Get current selected option
   const selectedOption = allOptions.find((option) => option.value === value);
 
+  // If value is not in predefined options, create a custom option
+  const displayValue = selectedOption ? selectedOption.label : value;
+
   const handleSelect = (optionValue: string) => {
     onValueChange(optionValue);
     setIsOpen(false);
@@ -69,7 +72,7 @@ export function LocationSelector({
   };
 
   const handleClear = () => {
-    onValueChange('Global');
+    onValueChange('');
     setSearchTerm('');
   };
 
@@ -78,7 +81,9 @@ export function LocationSelector({
       {showLabel && (
         <Label className='text-sm'>
           {labelText}{' '}
-          <span className='text-muted-foreground text-xs'>(for reviews)</span>
+          <span className='text-muted-foreground text-xs'>
+            (primary market)
+          </span>
         </Label>
       )}
 
@@ -87,9 +92,7 @@ export function LocationSelector({
           variant='outline'
           className={`w-full justify-between ${className}`}
           onClick={() => setIsOpen(!isOpen)}>
-          <span className='truncate'>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
+          <span className='truncate'>{displayValue || placeholder}</span>
           <ChevronDown
             className={`h-4 w-4 transition-transform ${
               isOpen ? 'rotate-180' : ''
@@ -105,7 +108,7 @@ export function LocationSelector({
                 <div className='relative'>
                   <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
                   <Input
-                    placeholder='Search countries, continents...'
+                    placeholder='Search markets, countries, regions...'
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className='pl-8 pr-8'
