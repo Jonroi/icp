@@ -174,7 +174,7 @@ export function useAppState() {
         console.warn('Failed to sync to active company record:', e);
       }
 
-      // Refresh UI state from server (no local caching) so that Additional Context appears immediately
+      // Refresh UI state from server (no local caching
       try {
         const refresh = await fetch('/api/company-data', { cache: 'no-store' });
         if (refresh.ok) {
@@ -310,11 +310,15 @@ export function useAppState() {
         },
       });
 
+      // Clear active company selection
+      setActiveCompanyId('');
+
       setOwnCompany(emptyCompany);
       alert('Form has been reset. All fields have been cleared.');
     } catch (error) {
       console.error('Error resetting company data:', error);
       // Still clear the form even if API call fails
+      setActiveCompanyId('');
       setOwnCompany(emptyCompany);
       alert('Form has been reset. All fields have been cleared.');
     }
