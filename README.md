@@ -129,6 +129,7 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
    ```
 
 7. **Start the development server**
+
    ```bash
    npm run dev
    ```
@@ -176,7 +177,7 @@ Each generated ICP includes:
 
 ### Project Structure
 
-```
+```text
 src/
 ├── components/          # React components
 │   ├── icp/            # ICP-related components
@@ -381,5 +382,3 @@ For support and questions:
 - **Storage**: ~5GB for Docker images and database
 
 ---
-
-**Built with ❤️ using modern web technologies and local AI processing**
