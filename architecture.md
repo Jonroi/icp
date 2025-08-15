@@ -2,16 +2,19 @@
 
 ## 🏗️ System Overview
 
-ICP Builder is a Next.js (App Router) application that generates comprehensive Ideal Customer Profiles (ICPs) from company data using a local LLM (Ollama). The system features an intelligent template selection system with 140+ ICP variations and generates detailed, actionable business insights using a robust step-by-step generation approach.
+ICP Builder is a Next.js (App Router) application that generates comprehensive Ideal Customer Profiles (ICPs) from company data using a local LLM (Ollama). The system features an intelligent template selection system with 140+ ICP variations and generates detailed, actionable business insights using efficient single-call generation approach.
 
 ## 📁 Project Structure
 
 ```text
 app/
 ├── api/
-│   ├── company/        # Company CRUD operations and active selection
-│   ├── company-data/   # Company form data storage (key-value)
-│   └── icp/            # ICP generation and management endpoints
+│   └── trpc/
+│       └── [trpc]/
+│           └── route.ts    # tRPC API handler
+├── globals.css
+├── layout.tsx
+└── page.tsx
 src/
 ├── components/          # React components
 │   ├── agents/         # ICP rules and schema definitions
@@ -35,7 +38,7 @@ src/
 ## 🔄 Data Flow
 
 ```text
-User Input → UI Components → useAppState → REST APIs → Services → PostgreSQL
+User Input → UI Components → useAppState → tRPC → Services → PostgreSQL
                                     ↘︎ AIService → Ollama → ICPs → DB
 ```
 
@@ -56,14 +59,14 @@ App.tsx
 ### AI Services
 
 - `ollama-client.ts`: HTTP client to local Ollama (`/api/generate`)
-- `icp-generator.ts`: Comprehensive ICP generation with step-by-step approach
+- `icp-generator.ts`: Efficient ICP generation with single-call approach
 - `ai-service.ts`: Orchestrator for ICP generation workflow
 
 ### ICP Generation Process
 
 1. **Business Model Detection**: Analyzes company data to determine B2B/B2C/B2B2C
-2. **Template Selection**: LLM selects 3 best-fitting ICP types from 140+ variations using non-greedy regex parsing
-3. **Step-by-Step Profile Generation**: Creates detailed ICP profiles using 12 separate LLM calls:
+2. **Template Selection**: LLM selects 3 best-fitting ICP types from 140+ variations
+3. **Single-Call Profile Generation**: Creates complete ICP profiles using one comprehensive LLM call per ICP:
    - Customer segments
    - Pain points and challenges
    - Jobs to be done
@@ -81,19 +84,20 @@ App.tsx
 
 ### Technical Implementation Details
 
-#### Step-by-Step Generation Benefits
+#### Single-Call Generation Benefits
 
-- **Avoids JSON Parsing Issues**: Uses simple comma-separated outputs instead of complex JSON
-- **Better Error Recovery**: Individual component failures don't break entire generation
-- **Improved Reliability**: More predictable LLM responses
-- **Faster Processing**: Parallel processing possible for individual components
+- **Efficiency**: One LLM call per ICP instead of 12+ separate calls
+- **Speed**: 30-60 seconds per ICP instead of 2-3 minutes
+- **Reliability**: Simpler parsing with fallback values
+- **Cost Effective**: Reduced LLM processing overhead
+- **Better UX**: Faster response times for users
 
 #### Error Handling Strategy
 
-- **Retry Logic**: Automatic retries for failed LLM calls
-- **Fallback Values**: Default values for critical fields
+- **Fallback Values**: Default values for all ICP components
+- **Robust Parsing**: Simple text-based parsing with error recovery
 - **User Feedback**: Clear error messages and loading states
-- **Graceful Degradation**: Partial results if some components fail
+- **Graceful Degradation**: Complete ICPs even with parsing issues
 
 ### ICP Template Library
 
@@ -103,19 +107,60 @@ App.tsx
 - **B2C (70 templates)**: Demographics, Lifestyle, Behavioral, Specialized Segments
 - **B2B2C (25 templates)**: Platform Partners, Hybrid Businesses
 
+## 🐳 Docker Architecture
+
+### Containerized Services
+
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: icp_builder
+      POSTGRES_USER: icp_user
+      POSTGRES_PASSWORD: P@ssw0rd123!
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama_data:/root/.ollama
+```
+
+### Docker Benefits
+
+- **Self-Contained**: All dependencies included
+- **Easy Deployment**: One command setup
+- **Consistent Environment**: Same setup across all machines
+- **Isolated Services**: No conflicts with local installations
+- **Persistent Data**: Database and model data preserved
+
 ## 📊 State Management
 
 ### App State Highlights
 
-- `ownCompany` (UI state; persisted via `/api/company-data`)
-- `activeCompanyId` (resolved via `/api/company`)
+- `ownCompany` (UI state; persisted via tRPC)
+- `activeCompanyId` (resolved via tRPC)
 - `generatedICPs` (client cache; authoritative store in DB)
 - `isLoading`, `error`
 
 ### State Management Flow
 
 ```text
-Component Action → useAppState → State Update → Component Re-render
+Component Action → useAppState → tRPC → State Update → Component Re-render
 ```
 
 ## 🎨 Component Architecture
@@ -142,7 +187,7 @@ App.tsx
 
 ### Service Responsibilities
 
-- **AI Services**: Handle ICP generation using local Ollama with step-by-step approach
+- **AI Services**: Handle ICP generation using local Ollama with single-call approach
 - **Business Services**: Handle data persistence and company management
 - **ICP Profiles Service**: Handle ICP storage and retrieval
 - **Company Services**: Handle company CRUD operations
@@ -150,12 +195,12 @@ App.tsx
 ### Service Communication
 
 ```text
-Components → useAppState → Services → External APIs
+Components → useAppState → tRPC → Services → External APIs
 ```
 
 ## 🗄️ Data Persistence
 
-PostgreSQL schema (`database/schema.sql`) includes:
+PostgreSQL schema (`database/schema-v4.sql`) includes:
 
 - `users` (seeded with `TEST_USER_ID`)
 - `company_data` (key-value fields for form data)
@@ -185,18 +230,18 @@ CREATE TABLE icp_profiles (
 
 ### Security Measures
 
-- **Server-side DB access** only; client uses API routes
+- **Server-side DB access** only; client uses tRPC API routes
 - **Local AI Processing**: All LLM processing happens locally with Ollama
 - **No External API Calls**: No data sent to external AI services
-- **Input Validation**: All user inputs are validated
+- **Input Validation**: All user inputs are validated with Zod
 - **Advisory-lock migrations** to avoid races
 - **Env-configured connections**; SSL in production
 
 ### Performance Optimization
 
-- **Step-by-Step Generation**: 12 separate LLM calls for better reliability
-- **Caching**: ICP-profiilit tallennetaan tietokantaan
-- **Parallel Processing**: Mahdollisuus rinnakkaiseen ICP-generointiin
+- **Single-Call Generation**: One LLM call per ICP for maximum efficiency
+- **Redis Caching**: ICP-profiilit tallennetaan tietokantaan ja välimuistiin
+- **Docker Optimization**: Optimized container configurations
 - **Lazy Loading**: ICP:t ladataan vain tarvittaessa
 - **Component Optimization**: React.memo for expensive components
 - **State Optimization**: Selective updates and debouncing
@@ -206,7 +251,7 @@ CREATE TABLE icp_profiles (
 
 - Verify DB connectivity and seeded user (`TEST_USER_ID`)
 - Ensure Ollama is running and model is pulled (`llama3.2:3b-instruct-q4_K_M`)
-- Use `/api/company` to create/select active company before ICP generation
+- Use tRPC endpoints to create/select active company before ICP generation
 - Test ICP generation with comprehensive company data for best results
 - Monitor LLM response times (~30-60 seconds per ICP profile)
 
@@ -222,6 +267,7 @@ Source Code → TypeScript/Next → next build → .next output
 
 - **Next.js** deploy with provisioned PostgreSQL
 - **Local AI**: Requires Ollama on the host with model pulled
+- **Docker**: Complete containerized deployment
 - **Environment Configuration**: Proper environment variables for database and AI settings
 
 ## 🎯 Architecture Principles
@@ -233,14 +279,14 @@ Source Code → TypeScript/Next → next build → .next output
 3. **Centralized State**: Single source of truth in `useAppState`
 4. **Modular Design**: Easy to extend and maintain
 5. **AI-First Design**: Comprehensive ICP generation with intelligent template selection
-6. **Robust Error Handling**: Graceful degradation and user feedback
-7. **Performance First**: Step-by-step generation for reliability
+6. **Efficiency First**: Single-call generation for speed and reliability
+7. **Containerization**: Docker-first approach for easy deployment
 
 ### Development Guidelines
 
 - **TypeScript**: Strict typing throughout
 - **Component Composition**: Reusable components
-- **Error Handling**: Comprehensive error management with retry logic
+- **Error Handling**: Comprehensive error management with fallback values
 - **Documentation**: Clear code comments and interfaces
 - **English Content**: All generated content and data in English
 - **Testing**: Robust error handling and edge case coverage
@@ -251,7 +297,7 @@ Source Code → TypeScript/Next → next build → .next output
 
 - **140+ Template Library**: Comprehensive ICP variations
 - **Intelligent Selection**: AI-driven template selection based on 6 criteria
-- **Step-by-Step Generation**: 12 separate LLM calls for reliability
+- **Single-Call Generation**: One comprehensive LLM call per ICP for efficiency
 - **Business Intelligence**: Detailed insights for marketing, sales, and product teams
 - **Fit Scoring**: 0-100 scoring with ABM tiering
 - **Error Recovery**: Robust error handling and fallback mechanisms
@@ -265,7 +311,7 @@ Source Code → TypeScript/Next → next build → .next output
 
 ### User Experience
 
-- **Real-time Generation**: Immediate ICP generation with local LLM
+- **Fast Generation**: 30-60 seconds for 3 ICPs with single-call approach
 - **Comprehensive Profiles**: Detailed ICPs with actionable insights
 - **Management Interface**: View, manage, and delete generated ICPs
 - **Loading States**: Clear feedback during ICP generation process
@@ -276,8 +322,8 @@ Source Code → TypeScript/Next → next build → .next output
 ### LLM Integration
 
 - **OllamaClient**: Singleton-pattern for LLM communication
-- **Response Parsing**: Simple comma-separated outputs instead of complex JSON
-- **Error Handling**: Retry logic and fallback values
+- **Response Parsing**: Simple text-based parsing with fallback values
+- **Error Handling**: Comprehensive error recovery and fallback mechanisms
 - **Performance**: ~30-60 seconds per ICP profile generation
 
 ### Database Design
@@ -289,11 +335,18 @@ Source Code → TypeScript/Next → next build → .next output
 
 ### API Design
 
-- **RESTful Endpoints**: Clean API design with proper HTTP methods
+- **tRPC Endpoints**: Type-safe API design with proper error handling
 - **Error Responses**: Consistent error handling across all endpoints
-- **Data Validation**: Input validation and sanitization
+- **Data Validation**: Input validation and sanitization with Zod
 - **Caching**: Appropriate caching strategies for performance
+
+### Docker Integration
+
+- **Multi-Service Setup**: PostgreSQL, Redis, and Ollama containers
+- **Persistent Volumes**: Data persistence across container restarts
+- **Environment Configuration**: Proper environment variable management
+- **Easy Deployment**: One-command setup and teardown
 
 ---
 
-This architecture documentation provides a comprehensive overview of the ICP Builder system's design and implementation patterns, reflecting the current enhanced capabilities with step-by-step LLM generation and robust error handling.
+This architecture documentation provides a comprehensive overview of the ICP Builder system's design and implementation patterns, reflecting the current efficient single-call LLM generation and Docker-first deployment approach.

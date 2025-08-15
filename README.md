@@ -1,17 +1,19 @@
 # ICP Builder
 
-A modern React/TypeScript application that generates Ideal Customer Profiles (ICPs) using AI analysis. Built with Next.js, tRPC, PostgreSQL, and Redis for optimal performance and type safety.
+A modern React/TypeScript application that generates Ideal Customer Profiles (ICPs) using AI analysis. Built with Next.js, tRPC, PostgreSQL, Redis, and Ollama for optimal performance and type safety.
 
 ## 🚀 Features
 
 - **AI-Powered ICP Generation**: Uses Ollama LLM for intelligent customer profile creation
+- **140+ ICP Templates**: Comprehensive library of B2B, B2C, and B2B2C customer profiles
 - **Type-Safe API**: Full end-to-end type safety with tRPC
 - **Redis Caching**: High-performance caching for companies, ICPs, and application state
 - **PostgreSQL Database**: Robust data persistence with proper schema management
-- **Step-by-Step Generation**: Reliable AI response parsing with individual component generation
+- **Single LLM Call Generation**: Efficient ICP generation with one call per profile
 - **Company Management**: Create, update, and manage multiple companies
 - **Campaign Design**: Design marketing campaigns based on generated ICPs
 - **Modern UI**: Built with Radix UI primitives and Tailwind CSS
+- **Docker Support**: Complete containerized setup for easy deployment
 
 ## 🏗️ Architecture
 
@@ -21,27 +23,28 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **Backend**: tRPC, Node.js
 - **Database**: PostgreSQL 15
 - **Cache**: Redis 7
-- **AI**: Ollama (local LLM)
+- **AI**: Ollama (local LLM with llama3.2:3b-instruct-q4_K_M)
 - **UI**: Radix UI, Tailwind CSS
 - **State Management**: React Query + tRPC
+- **Containerization**: Docker & Docker Compose
 
 ### Key Components
 
 - **tRPC Routers**: Type-safe API endpoints for companies, ICPs, and data management
 - **Redis Service**: Caching layer for performance optimization
-- **AI Service**: Step-by-step ICP generation with robust error handling
+- **AI Service**: Efficient ICP generation with single LLM call per profile
 - **Database Layer**: PostgreSQL with proper schema and migrations
+- **Ollama Integration**: Local LLM processing for privacy and performance
 
-## 📦 Installation
+## 📦 Installation & Setup
 
 ### Prerequisites
 
-- Node.js 18+
-- Docker & Docker Compose
-- PostgreSQL (or use Docker)
-- Redis (or use Docker)
+- **Docker & Docker Compose** (recommended)
+- **Node.js 18+** (for development)
+- **Git**
 
-### Quick Start with Docker
+### 🐳 Quick Start with Docker (Recommended)
 
 1. **Clone the repository**
 
@@ -50,60 +53,124 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
    cd icp
    ```
 
-2. **Start infrastructure services**
+2. **Start all services with Docker**
 
    ```bash
-   docker-compose up -d postgres redis
+   docker-compose up -d
    ```
 
-3. **Install dependencies**
+3. **Download the LLM model** (required for ICP generation)
+
+   ```bash
+   docker exec icp_ollama ollama pull llama3.2:3b-instruct-q4_K_M
+   ```
+
+4. **Install Node.js dependencies**
 
    ```bash
    npm install
    ```
 
-4. **Set up environment variables**
+5. **Start the development server**
+
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**
+   Navigate to `http://localhost:3000`
+
+### 🔧 Manual Setup (Alternative)
+
+1. **Clone the repository**
+
+   ```bash
+   git clone <repository-url>
+   cd icp
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Set up PostgreSQL**
+
+   - Install PostgreSQL 15+
+   - Create database: `icp_builder`
+   - Create user: `icp_user` with password `P@ssw0rd123!`
+
+4. **Set up Redis**
+
+   - Install Redis 7+
+   - Start Redis service
+
+5. **Install Ollama**
+
+   - Download from [ollama.ai](https://ollama.ai)
+   - Pull the model: `ollama pull llama3.2:3b-instruct-q4_K_M`
+
+6. **Configure environment**
    Create `.env.local`:
 
    ```env
-   DATABASE_URL=postgresql://icp_user:icp_password@localhost:5432/icp_builder
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=icp_builder
+   DB_USER=icp_user
+   DB_PASSWORD=P@ssw0rd123!
+   DB_SSL=false
+   TEST_USER_ID=11111111-1111-1111-1111-111111111111
+   OPENAI_BASE_URL=http://localhost:11434
+   OPENAI_API_KEY=ollama
+   OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
    REDIS_URL=redis://localhost:6379
-   NODE_ENV=development
    ```
 
-5. **Run database migrations**
-
-   ```bash
-   npm run db:migrate
-   ```
-
-6. **Start the development server**
+7. **Start the development server**
    ```bash
    npm run dev
    ```
 
-### Manual Setup
+## 🚀 Usage
 
-1. **Install dependencies**
+### 1. Company Setup
 
-   ```bash
-   npm install
-   ```
+1. Navigate to "ICP Generator" tab
+2. Fill in your company information:
+   - Company name and basic details
+   - Industry and target market
+   - Value proposition and offerings
+   - Pricing model and competitive advantages
+3. Click "Save" to store company data
 
-2. **Set up PostgreSQL**
+### 2. ICP Generation
 
-   - Create database: `icp_builder`
-   - Run schema: `database/schema.sql`
+1. Select your company from the dropdown
+2. Click "Generate ICPs"
+3. Wait for AI processing (typically 30-60 seconds for 3 ICPs)
+4. View generated profiles in "ICP Profiles" tab
 
-3. **Set up Redis**
+### 3. ICP Analysis
 
-   - Install Redis locally or use cloud service
-   - Update `REDIS_URL` in environment variables
+Each generated ICP includes:
 
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
+- **Customer Segments**: Target audience identification
+- **Pain Points**: Key challenges and problems
+- **Jobs to be Done**: What customers want to accomplish
+- **Desired Outcomes**: Expected results and benefits
+- **Buying Triggers**: Events that prompt purchases
+- **Common Objections**: Potential sales barriers
+- **Value Proposition**: Unique value alignment
+- **Go-to-Market Strategy**: Channels, messages, and content ideas
+- **Fit Scoring**: 0-100 score with ABM tiering
+
+### 4. Campaign Design
+
+1. Use generated ICPs to design targeted campaigns
+2. Access campaign templates and ideas
+3. Export campaign data for marketing tools
 
 ## 🔧 Development
 
@@ -143,30 +210,32 @@ src/
 
 #### AI Processing
 
-- **Step-by-Step Generation**: Individual ICP components generated separately
-- **Robust Error Handling**: No fallback patterns, explicit error throwing
-- **Type Safety**: Full TypeScript support throughout the pipeline
+- **Single LLM Call per ICP**: Efficient generation with one comprehensive prompt
+- **140+ Template Library**: B2B, B2C, and B2B2C variations
+- **Intelligent Selection**: AI-driven template selection based on company data
+- **Robust Error Handling**: Fallback values and comprehensive error management
 
-## 🚀 Usage
+## 🛠️ Development Commands
 
-### 1. Company Setup
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
 
-1. Navigate to "ICP Generator" tab
-2. Fill in your company information
-3. Save the company data
+# Database
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed database with sample data
 
-### 2. ICP Generation
+# Type checking
+npm run type-check       # Run TypeScript type checking
+npm run lint             # Run ESLint
 
-1. Select your company from the dropdown
-2. Click "Generate ICPs"
-3. Wait for AI processing (typically 30-60 seconds)
-4. View generated profiles in "ICP Profiles" tab
-
-### 3. Campaign Design
-
-1. Use generated ICPs to design targeted campaigns
-2. Access campaign templates and ideas
-3. Export campaign data
+# Docker
+docker-compose up -d     # Start all services
+docker-compose down      # Stop all services
+docker-compose logs      # View service logs
+```
 
 ## 🔍 API Documentation
 
@@ -205,47 +274,39 @@ trpc.icp.getAll.query();
 trpc.icp.generateMore.mutate({ companyId: string });
 ```
 
-## 🛠️ Development Commands
-
-```bash
-# Development
-npm run dev              # Start development server
-npm run build            # Build for production
-npm run start            # Start production server
-
-# Database
-npm run db:migrate       # Run database migrations
-npm run db:seed          # Seed database with sample data
-
-# Type checking
-npm run type-check       # Run TypeScript type checking
-npm run lint             # Run ESLint
-
-# Docker
-docker-compose up -d     # Start all services
-docker-compose down      # Stop all services
-```
-
 ## 🔧 Configuration
 
 ### Environment Variables
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/icp_builder
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=icp_builder
+DB_USER=icp_user
+DB_PASSWORD=P@ssw0rd123!
+DB_SSL=false
 
 # Redis
 REDIS_URL=redis://localhost:6379
 
+# AI/LLM
+OPENAI_BASE_URL=http://localhost:11434
+OPENAI_API_KEY=ollama
+OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
+
 # Development
+TEST_USER_ID=11111111-1111-1111-1111-111111111111
 NODE_ENV=development
 ```
 
-### Redis Configuration
+### Docker Configuration
 
-- **Default TTL**: 1 hour for companies, 2 hours for ICPs
-- **Persistence**: AOF (Append Only File) enabled
-- **Connection**: Automatic retry with failover support
+The `docker-compose.yml` includes:
+
+- **PostgreSQL 15**: Database with persistent storage
+- **Redis 7**: Caching layer
+- **Ollama**: Local LLM server
 
 ## 🚨 Error Handling
 
@@ -255,6 +316,7 @@ The application follows strict error handling principles:
 - **Type Safety**: Full TypeScript coverage prevents runtime errors
 - **Validation**: Zod schemas validate all inputs
 - **Logging**: Comprehensive error logging for debugging
+- **User Feedback**: Clear error messages and loading states
 
 ## 🔒 Security & Performance
 
@@ -262,7 +324,34 @@ The application follows strict error handling principles:
 - **Input Validation**: Zod schema validation on all inputs
 - **Caching**: Redis-based caching for improved performance
 - **Database**: Prepared statements and proper indexing
-- **Error Handling**: No sensitive data in error messages
+- **Local AI**: All LLM processing happens locally with Ollama
+- **No External APIs**: No data sent to external AI services
+
+## 🐳 Docker Deployment
+
+### Production Deployment
+
+1. **Build the application**
+
+   ```bash
+   npm run build
+   ```
+
+2. **Start production services**
+
+   ```bash
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+3. **Access the application**
+   Navigate to your server's IP address
+
+### Docker Services
+
+- **icp_postgres**: PostgreSQL database
+- **icp_redis**: Redis cache
+- **icp_ollama**: Local LLM server
+- **icp_app**: Next.js application (development)
 
 ## 🤝 Contributing
 
@@ -284,6 +373,13 @@ For support and questions:
 - Review existing issues
 - Create a new issue with detailed information
 
+## 🎯 Performance Notes
+
+- **ICP Generation**: 30-60 seconds for 3 ICPs
+- **LLM Model**: 2GB llama3.2:3b-instruct-q4_K_M model
+- **Memory Usage**: ~4GB RAM recommended for Docker setup
+- **Storage**: ~5GB for Docker images and database
+
 ---
 
-**Built with ❤️ using modern web technologies**
+**Built with ❤️ using modern web technologies and local AI processing**
