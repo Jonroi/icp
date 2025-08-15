@@ -206,16 +206,43 @@ export function ICPProfiles({
                         </p>
                       </div>
                       <div className='flex items-center gap-1'>
-                        <span
-                          className={`px-2 py-1 rounded-md text-xs font-medium border ${
-                            p.profileData.confidence === 'high'
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : p.profileData.confidence === 'medium'
-                              ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                          }`}>
-                          {p.profileData.confidence || 'medium'}
-                        </span>
+                        {(() => {
+                          const confidence = (
+                            p.profileData.confidence || 'medium'
+                          ).toLowerCase();
+                          let bgColor, textColor, borderColor, dotColor;
+
+                          switch (confidence) {
+                            case 'high':
+                              bgColor = 'bg-emerald-50';
+                              textColor = 'text-emerald-700';
+                              borderColor = 'border-emerald-200';
+                              dotColor = 'bg-emerald-500';
+                              break;
+                            case 'medium':
+                              bgColor = 'bg-amber-50';
+                              textColor = 'text-amber-700';
+                              borderColor = 'border-amber-200';
+                              dotColor = 'bg-amber-500';
+                              break;
+                            default: // low or any other value
+                              bgColor = 'bg-rose-50';
+                              textColor = 'text-rose-700';
+                              borderColor = 'border-rose-200';
+                              dotColor = 'bg-rose-500';
+                              break;
+                          }
+
+                          return (
+                            <span
+                              className={`px-2 py-1 rounded-md text-xs font-medium border flex items-center gap-1 ${bgColor} ${textColor} ${borderColor}`}>
+                              <span
+                                className={`w-2 h-2 rounded-full ${dotColor}`}
+                              />
+                              {p.profileData.confidence || 'medium'}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                   </CardHeader>
