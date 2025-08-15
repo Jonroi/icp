@@ -23,6 +23,7 @@ export default function App() {
     resetOwnCompany,
     generateICPs,
     setActiveCompanyId,
+    onCompanyDeleted,
   } = useAppState();
 
   const [activeTab, setActiveTab] = useState<string>('icp-generator');
@@ -54,6 +55,7 @@ export default function App() {
               alert('ICPs generated successfully!');
               setActiveTab('demographics');
             }}
+            onCompanyDeleted={onCompanyDeleted}
           />
         </TabsContent>
 

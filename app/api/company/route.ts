@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { companiesService } from '@/services/companies-service';
 import { companyDataService } from '@/services/company-data-service';
+import { icpProfilesService } from '@/services/icp-profiles-service';
 import type { OwnCompany } from '@/services/project-service';
 
 export async function GET(req: NextRequest) {
@@ -109,6 +110,40 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       { success: false, error: (e as Error).message },
       { status: 404 },
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json(
+      { success: false, error: 'id is required' },
+      { status: 400 },
+    );
+  }
+
+  try {
+    console.log(
+      `[API] DELETE /api/company?id=${id} → Deleting company and all associated data`,
+    );
+
+    // Delete all ICP profiles for this company
+    await icpProfilesService.deleteProfilesByCompany(id);
+
+    // Delete company data for this company
+    await companyDataService.deleteCompanyData(id);
+
+    // Delete the company itself
+    await companiesService.deleteCompany(id);
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting company:', e);
+    return NextResponse.json(
+      { success: false, error: (e as Error).message },
+      { status: 500 },
     );
   }
 }
