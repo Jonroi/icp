@@ -35,9 +35,9 @@ export interface ICP {
     competitive_advantages: string[];
   };
   offerings_pricing: {
-    main_offerings: string[];
+    main_offerings: string;
     pricing_model: string;
-    packaging_notes: string;
+    pricing_tiers: string[];
   };
   go_to_market: {
     primary_channels: string[];

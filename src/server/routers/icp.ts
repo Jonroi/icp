@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { icpProfilesService } from '@/services/database';
 import { companiesService } from '@/services/database';
-import { ICPGenerator } from '@/services/ai/icp-generator';
+import { ICPGenerator } from '@/services/ai/icp';
 import type { ICP } from '@/services/ai/types';
 
 // Create ICP generator instance

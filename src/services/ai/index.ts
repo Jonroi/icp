@@ -2,7 +2,7 @@
 export * from './types';
 
 // Export services
-export { ICPGenerator } from './icp-generator';
+export { ICPGenerator } from './icp';
 export { OllamaClient } from './ollama-client';
 
 // Export error handling

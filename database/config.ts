@@ -162,7 +162,7 @@ export class DatabaseMigration {
 
       if (checkResult.rows[0].exists) {
         console.log(
-          '✅ Database already initialized with v4 schema, skipping migrations',
+          '✅ Database already initialized with schema, skipping migrations',
         );
         return;
       }
@@ -172,15 +172,15 @@ export class DatabaseMigration {
       await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
       await client.query('BEGIN');
 
-      // Read and execute schema-v4.sql
+      // Read and execute schema.sql
       const fs = require('fs').promises;
       const path = require('path');
-      let schemaPath = path.join(__dirname, 'schema-v4.sql');
+      let schemaPath = path.join(__dirname, 'schema.sql');
       try {
         await fs.access(schemaPath);
       } catch (_) {
         // Fallback to repository path during Next.js runtime
-        schemaPath = path.join(process.cwd(), 'database', 'schema-v4.sql');
+        schemaPath = path.join(process.cwd(), 'database', 'schema.sql');
       }
       const schema = await fs.readFile(schemaPath, 'utf-8');
 

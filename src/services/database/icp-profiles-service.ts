@@ -1,4 +1,4 @@
-import type { ICP } from './ai/types';
+import type { ICP } from '../ai/types';
 import {
   databaseManager,
   getDatabaseConfig,
