@@ -1394,6 +1394,12 @@ export class ICPGenerator {
    */
   async generateICPs(companyData: any): Promise<ICP[]> {
     console.log('🎯 Starting comprehensive ICP generation...');
+    console.log('🎯 Company data received:', {
+      name: companyData.name,
+      industry: companyData.industry,
+      targetMarket: companyData.targetMarket,
+      valueProposition: companyData.valueProposition
+    });
 
     try {
       // Step 1: Determine business model
@@ -1522,7 +1528,10 @@ ${Object.entries(templatesByCategory)
       `${categoryLabels[category] || category.toUpperCase()} (${
         templates.length
       } options):\n${templates
-        .map((t) => `- ${t.id}: ${t.name} - ${t.description}`)
+        .map(
+          (t) =>
+            `- ID: "${t.id}" | Name: ${t.name} | Description: ${t.description}`,
+        )
         .join('\n')}`,
   )
   .join('\n\n')}
@@ -1537,21 +1546,31 @@ Selection Criteria:
 
 Analyze the company data carefully and select exactly 3 templates that would be MOST RELEVANT and ACTIONABLE for this specific company.
 
-Respond with JSON array of template IDs (e.g., ["startup_innovator", "tech_startup", "saas_startup"]):
+IMPORTANT: 
+1. Respond with ONLY a JSON array of template IDs, no explanations or additional text
+2. Use ONLY the exact template IDs listed above (e.g., "startup_innovator", "smb_optimizer", "tech_startup")
+3. Do NOT create new template IDs or use descriptive names
+
+Example: ["startup_innovator", "tech_startup", "saas_startup"]
 `;
 
     const response = await this.ollamaClient.generateResponse(prompt);
 
+    // Extract JSON from response - be more specific to avoid capturing too much
+    const jsonMatch = response.match(/\[[\s\S]*?\]/);
+
     try {
-      // Extract JSON from response
-      const jsonMatch = response.match(/\[.*\]/);
       if (!jsonMatch) {
         throw new Error('No JSON array found in response');
       }
 
       let jsonStr = jsonMatch[0];
+
+      // Clean up common LLM response artifacts
       jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      jsonStr = jsonStr.replace(/^- /gm, '');
+      jsonStr = jsonStr.replace(/^- /gm, ''); // Remove bullet points
+      jsonStr = jsonStr.replace(/^`/g, '').replace(/`$/g, ''); // Remove backticks
+      jsonStr = jsonStr.trim();
 
       const selectedIds = JSON.parse(jsonStr) as string[];
 
@@ -1579,130 +1598,317 @@ Respond with JSON array of template IDs (e.g., ["startup_innovator", "tech_start
     } catch (error) {
       console.error('Failed to parse template selection:', error);
       console.error('Raw response:', response);
+      console.error(
+        'Attempted to extract JSON from:',
+        jsonMatch ? jsonMatch[0] : 'No match found',
+      );
       throw new Error(
         `Failed to parse template selection: ${
           error instanceof Error ? error.message : 'Unknown error'
-        }`,
+        }. Raw response: ${response.substring(0, 200)}...`,
       );
     }
   }
 
   /**
-   * Generate ICP profile from selected template
+   * Generate ICP profile from selected template using a simpler approach
    */
   private async generateICPFromTemplate(
     companyData: any,
     template: any,
     businessModel: string,
   ): Promise<ICP> {
-    const prompt = `Generate a comprehensive ICP profile for this specific template:
+    // Generate ICP in parts to avoid complex JSON parsing issues
+    const icpId = `icp_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
-Company Data:
-${this.formatCompanyData(companyData)}
+    // Generate segments
+    console.log(`🎯 Generating segments for company: ${companyData.name}`);
+    const segmentsPrompt = `Based on this company data and template, provide 2-3 relevant customer segments for ${template.name}:
 
-ICP Template: ${template.name} - ${template.description}
-Business Model: ${businessModel}
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Target Market: ${companyData.targetMarket}
+Template: ${template.name} - ${template.description}
 
-## ICP Generation Guidelines
+Respond with ONLY a comma-separated list of segments, no additional text.
+Example: "Startup Founders, Tech Entrepreneurs, Small Business Owners"`;
 
-### ${
-      businessModel === 'B2B'
-        ? 'B2B ICP Characteristics'
-        : businessModel === 'B2C'
-        ? 'B2C ICP Characteristics'
-        : 'B2B2C ICP Characteristics'
-    }
-${
-  businessModel === 'B2B'
-    ? ICP_RULES.b2b_characteristics.join('\n')
-    : businessModel === 'B2C'
-    ? ICP_RULES.b2c_characteristics.join('\n')
-    : [...ICP_RULES.b2b_characteristics, ...ICP_RULES.b2c_characteristics].join(
-        '\n',
-      )
-}
+    const segmentsResponse = await this.ollamaClient.generateResponse(
+      segmentsPrompt,
+    );
+    const segments = segmentsResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
-### Other Considerations
-${ICP_RULES.other_considerations.join('\n')}
+    // Generate pains
+    console.log(`🎯 Generating pains for company: ${companyData.name}`);
+    const painsPrompt = `Based on this company data and template, identify 3-4 specific pain points for ${template.name}:
 
-### How to Use This ICP
-${Object.entries(ICP_RULES.usage_guidelines)
-  .map(
-    ([key, value]) =>
-      `- **${key.charAt(0).toUpperCase() + key.slice(1)}**: ${value}`,
-  )
-  .join('\n')}
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Value Proposition: ${companyData.valueProposition}
+Template: ${template.name} - ${template.description}
 
-Generate a detailed ICP profile following this JSON structure:
-{
-  "icp_id": "unique-id",
-  "icp_name": "${template.name}",
-  "business_model": "${businessModel}",
-  "meta": {
-    "generated_at": "ISO timestamp",
-    "source_company": "${companyData.name}"
-  },
-  "segments": ["relevant", "segments"],
-  "fit_definition": {
-    "company_attributes": {
-      "industries": ["relevant industries"],
-      "company_sizes": ["relevant sizes"],
-      "geographies": ["relevant regions"],
-      "tech_stack_hints": ["relevant technologies"]
-    },
-    "buyer_personas": [
-      {
-        "role": "relevant role",
-        "seniority": "level",
-        "dept": "department",
-        "decision_power": "decision maker"
-      }
-    ]
-  },
-  "needs_pain_goals": {
-    "pains": ["specific pain points for this template"],
-    "jobs_to_be_done": ["specific jobs"],
-    "desired_outcomes": ["expected results"]
-  },
-  "buying_triggers": ["specific triggers for this template"],
-  "common_objections": ["likely objections"],
-  "value_prop_alignment": {
-    "value_prop": "how your solution addresses their needs",
-    "unique_features": ["features that matter to them"],
-    "competitive_advantages": ["advantages for this segment"]
-  },
-  "offerings_pricing": {
-    "main_offerings": ["relevant offerings"],
-    "pricing_model": "appropriate pricing model",
-    "packaging_notes": "packaging considerations"
-  },
-  "go_to_market": {
-    "primary_channels": ["best channels for this segment"],
-    "messages": ["key messages that resonate"],
-    "content_ideas": ["content that addresses their needs"]
-  },
-  "fit_scoring": {
-    "score": 85,
-    "score_breakdown": {
-      "industry_fit": 90,
-      "size_fit": 85,
-      "geo_fit": 80,
-      "pain_alignment": 85,
-      "goal_alignment": 80
-    }
-  },
-  "abm_tier": "Tier 1",
-  "confidence": "high"
-}
+Respond with ONLY a comma-separated list of pain points, no additional text.
+Example: "High operational costs, Limited scalability, Complex compliance requirements"`;
 
-Focus on making this ICP highly specific to the ${
-      template.name
-    } template and actionable for ${companyData.name}.
+    const painsResponse = await this.ollamaClient.generateResponse(painsPrompt);
+    const pains = painsResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
-IMPORTANT: All content must be in English. Generate detailed, actionable insights that would be valuable for marketing, sales, and product teams.`;
+    // Generate jobs to be done
+    const jobsPrompt = `Based on this company data and template, identify 3-4 jobs to be done for ${template.name}:
 
-    const response = await this.ollamaClient.generateResponse(prompt);
-    return this.parseICPResponse(response, businessModel);
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Main Offerings: ${companyData.mainOfferings}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of jobs, no additional text.
+Example: "Reduce operational costs, Scale business efficiently, Ensure compliance"`;
+
+    const jobsResponse = await this.ollamaClient.generateResponse(jobsPrompt);
+    const jobs = jobsResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate desired outcomes
+    const outcomesPrompt = `Based on this company data and template, identify 3-4 desired outcomes for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Customer Goals: ${companyData.customerGoals}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of outcomes, no additional text.
+Example: "Increased efficiency, Cost savings, Improved compliance"`;
+
+    const outcomesResponse = await this.ollamaClient.generateResponse(
+      outcomesPrompt,
+    );
+    const outcomes = outcomesResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate buying triggers
+    const triggersPrompt = `Based on this company data and template, identify 3-4 buying triggers for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of triggers, no additional text.
+Example: "New business expansion, Regulatory changes, Technology upgrades"`;
+
+    const triggersResponse = await this.ollamaClient.generateResponse(
+      triggersPrompt,
+    );
+    const triggers = triggersResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate common objections
+    const objectionsPrompt = `Based on this company data and template, identify 3-4 common objections for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Pricing Model: ${companyData.pricingModel}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of objections, no additional text.
+Example: "High upfront costs, Implementation complexity, ROI uncertainty"`;
+
+    const objectionsResponse = await this.ollamaClient.generateResponse(
+      objectionsPrompt,
+    );
+    const objections = objectionsResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate value proposition
+    const valuePropPrompt = `Based on this company data and template, create a value proposition for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Value Proposition: ${companyData.valueProposition}
+Unique Features: ${companyData.uniqueFeatures}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY the value proposition sentence, no additional text.`;
+
+    const valuePropResponse = await this.ollamaClient.generateResponse(
+      valuePropPrompt,
+    );
+    const valueProp = valuePropResponse.trim();
+
+    // Generate unique features
+    const featuresPrompt = `Based on this company data and template, identify 3 unique features for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Unique Features: ${companyData.uniqueFeatures}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of features, no additional text.
+Example: "AI-powered optimization, 24/7 monitoring, Custom integrations"`;
+
+    const featuresResponse = await this.ollamaClient.generateResponse(
+      featuresPrompt,
+    );
+    const features = featuresResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate competitive advantages
+    const advantagesPrompt = `Based on this company data and template, identify 3 competitive advantages for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Competitive Advantages: ${companyData.competitiveAdvantages}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of advantages, no additional text.
+Example: "Proven ROI, Industry expertise, Comprehensive support"`;
+
+    const advantagesResponse = await this.ollamaClient.generateResponse(
+      advantagesPrompt,
+    );
+    const advantages = advantagesResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate go-to-market channels
+    const channelsPrompt = `Based on this company data and template, identify 3 go-to-market channels for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Current Marketing Channels: ${companyData.currentMarketingChannels}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of channels, no additional text.
+Example: "LinkedIn advertising, Industry events, Referral programs"`;
+
+    const channelsResponse = await this.ollamaClient.generateResponse(
+      channelsPrompt,
+    );
+    const channels = channelsResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate messages
+    const messagesPrompt = `Based on this company data and template, identify 3 key messages for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Marketing Messaging: ${companyData.marketingMessaging}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of messages, no additional text.
+Example: "Reduce costs by 30%, Improve efficiency, Scale your business"`;
+
+    const messagesResponse = await this.ollamaClient.generateResponse(
+      messagesPrompt,
+    );
+    const messages = messagesResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Generate content ideas
+    const contentPrompt = `Based on this company data and template, identify 3 content ideas for ${template.name}:
+
+Company: ${companyData.name}
+Industry: ${companyData.industry}
+Template: ${template.name} - ${template.description}
+
+Respond with ONLY a comma-separated list of content ideas, no additional text.
+Example: "Case studies, Webinars, Industry reports"`;
+
+    const contentResponse = await this.ollamaClient.generateResponse(
+      contentPrompt,
+    );
+    const content = contentResponse
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    // Create the ICP object
+    const icp: ICP = {
+      icp_id: icpId,
+      icp_name: template.name,
+      business_model: businessModel as 'B2B' | 'B2C' | 'B2B2C',
+      meta: {
+        generated_at: new Date().toISOString(),
+        source_company: companyData.name,
+      },
+      segments: segments,
+      fit_definition: {
+        company_attributes: {
+          industries: [companyData.industry || 'Technology'],
+          company_sizes: ['Small Business', 'Medium Business'],
+          geographies: ['Global'],
+          tech_stack_hints: ['Modern SaaS', 'Cloud-based'],
+        },
+        buyer_personas: [
+          {
+            role: 'Decision Maker',
+            seniority: 'Mid-level',
+            dept: 'Operations',
+            decision_power: 'decision maker',
+          },
+        ],
+      },
+      needs_pain_goals: {
+        pains: pains,
+        jobs_to_be_done: jobs,
+        desired_outcomes: outcomes,
+      },
+      buying_triggers: triggers,
+      common_objections: objections,
+      value_prop_alignment: {
+        value_prop: valueProp,
+        unique_features: features,
+        competitive_advantages: advantages,
+      },
+      offerings_pricing: {
+        main_offerings: companyData.mainOfferings
+          ? companyData.mainOfferings.split(',').map((s: string) => s.trim())
+          : ['Software Solutions'],
+        pricing_model: companyData.pricingModel || 'Subscription-based',
+        packaging_notes: 'Flexible pricing options, Custom enterprise plans',
+      },
+      go_to_market: {
+        primary_channels: channels,
+        messages: messages,
+        content_ideas: content,
+      },
+      fit_scoring: {
+        score: 85,
+        score_breakdown: {
+          industry_fit: 90,
+          size_fit: 85,
+          geo_fit: 80,
+          pain_alignment: 85,
+          goal_alignment: 80,
+        },
+      },
+      abm_tier: 'Tier 1',
+      confidence: 'high',
+    };
+
+    return icp;
   }
 
   /**
@@ -1738,47 +1944,5 @@ IMPORTANT: All content must be in English. Generate detailed, actionable insight
       })
       .filter(Boolean)
       .join('\n');
-  }
-
-  /**
-   * Parse LLM response into ICP object
-   */
-  private parseICPResponse(response: string, businessModel: string): ICP {
-    try {
-      // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
-
-      let jsonStr = jsonMatch[0];
-
-      // Clean up common LLM response artifacts
-      jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      jsonStr = jsonStr.replace(/^- /gm, ''); // Remove bullet points
-
-      const icp = JSON.parse(jsonStr) as ICP;
-
-      // Ensure required fields
-      icp.icp_id =
-        icp.icp_id ||
-        `icp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      icp.meta = icp.meta || {};
-      icp.meta.generated_at = icp.meta.generated_at || new Date().toISOString();
-      icp.business_model =
-        icp.business_model || (businessModel as 'B2B' | 'B2C' | 'B2B2C');
-      icp.confidence = icp.confidence || 'medium';
-
-      return icp;
-    } catch (error) {
-      console.error('Failed to parse ICP response:', error);
-      console.error('Raw response:', response);
-
-      throw new Error(
-        `Failed to parse ICP response: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
-      );
-    }
   }
 }

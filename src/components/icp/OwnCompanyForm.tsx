@@ -21,6 +21,8 @@ interface OwnCompanyFormProps {
   onReset?: () => void;
   onSaveCompany?: (company: OwnCompany) => Promise<void>;
   onCompanyDeleted?: () => void;
+  activeCompanyId?: string;
+  onCompanyIdChange?: (id: string) => void;
 }
 
 export function OwnCompanyForm({
@@ -29,6 +31,8 @@ export function OwnCompanyForm({
   onReset,
   onSaveCompany,
   onCompanyDeleted,
+  activeCompanyId,
+  onCompanyIdChange,
 }: OwnCompanyFormProps) {
   // Handle bulk company selection
   const handleCompanySelect = (selectedCompany: OwnCompany) => {
@@ -149,6 +153,8 @@ export function OwnCompanyForm({
               onCompanySelect={handleCompanySelect}
               onSaveCompany={onSaveCompany}
               onCompanyDeleted={onCompanyDeleted}
+              selectedCompanyId={activeCompanyId}
+              onCompanyIdSelected={onCompanyIdChange}
             />
           </div>
 

@@ -18,22 +18,26 @@ interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
   isLoading: boolean;
   error: string | null;
+  activeCompanyId?: string;
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => Promise<void>;
   onResetOwnCompany?: () => Promise<void>;
   onGenerateICPs: () => Promise<void>;
   onCompanyDeleted?: () => void;
+  onCompanyIdChange?: (id: string) => void;
 }
 
 export function ICPGenerator({
   ownCompany,
   isLoading,
   error,
+  activeCompanyId,
   onOwnCompanyChange,
   onSaveOwnCompany,
   onResetOwnCompany,
   onGenerateICPs,
   onCompanyDeleted,
+  onCompanyIdChange,
 }: ICPGeneratorProps) {
   return (
     <Card className='mt-4'>
@@ -86,6 +90,8 @@ export function ICPGenerator({
               }
             }}
             onCompanyDeleted={onCompanyDeleted}
+            activeCompanyId={activeCompanyId}
+            onCompanyIdChange={onCompanyIdChange}
           />
         </div>
 
