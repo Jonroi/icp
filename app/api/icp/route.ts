@@ -22,11 +22,28 @@ export async function POST(req: NextRequest) {
       companyId = active.id;
     }
 
-    // Generate ICPs using current stored company-data context
-    const state = await companyDataService.getCurrentData();
-    const currentData = state.currentData || {};
+    // Get the current company's data directly
+    const company = await companiesService.selectCompany(companyId);
+    if (!company) {
+      return NextResponse.json(
+        { success: false, error: 'Company not found' },
+        { status: 404 },
+      );
+    }
+
+    console.log(
+      `[API] Generating ICPs for company: ${company.name} (${company.id})`,
+    );
+    console.log(`[API] Company data:`, {
+      name: company.name,
+      industry: company.industry,
+      targetMarket: company.targetMarket,
+      valueProposition: company.valueProposition,
+    });
+
+    // Generate ICPs using the current company's data
     const ai = new AIService();
-    const icps = await ai.generateICPs(currentData);
+    const icps = await ai.generateICPs(company);
 
     // Persist profiles under company
     const saved = await icpProfilesService.saveProfilesForCompany(

@@ -1398,7 +1398,7 @@ export class ICPGenerator {
       name: companyData.name,
       industry: companyData.industry,
       targetMarket: companyData.targetMarket,
-      valueProposition: companyData.valueProposition
+      valueProposition: companyData.valueProposition,
     });
 
     try {

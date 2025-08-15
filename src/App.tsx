@@ -47,6 +47,7 @@ export default function App() {
             ownCompany={ownCompany}
             isLoading={isLoading}
             error={error}
+            activeCompanyId={activeCompanyId}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
             onResetOwnCompany={resetOwnCompany}
@@ -56,6 +57,7 @@ export default function App() {
               setActiveTab('demographics');
             }}
             onCompanyDeleted={onCompanyDeleted}
+            onCompanyIdChange={setActiveCompanyId}
           />
         </TabsContent>
 
