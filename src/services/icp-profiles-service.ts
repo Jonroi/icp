@@ -1,4 +1,4 @@
-import type { ICP, ApifyBasedICP } from './ai/types';
+import type { ICP } from './ai/types';
 import {
   databaseManager,
   getDatabaseConfig,
@@ -31,7 +31,7 @@ export interface StoredICPProfile {
 export const icpProfilesService = {
   async saveProfilesForCompany(
     companyId: string,
-    profiles: (ICP | ApifyBasedICP)[],
+    profiles: ICP[],
   ): Promise<StoredICPProfile[]> {
     await ensureDb();
     const inserted: StoredICPProfile[] = [];

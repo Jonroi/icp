@@ -2,10 +2,7 @@
 export * from './types';
 
 // Export services
-export { AIService } from './ai-service';
 export { ICPGenerator } from './icp-generator';
-export { ReviewAnalyzer } from './review-analyzer';
-export { ReviewAgent } from './review-agent';
 export { OllamaClient } from './ollama-client';
 
 // Export error handling
@@ -15,8 +12,4 @@ export {
   type AIServiceError,
   type ValidationResult,
   type ICPGenerationError,
-  type ReviewCollectionError,
-  type CompanySearchError,
 } from './error-types';
-
-// Note: Chat/agent modules have been removed as part of the reset

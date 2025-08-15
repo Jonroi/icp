@@ -39,7 +39,7 @@ function AppContent() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className='w-full'>
           <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
-          <TabsTrigger value='demographics'>ICP Profiles</TabsTrigger>
+          <TabsTrigger value='demographics'>ICPs</TabsTrigger>
           <TabsTrigger value='campaign-designer'>Campaign Designer</TabsTrigger>
           <TabsTrigger value='campaign-library'>
             Campaign Idea Library

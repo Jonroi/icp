@@ -1,4 +1,4 @@
-import type { ICP, CustomerReview, ApifyDataSource } from './types';
+import type { ICP } from './types';
 import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
 

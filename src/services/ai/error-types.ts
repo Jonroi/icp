@@ -3,201 +3,123 @@
  */
 
 export interface AIServiceError {
-  code: string;
+  type: string;
   message: string;
-  details?: Record<string, any>;
-  originalError?: Error;
-  timestamp: Date;
+  details?: any;
+  timestamp: string;
 }
 
 export interface ValidationResult {
   isValid: boolean;
   errors: AIServiceError[];
-  warnings: string[];
 }
 
 export interface ICPGenerationError extends AIServiceError {
-  code:
-    | 'ICP_GENERATION_FAILED'
-    | 'INVALID_INPUT_DATA'
-    | 'LLM_UNAVAILABLE'
-    | 'PARSING_FAILED';
-  inputData?: {
-    competitorCount: number;
-    reviewCount: number;
-    hasAdditionalContext: boolean;
-  };
-}
-
-export interface ReviewCollectionError extends AIServiceError {
-  code:
-    | 'NO_REVIEWS_FOUND'
-    | 'INVALID_WEBSITE'
-    | 'NETWORK_ERROR'
-    | 'VALIDATION_FAILED'
-    | 'INVALID_COMPANY_NAME'
-    | 'NO_API_KEY'
-    | 'APIFY_API_ERROR';
-  source?: string;
-  attemptedUrls?: string[];
-}
-
-export interface CompanySearchError extends AIServiceError {
-  code:
-    | 'COMPANY_NOT_FOUND'
-    | 'INVALID_COMPANY_NAME'
-    | 'LLM_SEARCH_FAILED'
-    | 'VALIDATION_FAILED'
-    | 'LINKEDIN_FETCH_FAILED';
-  searchTerms?: string[];
+  type: 'ICP_GENERATION_ERROR';
+  companyData?: any;
+  templateId?: string;
 }
 
 export class AIServiceErrorFactory {
   static createICPGenerationError(
-    code: ICPGenerationError['code'],
     message: string,
-    details?: Record<string, any>,
-    originalError?: Error,
+    details?: any,
+    companyData?: any,
+    templateId?: string,
   ): ICPGenerationError {
     return {
-      code,
+      type: 'ICP_GENERATION_ERROR',
       message,
       details,
-      originalError,
-      timestamp: new Date(),
+      companyData,
+      templateId,
+      timestamp: new Date().toISOString(),
     };
   }
 
-  static createReviewCollectionError(
-    code: ReviewCollectionError['code'],
-    message: string,
-    source?: string,
-    attemptedUrls?: string[],
-    originalError?: Error,
-  ): ReviewCollectionError {
+  static createValidationError(message: string, details?: any): AIServiceError {
     return {
-      code,
+      type: 'VALIDATION_ERROR',
       message,
-      source,
-      attemptedUrls,
-      originalError,
-      timestamp: new Date(),
+      details,
+      timestamp: new Date().toISOString(),
     };
   }
 
-  static createCompanySearchError(
-    code: CompanySearchError['code'],
-    message: string,
-    searchTerms?: string[],
-    originalError?: Error,
-  ): CompanySearchError {
+  static createLLMError(message: string, details?: any): AIServiceError {
     return {
-      code,
+      type: 'LLM_ERROR',
       message,
-      searchTerms,
-      originalError,
-      timestamp: new Date(),
+      details,
+      timestamp: new Date().toISOString(),
     };
   }
 }
 
 export class InputValidator {
-  static validateCompanyName(name: string): ValidationResult {
+  static validateCompanyData(companyData: any): ValidationResult {
     const errors: AIServiceError[] = [];
-    const warnings: string[] = [];
 
-    if (!name || name.trim().length === 0) {
-      errors.push({
-        code: 'EMPTY_COMPANY_NAME',
-        message: 'Company name cannot be empty',
-        timestamp: new Date(),
-      });
+    if (!companyData) {
+      errors.push(
+        AIServiceErrorFactory.createValidationError('Company data is required'),
+      );
+      return { isValid: false, errors };
     }
 
-    if (name && name.trim().length < 2) {
-      errors.push({
-        code: 'COMPANY_NAME_TOO_SHORT',
-        message: 'Company name must be at least 2 characters long',
-        timestamp: new Date(),
-      });
+    if (!companyData.name || companyData.name.trim() === '') {
+      errors.push(
+        AIServiceErrorFactory.createValidationError('Company name is required'),
+      );
     }
 
-    if (name && /^[0-9]+$/.test(name.trim())) {
-      errors.push({
-        code: 'INVALID_COMPANY_NAME_FORMAT',
-        message: 'Company name cannot be only numbers',
-        timestamp: new Date(),
-      });
+    if (!companyData.industry || companyData.industry.trim() === '') {
+      errors.push(
+        AIServiceErrorFactory.createValidationError('Industry is required'),
+      );
     }
 
-    if (name && name.length > 100) {
-      warnings.push('Company name is unusually long');
+    if (!companyData.targetMarket || companyData.targetMarket.trim() === '') {
+      errors.push(
+        AIServiceErrorFactory.createValidationError(
+          'Target market is required',
+        ),
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings,
     };
   }
 
-  static validateWebsiteUrl(url: string): ValidationResult {
+  static validateICPTemplate(template: any): ValidationResult {
     const errors: AIServiceError[] = [];
-    const warnings: string[] = [];
 
-    if (!url || url.trim().length === 0) {
-      return { isValid: true, errors: [], warnings: [] }; // Optional field
+    if (!template) {
+      errors.push(
+        AIServiceErrorFactory.createValidationError('ICP template is required'),
+      );
+      return { isValid: false, errors };
     }
 
-    try {
-      const urlObj = new URL(url);
+    if (!template.id || template.id.trim() === '') {
+      errors.push(
+        AIServiceErrorFactory.createValidationError('Template ID is required'),
+      );
+    }
 
-      if (!['http:', 'https:'].includes(urlObj.protocol)) {
-        errors.push({
-          code: 'INVALID_URL_PROTOCOL',
-          message: 'URL must use HTTP or HTTPS protocol',
-          timestamp: new Date(),
-        });
-      }
-
-      if (urlObj.hostname.length === 0) {
-        errors.push({
-          code: 'INVALID_URL_HOSTNAME',
-          message: 'URL must have a valid hostname',
-          timestamp: new Date(),
-        });
-      }
-    } catch (error) {
-      errors.push({
-        code: 'INVALID_URL_FORMAT',
-        message: 'Invalid URL format',
-        originalError: error as Error,
-        timestamp: new Date(),
-      });
+    if (!template.name || template.name.trim() === '') {
+      errors.push(
+        AIServiceErrorFactory.createValidationError(
+          'Template name is required',
+        ),
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings,
-    };
-  }
-
-  static validateICPGenerationInput(
-    _competitors: unknown[],
-    additionalContext: string,
-  ): ValidationResult {
-    const errors: AIServiceError[] = [];
-    const warnings: string[] = [];
-
-    if (additionalContext && additionalContext.length > 2000) {
-      warnings.push('Additional context is very long and may be truncated');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
     };
   }
 }
