@@ -64,6 +64,10 @@ export default function App() {
             generatedICPs={generatedICPs}
             activeCompanyId={activeCompanyId}
             onCompanyIdChange={setActiveCompanyId}
+            onGenerateMore={async () => {
+              await generateICPs();
+              alert('Additional ICPs generated successfully!');
+            }}
           />
         </TabsContent>
 

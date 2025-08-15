@@ -6,7 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bot, Sparkles, Link as LinkIcon, Pencil, Trash2 } from 'lucide-react';
+import {
+  Bot,
+  Sparkles,
+  Link as LinkIcon,
+  Pencil,
+  Trash2,
+  Plus,
+} from 'lucide-react';
 import { CompanySelector } from '@/components/ui/company-selector';
 import type { OwnCompany } from '@/services/project-service';
 import type { StoredICPProfile } from '@/services';
@@ -43,12 +50,14 @@ interface ICPProfilesProps {
   generatedICPs: ICP[];
   activeCompanyId?: string;
   onCompanyIdChange?: (id: string) => void;
+  onGenerateMore?: () => Promise<void>;
 }
 
 export function ICPProfiles({
   generatedICPs,
   activeCompanyId,
   onCompanyIdChange,
+  onGenerateMore,
 }: ICPProfilesProps) {
   const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
   const [companyName, setCompanyName] = useState<string>('');
@@ -119,14 +128,21 @@ export function ICPProfiles({
               allowDelete={false}
               className='min-w-[260px]'
             />
-            <Button size='sm' className='flex items-center gap-2' disabled>
-              Analyze ICPs (coming soon)
+            <Button
+              size='sm'
+              className='flex items-center gap-2'
+              disabled={!companyId}
+              onClick={onGenerateMore}
+              title='Generate more ICP profiles using current company data'>
+              <Plus className='h-4 w-4' />
+              Generate More
             </Button>
             <Button
               size='sm'
               variant='destructive'
               className='flex items-center gap-2'
               disabled={!companyId || isDeleting}
+              title='Delete all ICP profiles for this company'
               onClick={async () => {
                 if (!companyId) return;
                 try {
@@ -191,12 +207,12 @@ export function ICPProfiles({
                       </div>
                       <div className='flex items-center gap-1'>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          className={`px-2 py-1 rounded-md text-xs font-medium border ${
                             p.profileData.confidence === 'high'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-green-50 text-green-700 border-green-200'
                               : p.profileData.confidence === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                              : 'bg-red-50 text-red-700 border-red-200'
                           }`}>
                           {p.profileData.confidence || 'medium'}
                         </span>
@@ -213,12 +229,12 @@ export function ICPProfiles({
                           .map((segment, i) => (
                             <span
                               key={i}
-                              className='px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs'>
+                              className='px-2 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-xs font-medium'>
                               {segment}
                             </span>
                           ))}
                         {p.profileData.segments?.length > 3 && (
-                          <span className='px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs'>
+                          <span className='px-2 py-1 bg-muted text-muted-foreground border border-border rounded-md text-xs'>
                             +{p.profileData.segments.length - 3} more
                           </span>
                         )}
@@ -233,8 +249,10 @@ export function ICPProfiles({
                           {p.profileData.needs_pain_goals.pains
                             .slice(0, 2)
                             .map((pain, i) => (
-                              <li key={i} className='flex items-start gap-2'>
-                                <span className='text-red-500 mt-1'>•</span>
+                              <li key={i} className='flex items-center gap-2'>
+                                <span className='text-red-500 text-lg leading-none'>
+                                  •
+                                </span>
                                 <span>{pain}</span>
                               </li>
                             ))}
@@ -250,8 +268,10 @@ export function ICPProfiles({
                           {p.profileData.buying_triggers
                             .slice(0, 2)
                             .map((trigger, i) => (
-                              <li key={i} className='flex items-start gap-2'>
-                                <span className='text-green-500 mt-1'>•</span>
+                              <li key={i} className='flex items-center gap-2'>
+                                <span className='text-green-500 text-lg leading-none'>
+                                  •
+                                </span>
                                 <span>{trigger}</span>
                               </li>
                             ))}
@@ -261,21 +281,31 @@ export function ICPProfiles({
 
                     {/* Actions */}
                     <div className='flex items-center gap-2 pt-2'>
-                      <Button className='flex-1' variant='default' size='sm'>
+                      <Button
+                        className='flex-1'
+                        variant='default'
+                        size='sm'
+                        title='View detailed ICP profile information'>
                         <Sparkles className='mr-2 h-4 w-4' /> View Details
                       </Button>
                       <Button
                         variant='outline'
                         size='icon'
+                        title='Copy ICP profile link'
                         aria-label='Copy link'>
                         <LinkIcon className='h-4 w-4' />
                       </Button>
-                      <Button variant='outline' size='icon' aria-label='Edit'>
+                      <Button
+                        variant='outline'
+                        size='icon'
+                        title='Edit ICP profile'
+                        aria-label='Edit'>
                         <Pencil className='h-4 w-4' />
                       </Button>
                       <Button
                         variant='destructive'
                         size='icon'
+                        title='Delete this ICP profile'
                         aria-label='Delete'
                         onClick={async () => {
                           try {
