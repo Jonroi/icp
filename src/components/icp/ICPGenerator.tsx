@@ -43,8 +43,8 @@ export function ICPGenerator({
   onCompanyIdChange,
 }: ICPGeneratorProps) {
   return (
-    <Card className='mt-4'>
-      <CardHeader className='flex-row items-start justify-between'>
+    <Card className='mt-4 max-w-4xl mx-auto'>
+      <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
           <CardTitle className='flex items-center gap-2'>
             <Wand2 className='h-5 w-5 text-primary' />

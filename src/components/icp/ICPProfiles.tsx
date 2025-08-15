@@ -119,18 +119,18 @@ export function ICPProfiles({
   };
 
   return (
-    <Card className='mt-4'>
-      <CardHeader className='flex-row items-start justify-between'>
+    <Card className='mt-4 max-w-6xl mx-auto'>
+      <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
           <CardTitle className='flex items-center gap-2'>
             <Bot className='h-5 w-5 text-primary' />
-            ICP Profiles
+            ICP Overview
           </CardTitle>
           <CardDescription>
             View and manage your generated Ideal Customer Profiles
           </CardDescription>
         </div>
-        <div className='flex items-end gap-2'>
+        <div className='flex flex-col space-y-3 sm:flex-row sm:items-end sm:space-y-0 sm:gap-2'>
           <CompanySelector
             value={companyName}
             onChange={() => {}}

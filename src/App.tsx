@@ -33,57 +33,64 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('icp-generator');
 
   return (
-    <div className='space-y-6 pt-6 md:pt-8 lg:pt-10'>
-      <Header />
+    <div className='min-h-screen bg-background'>
+      <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+        <div className='space-y-6 py-6 md:py-8 lg:py-10'>
+          <Header />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className='w-full'>
-          <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
-          <TabsTrigger value='demographics'>ICPs</TabsTrigger>
-          <TabsTrigger value='campaign-designer'>Campaign Designer</TabsTrigger>
-          <TabsTrigger value='campaign-library'>
-            Campaign Idea Library
-          </TabsTrigger>
-        </TabsList>
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className='w-full'>
+            <TabsList className='w-full'>
+              <TabsTrigger value='icp-generator'>ICP Generator</TabsTrigger>
+              <TabsTrigger value='demographics'>ICP Overview</TabsTrigger>
+              <TabsTrigger value='campaign-designer'>
+                Campaign Designer
+              </TabsTrigger>
+              <TabsTrigger value='campaign-library'>Campaign Ideas</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value='icp-generator'>
-          <ICPGenerator
-            ownCompany={ownCompany}
-            isLoading={isLoading}
-            error={error || null}
-            activeCompanyId={activeCompanyId}
-            companies={companies}
-            activeCompany={activeCompany}
-            onOwnCompanyChange={onOwnCompanyChange}
-            onSaveOwnCompany={saveOwnCompany}
-            onResetOwnCompany={resetOwnCompany}
-            onGenerateICPs={async () => {
-              await generateICPs();
-              alert('ICPs generated successfully!');
-              setActiveTab('demographics');
-            }}
-            onCompanyDeleted={onCompanyDeleted}
-            onCompanyIdChange={setActiveCompanyId}
-          />
-        </TabsContent>
+            <TabsContent value='icp-generator' className='mt-6'>
+              <ICPGenerator
+                ownCompany={ownCompany}
+                isLoading={isLoading}
+                error={error || null}
+                activeCompanyId={activeCompanyId}
+                companies={companies}
+                activeCompany={activeCompany}
+                onOwnCompanyChange={onOwnCompanyChange}
+                onSaveOwnCompany={saveOwnCompany}
+                onResetOwnCompany={resetOwnCompany}
+                onGenerateICPs={async () => {
+                  await generateICPs();
+                  alert('ICPs generated successfully!');
+                  setActiveTab('demographics');
+                }}
+                onCompanyDeleted={onCompanyDeleted}
+                onCompanyIdChange={setActiveCompanyId}
+              />
+            </TabsContent>
 
-        <TabsContent value='demographics'>
-          <ICPProfiles
-            generatedICPs={generatedICPs}
-            activeCompanyId={activeCompanyId}
-            onCompanyIdChange={setActiveCompanyId}
-            onGenerateMore={generateMoreICPs}
-          />
-        </TabsContent>
+            <TabsContent value='demographics' className='mt-6'>
+              <ICPProfiles
+                generatedICPs={generatedICPs}
+                activeCompanyId={activeCompanyId}
+                onCompanyIdChange={setActiveCompanyId}
+                onGenerateMore={generateMoreICPs}
+              />
+            </TabsContent>
 
-        <TabsContent value='campaign-designer'>
-          <CampaignDesigner />
-        </TabsContent>
+            <TabsContent value='campaign-designer' className='mt-6'>
+              <CampaignDesigner />
+            </TabsContent>
 
-        <TabsContent value='campaign-library'>
-          <CampaignLibrary />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value='campaign-library' className='mt-6'>
+              <CampaignLibrary />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
