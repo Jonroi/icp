@@ -17,16 +17,20 @@ import { ExternalLink, Save, RotateCcw } from 'lucide-react';
 
 interface OwnCompanyFormProps {
   company: OwnCompany;
+  companies?: any[];
+  activeCompany?: any;
   onChange: (field: keyof OwnCompany, value: string) => void;
   onReset?: () => void;
   onSaveCompany?: (company: OwnCompany) => Promise<void>;
-  onCompanyDeleted?: () => void;
+  onCompanyDeleted?: (companyId: string) => void;
   activeCompanyId?: string;
   onCompanyIdChange?: (id: string) => void;
 }
 
 export function OwnCompanyForm({
   company,
+  companies = [],
+  activeCompany,
   onChange,
   onReset,
   onSaveCompany,
@@ -54,6 +58,7 @@ export function OwnCompanyForm({
       throw new Error('Form reset handler is required but not provided');
     }
   };
+
   // Predefined options for dropdowns
   const industryOptions = [
     'SaaS/Software',

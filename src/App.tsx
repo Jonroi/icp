@@ -17,12 +17,15 @@ function AppContent() {
     isLoading,
     error,
     activeCompanyId,
+    companies,
+    activeCompany,
 
     // Actions
     onOwnCompanyChange,
     saveOwnCompany,
     resetOwnCompany,
     generateICPs,
+    generateMoreICPs,
     setActiveCompanyId,
     onCompanyDeleted,
   } = useAppState();
@@ -47,8 +50,10 @@ function AppContent() {
           <ICPGenerator
             ownCompany={ownCompany}
             isLoading={isLoading}
-            error={error}
+            error={error || null}
             activeCompanyId={activeCompanyId}
+            companies={companies}
+            activeCompany={activeCompany}
             onOwnCompanyChange={onOwnCompanyChange}
             onSaveOwnCompany={saveOwnCompany}
             onResetOwnCompany={resetOwnCompany}
@@ -67,10 +72,7 @@ function AppContent() {
             generatedICPs={generatedICPs}
             activeCompanyId={activeCompanyId}
             onCompanyIdChange={setActiveCompanyId}
-            onGenerateMore={async () => {
-              await generateICPs();
-              alert('Additional ICPs generated successfully!');
-            }}
+            onGenerateMore={generateMoreICPs}
           />
         </TabsContent>
 

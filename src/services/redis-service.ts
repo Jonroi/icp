@@ -8,14 +8,14 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const CompanyCacheSchema = z.object({
   id: z.string(),
   name: z.string(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   updatedAt: z.string(),
 });
 
 const ICPCacheSchema = z.object({
   id: z.string(),
   companyId: z.string(),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
   generatedAt: z.string(),
 });
 
@@ -30,7 +30,6 @@ export class RedisService {
 
   private constructor() {
     this.redis = new Redis(REDIS_URL, {
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
     });
@@ -125,6 +124,12 @@ export class RedisService {
 
   async getCompanyICPs(companyId: string): Promise<string[]> {
     return await this.redis.smembers(`company:${companyId}:icps`);
+  }
+
+  async setCompanyICPs(companyId: string, icpNames: string[]): Promise<void> {
+    if (icpNames.length > 0) {
+      await this.redis.sadd(`company:${companyId}:icps`, ...icpNames);
+    }
   }
 
   async invalidateICPCache(icpId: string): Promise<void> {

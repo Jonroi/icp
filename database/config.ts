@@ -15,6 +15,7 @@ export interface DatabaseConfig {
 export class DatabaseManager {
   private static instance: DatabaseManager;
   private pool: Pool | null = null;
+  private isInitialized = false;
 
   private constructor() {}
 
@@ -29,6 +30,10 @@ export class DatabaseManager {
    * Initialize database connection
    */
   async initialize(config: DatabaseConfig): Promise<void> {
+    if (this.isInitialized && this.pool) {
+      return;
+    }
+
     const poolConfig: PoolConfig = {
       host: config.host,
       port: config.port,
@@ -48,8 +53,11 @@ export class DatabaseManager {
       const client = await this.pool.connect();
       console.log('✅ PostgreSQL connection established');
       client.release();
+      this.isInitialized = true;
     } catch (error) {
       console.error('❌ Failed to connect to PostgreSQL:', error);
+      this.pool = null;
+      this.isInitialized = false;
       throw error;
     }
   }
@@ -71,6 +79,7 @@ export class DatabaseManager {
     if (this.pool) {
       await this.pool.end();
       this.pool = null;
+      this.isInitialized = false;
       console.log('✅ Database connection closed');
     }
   }
@@ -79,20 +88,33 @@ export class DatabaseManager {
    * Run a query with parameters
    */
   async query(text: string, params?: any[]): Promise<any> {
-    if (!this.pool) {
+    if (!this.pool || !this.isInitialized) {
       throw new Error('Database not initialized');
     }
-    return this.pool.query(text, params);
+
+    try {
+      return await this.pool.query(text, params);
+    } catch (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
   }
 
   /**
    * Get a client from the pool
    */
   async getClient(): Promise<any> {
-    if (!this.pool) {
+    if (!this.pool || !this.isInitialized) {
       throw new Error('Database not initialized');
     }
     return this.pool.connect();
+  }
+
+  /**
+   * Check if database is initialized
+   */
+  isReady(): boolean {
+    return this.isInitialized && this.pool !== null;
   }
 }
 
@@ -127,20 +149,38 @@ export class DatabaseMigration {
   async runMigrations(): Promise<void> {
     const client = await this.db.getClient();
     try {
+      // Check if database is already initialized with v4 schema
+      const checkResult = await client.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.columns 
+          WHERE table_schema = 'public' 
+          AND table_name = 'companies'
+          AND column_name = 'id'
+          AND data_type = 'integer'
+        );
+      `);
+
+      if (checkResult.rows[0].exists) {
+        console.log(
+          '✅ Database already initialized with v4 schema, skipping migrations',
+        );
+        return;
+      }
+
       // Serialize migrations across concurrent requests using an advisory lock
       const LOCK_KEY = 792347923; // arbitrary app-specific key
       await client.query('SELECT pg_advisory_lock($1)', [LOCK_KEY]);
       await client.query('BEGIN');
 
-      // Read and execute schema.sql
+      // Read and execute schema-v4.sql
       const fs = require('fs').promises;
       const path = require('path');
-      let schemaPath = path.join(__dirname, 'schema.sql');
+      let schemaPath = path.join(__dirname, 'schema-v4.sql');
       try {
         await fs.access(schemaPath);
       } catch (_) {
         // Fallback to repository path during Next.js runtime
-        schemaPath = path.join(process.cwd(), 'database', 'schema.sql');
+        schemaPath = path.join(process.cwd(), 'database', 'schema-v4.sql');
       }
       const schema = await fs.readFile(schemaPath, 'utf-8');
 

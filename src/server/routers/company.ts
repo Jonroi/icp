@@ -4,26 +4,23 @@ import { companiesService } from '@/services/companies-service';
 import type { OwnCompany } from '@/services/project-service';
 
 export const companyRouter = createTRPCRouter({
-  // List all companies with Redis caching
+  // List all companies for the current user
   list: publicProcedure.query(async ({ ctx }) => {
     try {
-      // Try to get from cache first
-      const cachedActiveCompanyId = await ctx.redis.getActiveCompany();
+      const companies = await companiesService.getAllCompaniesWithData();
 
-      const companies = await companiesService.listCompanies();
-      const activeCompany = cachedActiveCompanyId
-        ? await companiesService.selectCompany(cachedActiveCompanyId)
-        : await companiesService.getActiveCompany();
-
-      // Cache active company if found
-      if (activeCompany) {
-        await ctx.redis.cacheCompany(activeCompany.id, activeCompany);
-        await ctx.redis.setActiveCompany(activeCompany.id);
-      }
+      // Transform to match expected format
+      const companyList = companies.map((company) => ({
+        ...company.data,
+        id: company.id,
+        name: company.name, // Add name field explicitly
+        created_at: company.created_at,
+        updated_at: company.updated_at,
+      }));
 
       return {
-        list: companies,
-        active: activeCompany,
+        list: companyList,
+        active: null, // No company selected by default
       };
     } catch (error) {
       throw new Error(
@@ -34,27 +31,23 @@ export const companyRouter = createTRPCRouter({
     }
   }),
 
-  // Get company by ID with Redis caching
+  // Get company by ID
   getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       try {
-        // Try cache first
-        const cached = await ctx.redis.getCachedCompany(input.id);
-        if (cached) {
-          // Set as active in cache
-          await ctx.redis.setActiveCompany(input.id);
-          return cached.data;
+        const company = await companiesService.getCompanyWithData(input.id);
+        if (!company) {
+          throw new Error('Company not found');
         }
 
-        // Fetch from database
-        const company = await companiesService.selectCompany(input.id);
-
-        // Cache the result
-        await ctx.redis.cacheCompany(input.id, company);
-        await ctx.redis.setActiveCompany(input.id);
-
-        return company;
+        return {
+          ...company.data,
+          id: company.id,
+          name: company.name,
+          created_at: company.created_at,
+          updated_at: company.updated_at,
+        };
       } catch (error) {
         throw new Error(
           `Failed to get company: ${
@@ -64,7 +57,7 @@ export const companyRouter = createTRPCRouter({
       }
     }),
 
-  // Create new company with cache invalidation
+  // Create new company
   create: publicProcedure
     .input(
       z.object({
@@ -91,13 +84,37 @@ export const companyRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const company = await companiesService.createCompany(input);
+        // Create the company
+        const newCompany = await companiesService.createCompany(input.name);
 
-        // Cache the new company
-        await ctx.redis.cacheCompany(company.id, company);
-        await ctx.redis.setActiveCompany(company.id);
+        // Update company data fields
+        const updates = [];
+        for (const [field, value] of Object.entries(input)) {
+          if (field !== 'name' && value !== undefined) {
+            await companiesService.updateCompanyField(
+              newCompany.id.toString(),
+              field as keyof OwnCompany,
+              value,
+            );
+            updates.push({ field, value });
+          }
+        }
 
-        return company;
+        // Get the created company with data
+        const companyWithData = await companiesService.getCompanyWithData(
+          newCompany.id.toString(),
+        );
+        if (!companyWithData) {
+          throw new Error('Failed to retrieve created company');
+        }
+
+        return {
+          ...companyWithData.data,
+          id: companyWithData.id,
+          name: companyWithData.name,
+          created_at: companyWithData.created_at,
+          updated_at: companyWithData.updated_at,
+        };
       } catch (error) {
         throw new Error(
           `Failed to create company: ${
@@ -107,7 +124,7 @@ export const companyRouter = createTRPCRouter({
       }
     }),
 
-  // Update company field with cache invalidation
+  // Update company field
   updateField: publicProcedure
     .input(
       z.object({
@@ -118,20 +135,27 @@ export const companyRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const result = await companiesService.updateCompanyField(
+        await companiesService.updateCompanyField(
           input.id,
           input.field as keyof OwnCompany,
           input.value,
         );
 
-        // Invalidate cache for this company
-        await ctx.redis.invalidateCompanyCache(input.id);
+        // Get updated company data
+        const companyWithData = await companiesService.getCompanyWithData(
+          input.id,
+        );
+        if (!companyWithData) {
+          throw new Error('Company not found');
+        }
 
-        // Re-cache the updated company
-        const updatedCompany = await companiesService.selectCompany(input.id);
-        await ctx.redis.cacheCompany(input.id, updatedCompany);
-
-        return result;
+        return {
+          ...companyWithData.data,
+          id: companyWithData.id,
+          name: companyWithData.name,
+          created_at: companyWithData.created_at,
+          updated_at: companyWithData.updated_at,
+        };
       } catch (error) {
         throw new Error(
           `Failed to update company field: ${
@@ -141,16 +165,12 @@ export const companyRouter = createTRPCRouter({
       }
     }),
 
-  // Delete company with cache cleanup
+  // Delete company
   delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
         await companiesService.deleteCompany(input.id);
-
-        // Clean up all cached data for this company
-        await ctx.redis.invalidateCompanyData(input.id);
-
         return { success: true };
       } catch (error) {
         throw new Error(
@@ -161,21 +181,12 @@ export const companyRouter = createTRPCRouter({
       }
     }),
 
-  // Get active company from cache
+  // Get active company (returns null if no company is selected)
   getActive: publicProcedure.query(async ({ ctx }) => {
     try {
-      const activeCompanyId = await ctx.redis.getActiveCompany();
-      if (!activeCompanyId) return null;
-
-      // Try cache first
-      const cached = await ctx.redis.getCachedCompany(activeCompanyId);
-      if (cached) return cached.data;
-
-      // Fallback to database
-      const company = await companiesService.selectCompany(activeCompanyId);
-      await ctx.redis.cacheCompany(activeCompanyId, company);
-
-      return company;
+      // For now, return null to indicate no company is selected
+      // This will be updated when we implement user preferences
+      return null;
     } catch (error) {
       throw new Error(
         `Failed to get active company: ${
@@ -185,12 +196,18 @@ export const companyRouter = createTRPCRouter({
     }
   }),
 
-  // Set active company
+  // Set active company (no-op for now, could be implemented with user preferences)
   setActive: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await ctx.redis.setActiveCompany(input.id);
+        // Verify company exists and belongs to user
+        const company = await companiesService.getCompanyById(input.id);
+        if (!company) {
+          throw new Error('Company not found');
+        }
+
+        // For now, just return success (could store active company preference)
         return { success: true };
       } catch (error) {
         throw new Error(

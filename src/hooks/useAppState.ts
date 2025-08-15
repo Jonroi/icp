@@ -1,100 +1,80 @@
-import { useState, useEffect, useMemo } from 'react';
-import { AIService, type ICP } from '@/services/ai';
-import type { StoredICPProfile } from '@/services';
-import { ProjectService, type OwnCompany } from '@/services/project-service';
+import { useState, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
+import type { ICP } from '@/services/ai/types';
+import type { OwnCompany } from '@/services/project-service';
 
 export function useAppState() {
-  // Basic state for ICP generation
-  // Removed additionalContext
+  // Basic state
   const [ownCompany, setOwnCompany] = useState<OwnCompany>({
     name: '',
     website: '',
     social: '',
     location: '',
+    industry: '',
+    companySize: '',
+    targetMarket: '',
+    valueProposition: '',
+    mainOfferings: '',
+    pricingModel: '',
+    uniqueFeatures: '',
+    marketSegment: '',
+    competitiveAdvantages: '',
+    currentCustomers: '',
+    successStories: '',
+    painPointsSolved: '',
+    customerGoals: '',
+    currentMarketingChannels: '',
+    marketingMessaging: '',
   });
   const [generatedICPs, setGeneratedICPs] = useState<ICP[]>([]);
   const [activeCompanyId, setActiveCompanyId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // AI service
-  const aiService = useMemo(() => new AIService(), []);
+  // tRPC queries and mutations
+  const companyListQuery = trpc.company.list.useQuery();
+  const icpListQuery = trpc.icp.getAll.useQuery();
 
-  // On mount: start with a clean UI state (no local or server preload)
+  const createCompanyMutation = trpc.company.create.useMutation();
+  const updateCompanyFieldMutation = trpc.company.updateField.useMutation();
+  const deleteCompanyMutation = trpc.company.delete.useMutation();
+  const setActiveCompanyMutation = trpc.company.setActive.useMutation();
+
+  const generateICPsMutation = trpc.icp.generate.useMutation();
+  const generateMoreICPsMutation = trpc.icp.generateMore.useMutation();
+
+  // Initialize state from tRPC data
+  // Note: We don't auto-populate the form on page load anymore
+  // The form will start empty and only populate when user selects a company
+
+  // Load company data when activeCompanyId changes
   useEffect(() => {
-    setOwnCompany({ name: '', website: '', social: '', location: '' });
-  }, []);
+    if (activeCompanyId) {
+      // Find the selected company in the companies list
+      const selectedCompany = companyListQuery.data?.list?.find(
+        (company) => company.id.toString() === activeCompanyId,
+      );
 
-  // Helper function to build own company context
-  const buildOwnCompanyContext = (company: OwnCompany): string => {
-    if (!company.name && !company.website && !company.social) {
-      return '';
+      if (selectedCompany) {
+        // Update the form with the selected company's data
+        setOwnCompany(selectedCompany);
+      }
     }
+  }, [activeCompanyId, companyListQuery.data]);
 
-    const sections: string[] = [];
-
-    // Basic Information
-    const basicInfo = [
-      `Name: ${company.name || 'N/A'}`,
-      `Website: ${company.website || 'N/A'}`,
-      `LinkedIn: ${company.social || 'N/A'}`,
-      `Location: ${company.location || 'N/A'}`,
-    ].join('\n');
-    sections.push(`Basic Information:\n${basicInfo}`);
-
-    // Business Information
-    const businessInfo = [
-      company.industry && `Industry: ${company.industry}`,
-      company.companySize && `Company Size: ${company.companySize}`,
-      company.targetMarket && `Target Market: ${company.targetMarket}`,
-      company.valueProposition &&
-        `Value Proposition: ${company.valueProposition}`,
-      company.mainOfferings && `Main Offerings: ${company.mainOfferings}`,
-      company.pricingModel && `Pricing Model: ${company.pricingModel}`,
-      company.uniqueFeatures && `Unique Features: ${company.uniqueFeatures}`,
-      company.marketSegment && `Market Segment: ${company.marketSegment}`,
-      company.competitiveAdvantages &&
-        `Competitive Advantages: ${company.competitiveAdvantages}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    if (businessInfo) {
-      sections.push(`Business Information:\n${businessInfo}`);
+  useEffect(() => {
+    if (icpListQuery.data) {
+      // Convert StoredICPProfile[] to ICP[] format
+      const convertedICPs =
+        icpListQuery.data?.map((profile) => ({
+          ...profile.profileData,
+          icp_id: profile.id,
+          icp_name: profile.name,
+          confidence: profile.confidenceLevel,
+        })) || [];
+      setGeneratedICPs(convertedICPs);
     }
-
-    // Customer Insights
-    const customerInfo = [
-      company.currentCustomers &&
-        `Current Customers: ${company.currentCustomers}`,
-      company.successStories && `Success Stories: ${company.successStories}`,
-      company.painPointsSolved &&
-        `Pain Points Solved: ${company.painPointsSolved}`,
-      company.customerGoals && `Customer Goals: ${company.customerGoals}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    if (customerInfo) {
-      sections.push(`Customer Insights:\n${customerInfo}`);
-    }
-
-    // Marketing Context
-    const marketingInfo = [
-      company.currentMarketingChannels &&
-        `Current Marketing Channels: ${company.currentMarketingChannels}`,
-      company.marketingMessaging &&
-        `Marketing Messaging: ${company.marketingMessaging}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    if (marketingInfo) {
-      sections.push(`Marketing Context:\n${marketingInfo}`);
-    }
-
-    return sections.join('\n\n');
-  };
+  }, [icpListQuery.data]);
 
   // Own company management
   const handleOwnCompanyChange = (field: keyof OwnCompany, value: string) => {
@@ -108,174 +88,66 @@ export function useAppState() {
     }
 
     try {
-      // Save to API endpoint (DB)
-      const fieldsToSave = [
-        'name',
-        'location',
-        'website',
-        'social',
-        'industry',
-        'companySize',
-        'targetMarket',
-        'valueProposition',
-        'mainOfferings',
-        'pricingModel',
-        'uniqueFeatures',
-        'marketSegment',
-        'competitiveAdvantages',
-        'currentCustomers',
-        'successStories',
-        'painPointsSolved',
-        'customerGoals',
-        'currentMarketingChannels',
-        'marketingMessaging',
-      ] as const;
+      setIsLoading(true);
+      setError(null);
 
-      // Save each field to the API
-      for (const field of fieldsToSave) {
-        const v = company[field] as string | undefined;
-        if (v && v.trim() !== '') {
-          await fetch('/api/company-data', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ field, value: v }),
-          });
-        }
-      }
+      // Create or update company
+      if (activeCompanyId) {
+        // Update existing company
+        const fieldsToUpdate = [
+          'name',
+          'location',
+          'website',
+          'social',
+          'industry',
+          'companySize',
+          'targetMarket',
+          'valueProposition',
+          'mainOfferings',
+          'pricingModel',
+          'uniqueFeatures',
+          'marketSegment',
+          'competitiveAdvantages',
+          'currentCustomers',
+          'successStories',
+          'painPointsSolved',
+          'customerGoals',
+          'currentMarketingChannels',
+          'marketingMessaging',
+        ] as const;
 
-      // Additionally, sync fields to the active company record if present
-      try {
-        const resp = await fetch('/api/company', { cache: 'no-store' });
-        if (resp.ok) {
-          const json = (await resp.json()) as {
-            success: boolean;
-            active?: { id?: string } | null;
-          };
-          const activeId = (json as unknown as { active?: { id?: string } })
-            .active?.id;
-          if (activeId) {
-            setActiveCompanyId(activeId);
-            // Sync to active company record
-            for (const field of fieldsToSave) {
-              const value = company[field as keyof OwnCompany] as
-                | string
-                | undefined;
-              if (value && value.trim() !== '') {
-                await fetch('/api/company', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ id: activeId, field, value }),
-                });
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to sync to active company record:', e);
-      }
-
-      // Refresh UI state from server (no local caching
-      try {
-        const refresh = await fetch('/api/company-data', { cache: 'no-store' });
-        if (refresh.ok) {
-          const json = await refresh.json();
-          const current = json?.data?.currentData as OwnCompany | undefined;
-          if (current) {
-            setOwnCompany({
-              name: current.name || '',
-              website: current.website || '',
-              social: current.social || '',
-              location: current.location || '',
-              industry: current.industry || '',
-              companySize: current.companySize || '',
-              targetMarket: current.targetMarket || '',
-              valueProposition: current.valueProposition || '',
-              mainOfferings: current.mainOfferings || '',
-              pricingModel: current.pricingModel || '',
-              uniqueFeatures: current.uniqueFeatures || '',
-              marketSegment: current.marketSegment || '',
-              competitiveAdvantages: current.competitiveAdvantages || '',
-              currentCustomers: current.currentCustomers || '',
-              successStories: current.successStories || '',
-              painPointsSolved: current.painPointsSolved || '',
-              customerGoals: current.customerGoals || '',
-              currentMarketingChannels: current.currentMarketingChannels || '',
-              marketingMessaging: current.marketingMessaging || '',
+        for (const field of fieldsToUpdate) {
+          const value = company[field];
+          if (value && value.trim() !== '') {
+            await updateCompanyFieldMutation.mutateAsync({
+              id: activeCompanyId,
+              field,
+              value,
             });
           }
         }
-      } catch (_) {}
+      } else {
+        // Create new company
+        const newCompany = await createCompanyMutation.mutateAsync(company);
+        setActiveCompanyId(newCompany.id.toString());
+        await setActiveCompanyMutation.mutateAsync({
+          id: newCompany.id.toString(),
+        });
+      }
+
+      // Refresh queries
+      await companyListQuery.refetch();
 
       alert(`Your company "${company.name}" saved successfully!`);
     } catch (error) {
       console.error('Error saving company data:', error);
-      alert('Error saving company data. Please try again.');
+      const message =
+        error instanceof Error ? error.message : 'Error saving company data';
+      setError(message);
+      alert(message);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  // Persist current ownCompany fields to the server without UI alerts
-  const persistOwnCompanyToServer = async (company: OwnCompany) => {
-    const fieldsToSave = [
-      'name',
-      'location',
-      'website',
-      'social',
-      'industry',
-      'companySize',
-      'targetMarket',
-      'valueProposition',
-      'mainOfferings',
-      'pricingModel',
-      'uniqueFeatures',
-      'marketSegment',
-      'competitiveAdvantages',
-      'currentCustomers',
-      'successStories',
-      'painPointsSolved',
-      'customerGoals',
-      'currentMarketingChannels',
-      'marketingMessaging',
-    ] as const;
-
-    // Save each field to the API
-    for (const field of fieldsToSave) {
-      const v = company[field] as string | undefined;
-      if (v && v.trim() !== '') {
-        await fetch('/api/company-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ field, value: v }),
-        });
-      }
-    }
-
-    // Sync to active company record if present
-    try {
-      const resp = await fetch('/api/company', { cache: 'no-store' });
-      if (resp.ok) {
-        const json = (await resp.json()) as {
-          success: boolean;
-          active?: { id?: string } | null;
-        };
-        const activeId = (json as unknown as { active?: { id?: string } })
-          .active?.id;
-        if (activeId) {
-          setActiveCompanyId(activeId);
-          for (const field of fieldsToSave) {
-            const value = company[field as keyof OwnCompany] as
-              | string
-              | undefined;
-            if (value && value.trim() !== '') {
-              await fetch('/api/company', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: activeId, field, value }),
-              });
-            }
-          }
-        }
-      }
-    } catch (_) {}
   };
 
   const resetOwnCompany = async () => {
@@ -302,22 +174,11 @@ export function useAppState() {
     };
 
     try {
-      // Clear API storage
-      await fetch('/api/company-data', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      // Clear active company selection
       setActiveCompanyId('');
-
       setOwnCompany(emptyCompany);
       alert('Form has been reset. All fields have been cleared.');
     } catch (error) {
       console.error('Error resetting company data:', error);
-      // Still clear the form even if API call fails
       setActiveCompanyId('');
       setOwnCompany(emptyCompany);
       alert('Form has been reset. All fields have been cleared.');
@@ -331,58 +192,60 @@ export function useAppState() {
       return;
     }
 
+    if (!activeCompanyId) {
+      alert('Please save your company first before generating ICPs.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const combinedContext = buildOwnCompanyContext(ownCompany);
+      console.log('Generating ICPs for company:', activeCompanyId);
 
-      console.log('Generating ICPs with own company data');
-      console.log('Additional context:', combinedContext);
-
-      // Generate ICPs based on own company data and additional context
-      // Persist current form values to server before generation
-      await persistOwnCompanyToServer(ownCompany);
-
-      // Use server to generate and persist under active company
-      // Ensure we have a company id
-      let companyId = activeCompanyId;
-      if (!companyId) {
-        try {
-          const resp = await fetch('/api/company', { cache: 'no-store' });
-          if (resp.ok) {
-            const data = await resp.json();
-            companyId = data?.active?.id || '';
-            if (companyId) setActiveCompanyId(companyId);
-          }
-        } catch (_) {}
-      }
-
-      const resp = await fetch('/api/icp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId }),
+      const icps = await generateICPsMutation.mutateAsync({
+        companyId: activeCompanyId,
       });
-      const out = (await resp.json().catch(() => ({}))) as {
-        success: boolean;
-        profiles: StoredICPProfile[];
-        error?: string;
-      };
-      if (!resp.ok || out?.success === false) {
-        throw new Error(
-          out?.error || `ICP generation failed (HTTP ${resp.status})`,
-        );
-      }
-      const icps: ICP[] = (out.profiles || []).map((p) => p.profileData);
       setGeneratedICPs(icps);
+
+      // Refresh ICP list
+      await icpListQuery.refetch();
 
       console.log('ICPs generated successfully');
     } catch (error) {
       console.error('Error generating ICPs:', error);
       const message =
-        error instanceof Error && error.message
-          ? error.message
-          : 'ICP generation failed';
+        error instanceof Error ? error.message : 'ICP generation failed';
+      setError(message);
+      alert(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateMoreICPs = async () => {
+    if (!activeCompanyId) {
+      alert('No active company selected.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const newIcps = await generateMoreICPsMutation.mutateAsync({
+        companyId: activeCompanyId,
+      });
+      setGeneratedICPs((prev) => [...prev, ...newIcps]);
+
+      // Refresh ICP list
+      await icpListQuery.refetch();
+
+      alert('Additional ICPs generated successfully!');
+    } catch (error) {
+      console.error('Error generating more ICPs:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to generate more ICPs';
       setError(message);
       alert(message);
     } finally {
@@ -391,13 +254,29 @@ export function useAppState() {
   };
 
   // Handle company deletion
-  const handleCompanyDeleted = () => {
-    // Clear generated ICPs when company is deleted
-    setGeneratedICPs([]);
-    // Clear active company ID
-    setActiveCompanyId('');
-    // Reset form data
-    setOwnCompany({ name: '', website: '', social: '', location: '' });
+  const handleCompanyDeleted = async (companyId: string) => {
+    try {
+      await deleteCompanyMutation.mutateAsync({ id: companyId });
+
+      // Clear generated ICPs when company is deleted
+      setGeneratedICPs([]);
+
+      // Clear active company ID if it was the deleted one
+      if (activeCompanyId === companyId) {
+        setActiveCompanyId('');
+        setOwnCompany({ name: '', website: '', social: '', location: '' });
+      }
+
+      // Refresh queries
+      await companyListQuery.refetch();
+      await icpListQuery.refetch();
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete company';
+      setError(message);
+      alert(message);
+    }
   };
 
   return {
@@ -405,14 +284,21 @@ export function useAppState() {
     ownCompany,
     generatedICPs,
     activeCompanyId,
-    isLoading,
-    error,
+    isLoading:
+      isLoading || companyListQuery.isLoading || icpListQuery.isLoading,
+    error:
+      error || companyListQuery.error?.message || icpListQuery.error?.message,
+
+    // Company data
+    companies: companyListQuery.data?.list || [],
+    activeCompany: null, // No auto-selection on page load
 
     // Actions
     saveOwnCompany,
     resetOwnCompany,
     onOwnCompanyChange: handleOwnCompanyChange,
     generateICPs: handleGenerateICPs,
+    generateMoreICPs: handleGenerateMoreICPs,
     setActiveCompanyId,
     onCompanyDeleted: handleCompanyDeleted,
   };

@@ -3,6 +3,7 @@ import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { z } from 'zod';
 import superjson from 'superjson';
 import { redisService } from '@/services/redis-service';
+import { databaseManager } from '../../database/config';
 
 /**
  * 1. CONTEXT
@@ -11,6 +12,7 @@ import { redisService } from '@/services/redis-service';
  */
 interface CreateContextOptions {
   redis: typeof redisService;
+  db: typeof databaseManager;
 }
 
 /**
@@ -30,6 +32,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   return createInnerTRPCContext({
     redis: redisService,
+    db: databaseManager,
   });
 };
 

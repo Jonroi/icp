@@ -12,18 +12,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Wand2, Save, Loader2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project-service';
-// Agent button removed during reset
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
   isLoading: boolean;
   error: string | null;
   activeCompanyId?: string;
+  companies?: any[];
+  activeCompany?: any;
   onOwnCompanyChange?: (field: keyof OwnCompany, value: string) => void;
   onSaveOwnCompany?: (company: OwnCompany) => Promise<void>;
   onResetOwnCompany?: () => Promise<void>;
   onGenerateICPs: () => Promise<void>;
-  onCompanyDeleted?: () => void;
+  onCompanyDeleted?: (companyId: string) => void;
   onCompanyIdChange?: (id: string) => void;
 }
 
@@ -32,6 +33,8 @@ export function ICPGenerator({
   isLoading,
   error,
   activeCompanyId,
+  companies = [],
+  activeCompany,
   onOwnCompanyChange,
   onSaveOwnCompany,
   onResetOwnCompany,
@@ -82,6 +85,8 @@ export function ICPGenerator({
         <div className='space-y-2'>
           <OwnCompanyForm
             company={ownCompany || { name: '', website: '', social: '' }}
+            companies={companies}
+            activeCompany={activeCompany}
             onChange={(field, value) => onOwnCompanyChange?.(field, value)}
             onSaveCompany={onSaveOwnCompany}
             onReset={async () => {
@@ -99,29 +104,21 @@ export function ICPGenerator({
 
         <div className='flex flex-wrap gap-2'>
           <Button
-            className='flex-1'
-            title='Generate Ideal Customer Profiles using current company data'
-            onClick={async () => {
-              try {
-                await onGenerateICPs();
-              } catch (error) {
-                console.error('Error generating ICPs:', error);
-              }
-            }}
-            disabled={isLoading}>
+            onClick={onGenerateICPs}
+            disabled={isLoading || !ownCompany?.name?.trim()}
+            className='flex items-center gap-2'>
             {isLoading ? (
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              <Loader2 className='h-4 w-4 animate-spin' />
             ) : (
-              <Sparkles className='mr-2 h-4 w-4' />
+              <Sparkles className='h-4 w-4' />
             )}
-            {isLoading
-              ? 'Generating ICPs...'
-              : 'Generate Ideal Customer Personas'}
+            Generate ICPs
           </Button>
         </div>
+
         {error && (
-          <div className='p-4 bg-red-50 border border-red-200 rounded-md'>
-            <p className='text-red-600 text-sm'>{error}</p>
+          <div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>
+            {error}
           </div>
         )}
       </CardContent>

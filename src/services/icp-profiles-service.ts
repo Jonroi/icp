@@ -19,7 +19,7 @@ async function ensureDb(): Promise<void> {
 
 export interface StoredICPProfile {
   id: string;
-  companyId: string | null;
+  companyId: number | null;
   name: string;
   description: string;
   profileData: ICP;
@@ -38,12 +38,11 @@ export const icpProfilesService = {
     for (const p of profiles) {
       const confidenceLevel = p.confidence || 'medium';
       const res = await databaseManager.query(
-        `INSERT INTO icp_profiles (user_id, company_id, name, description, profile_data, confidence_level, created_at, updated_at)
-				 VALUES ($1, $2, $3, $4, $5::jsonb, $6, NOW(), NOW())
-				 RETURNING id::text AS id, company_id::text AS company_id, name, description, profile_data, confidence_level, created_at, updated_at`,
+        `INSERT INTO icp_profiles (company_id, name, description, profile_data, confidence_level, created_at, updated_at)
+				 VALUES ($1, $2, $3, $4::jsonb, $5, NOW(), NOW())
+				 RETURNING id::text AS id, name, description, profile_data, confidence_level, created_at, updated_at`,
         [
-          CURRENT_USER_ID,
-          companyId,
+          parseInt(companyId),
           p.icp_name,
           p.segments?.join(', ') || 'ICP Profile',
           JSON.stringify(p),
@@ -52,7 +51,6 @@ export const icpProfilesService = {
       );
       const row = res.rows[0] as {
         id: string;
-        company_id: string | null;
         name: string;
         description: string;
         profile_data: ICP;
@@ -62,7 +60,7 @@ export const icpProfilesService = {
       };
       inserted.push({
         id: row.id,
-        companyId: row.company_id,
+        companyId: parseInt(companyId), // Keep for interface compatibility
         name: row.name,
         description: row.description,
         profileData: row.profile_data,
@@ -78,13 +76,13 @@ export const icpProfilesService = {
   async listProfilesByCompany(companyId: string): Promise<StoredICPProfile[]> {
     await ensureDb();
     const res = await databaseManager.query(
-      `SELECT id::text AS id, company_id::text AS company_id, name, description, profile_data, confidence_level, created_at, updated_at
-			 FROM icp_profiles WHERE user_id = $1 AND company_id = $2 ORDER BY created_at DESC`,
-      [CURRENT_USER_ID, companyId],
+      `SELECT id::text AS id, name, description, profile_data, confidence_level, created_at, updated_at
+			 FROM icp_profiles WHERE company_id = $1 ORDER BY created_at DESC`,
+      [parseInt(companyId)],
     );
     return res.rows.map((row: any) => ({
       id: row.id,
-      companyId: row.company_id,
+      companyId: parseInt(companyId), // Keep for interface compatibility
       name: row.name,
       description: row.description,
       profileData: row.profile_data as ICP,
@@ -102,17 +100,14 @@ export const icpProfilesService = {
 
   async deleteProfileById(id: string): Promise<void> {
     await ensureDb();
-    await databaseManager.query(
-      `DELETE FROM icp_profiles WHERE id = $1 AND user_id = $2`,
-      [id, CURRENT_USER_ID],
-    );
+    await databaseManager.query(`DELETE FROM icp_profiles WHERE id = $1`, [id]);
   },
 
   async deleteProfilesByCompany(companyId: string): Promise<number> {
     await ensureDb();
     const res = await databaseManager.query(
-      `DELETE FROM icp_profiles WHERE company_id = $1 AND user_id = $2`,
-      [companyId, CURRENT_USER_ID],
+      `DELETE FROM icp_profiles WHERE company_id = $1`,
+      [parseInt(companyId)],
     );
     // node-postgres doesn't return rowCount on some setups; fallback to 0
     return (

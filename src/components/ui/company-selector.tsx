@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Input } from './input';
 import { Label } from './label';
 import {
@@ -11,6 +11,7 @@ import {
 import { Button } from './button';
 import type { OwnCompany } from '@/services/project-service';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
 
 interface CompanySelectorProps {
   value: string;
@@ -22,7 +23,7 @@ interface CompanySelectorProps {
   selectedCompanyId?: string;
   allowCreate?: boolean;
   allowDelete?: boolean;
-  onCompanyDeleted?: () => void;
+  onCompanyDeleted?: (companyId: string) => void;
   hideLoadingSpinner?: boolean;
 }
 
@@ -39,42 +40,31 @@ export function CompanySelector({
   onCompanyDeleted,
   hideLoadingSpinner = false,
 }: CompanySelectorProps) {
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>(
-    [],
-  );
-  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
   const [selectedId, setSelectedId] = useState<string>('');
 
-  // Load available companies on component mount
+  // tRPC queries and mutations
+  const companyListQuery = trpc.company.list.useQuery();
+  const createCompanyMutation = trpc.company.create.useMutation();
+  const deleteCompanyMutation = trpc.company.delete.useMutation();
+  const setActiveCompanyMutation = trpc.company.setActive.useMutation();
+
+  const companies = useMemo(
+    () => companyListQuery.data?.list || [],
+    [companyListQuery.data?.list],
+  );
+  const isLoadingCompanies = companyListQuery.isLoading;
+
+  // Only set selected company if user explicitly selects one
+  // Don't auto-select on page load
   useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        setIsLoadingCompanies(true);
-
-        const resp = await fetch('/api/company', { cache: 'no-store' });
-        if (resp.ok) {
-          const json = await resp.json();
-          const list = (json.list || []) as Array<{ id: string; name: string }>;
-          setCompanies(list);
-          // Do not auto-select active company on initial load
-        }
-      } catch (error) {
-        console.error('Error loading companies:', error);
-      } finally {
-        setIsLoadingCompanies(false);
-      }
-    };
-
-    loadCompanies();
-  }, [onCompanyIdSelected, selectedCompanyId]);
-
-  useEffect(() => {
-    if (selectedCompanyId) setSelectedId(selectedCompanyId);
-  }, [selectedCompanyId]);
+    if (selectedCompanyId && selectedCompanyId !== selectedId) {
+      setSelectedId(selectedCompanyId);
+    }
+  }, [selectedCompanyId, selectedId]);
 
   const handleCompanySelect = useCallback(
     async (companyId: string) => {
@@ -89,81 +79,65 @@ export function CompanySelector({
       try {
         setIsLoading(true);
 
-        // Ask server to select and mirror fields, then fetch current form data to populate UI
-        await fetch(`/api/company?id=${encodeURIComponent(companyId)}`, {
-          cache: 'no-store',
-        });
+        // Set as active company
+        await setActiveCompanyMutation.mutateAsync({ id: companyId });
         if (onCompanyIdSelected) onCompanyIdSelected(companyId);
         setSelectedId(companyId);
-        const stateResp = await fetch('/api/company-data');
-        if (stateResp.ok) {
-          const data = await stateResp.json();
-          onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
+
+        // Find the selected company data and populate form
+        const selectedCompany = companies.find(
+          (company) => company.id.toString() === companyId,
+        );
+        if (selectedCompany && onCompanySelect) {
+          onCompanySelect(selectedCompany);
         }
-        // Force refresh after mirror to ensure all fields show immediately
-        try {
-          const refresh = await fetch('/api/company-data', {
-            cache: 'no-store',
-          });
-          if (refresh.ok) {
-            const d = await refresh.json();
-            onCompanySelect(d?.data?.currentData || ({} as OwnCompany));
-          }
-        } catch (_) {}
       } catch (error) {
         console.error('Error loading company data:', error);
       } finally {
         setIsLoading(false);
       }
     },
-    [allowCreate, onCompanyIdSelected, onCompanySelect],
+    [
+      allowCreate,
+      onCompanyIdSelected,
+      setActiveCompanyMutation,
+      companies,
+      onCompanySelect,
+    ],
   );
 
   const handleSaveNewCompany = async () => {
     if (!newCompanyName.trim()) return;
 
     try {
-      // Create company in DB
-      const resp = await fetch('/api/company', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCompanyName.trim() }),
-      });
-      if (!resp.ok) throw new Error('Failed to create company');
-      const created = await resp.json();
-      // Refresh list
-      const listResp = await fetch('/api/company', { cache: 'no-store' });
-      if (listResp.ok) {
-        const json = await listResp.json();
-        setCompanies((json.list || []) as Array<{ id: string; name: string }>);
-      }
-      // Since create sets active, pull current form data
-      const stateResp = await fetch('/api/company-data');
-      if (stateResp.ok) {
-        const data = await stateResp.json();
-        onCompanySelect(data?.data?.currentData || ({} as OwnCompany));
-      }
-      try {
-        const id = (created?.company?.id ||
-          created?.company?.id?.toString?.()) as string | undefined;
-        if (id) {
-          onCompanyIdSelected?.(id);
-          setSelectedId(id);
-        }
-      } catch (_) {}
-      // Reset form
-      setNewCompanyName('');
       setIsCreatingNew(false);
+
+      // Create company using tRPC
+      const newCompany = await createCompanyMutation.mutateAsync({
+        name: newCompanyName.trim(),
+      });
+
+      // Refresh company list
+      await companyListQuery.refetch();
+
+      // Select the new company
+      if (onCompanyIdSelected) onCompanyIdSelected(newCompany.id.toString());
+      setSelectedId(newCompany.id.toString());
+      onCompanySelect(newCompany);
+
+      setNewCompanyName('');
     } catch (error) {
-      console.error('Error saving new company:', error);
+      console.error('Error creating company:', error);
+      alert('Failed to create company. Please try again.');
     }
   };
 
   const handleDeleteCompany = async () => {
+    if (!selectedId || !allowDelete) return;
+
     if (
-      !selectedId ||
       !confirm(
-        'Are you sure you want to delete this company? This will also delete all associated ICP profiles and cannot be undone.',
+        'Are you sure you want to delete this company? This action cannot be undone.',
       )
     ) {
       return;
@@ -172,32 +146,18 @@ export function CompanySelector({
     try {
       setIsDeleting(true);
 
-      // Delete company and all associated data
-      const resp = await fetch(
-        `/api/company?id=${encodeURIComponent(selectedId)}`,
-        {
-          method: 'DELETE',
-        },
-      );
+      // Delete company using tRPC
+      await deleteCompanyMutation.mutateAsync({ id: selectedId });
 
-      if (!resp.ok) {
-        throw new Error('Failed to delete company');
-      }
+      // Notify parent component
+      onCompanyDeleted?.(selectedId);
 
-      // Refresh companies list
-      const listResp = await fetch('/api/company', { cache: 'no-store' });
-      if (listResp.ok) {
-        const json = await listResp.json();
-        setCompanies((json.list || []) as Array<{ id: string; name: string }>);
-      }
+      // Refresh company list
+      await companyListQuery.refetch();
 
       // Clear selection
       setSelectedId('');
-      onCompanyIdSelected?.('');
-      onCompanySelect({} as OwnCompany);
-
-      // Notify parent component
-      onCompanyDeleted?.();
+      if (onCompanyIdSelected) onCompanyIdSelected('');
     } catch (error) {
       console.error('Error deleting company:', error);
       alert('Failed to delete company. Please try again.');
@@ -266,7 +226,7 @@ export function CompanySelector({
                   Companies
                 </div>
                 {companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id || ''}>
+                  <SelectItem key={company.id} value={company.id.toString()}>
                     {company.name}
                   </SelectItem>
                 ))}

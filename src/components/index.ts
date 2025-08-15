@@ -10,10 +10,6 @@ export { OwnCompanyForm } from './icp/OwnCompanyForm';
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
 
-// Dialog components
-export { LoadProjectDialog } from './dialogs/LoadProjectDialog';
-export { SaveProjectDialog } from './dialogs/SaveProjectDialog';
-
 // UI components
 export { Button } from './ui/button';
 export {
@@ -23,7 +19,6 @@ export {
   CardHeader,
   CardTitle,
 } from './ui/card';
-export { CardToolbar } from './ui/card-toolbar';
 export { Input } from './ui/input';
 export { Label } from './ui/label';
 export {
