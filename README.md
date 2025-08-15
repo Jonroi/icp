@@ -8,10 +8,14 @@ Generate comprehensive Ideal Customer Profiles (ICPs) from your company data usi
 - **140+ ICP Template Library**: AI selects 3 best-fitting ICP types from dozens of variations
 - **Multi-Segment ICPs**: Automatically creates B2B, B2C, and B2B2C profiles based on company data analysis
 - **Intelligent Template Selection**: LLM analyzes company data and selects most relevant ICP templates
+- **Step-by-Step Generation**: Robust ICP generation using 12 separate LLM calls to avoid JSON parsing issues
 - **Comprehensive Business Intelligence**: Includes buying triggers, objections, pain points, go-to-market strategies, and fit scoring
 - **Company Management**: Create/select companies with persistent storage in PostgreSQL
 - **ICP Profiles Library**: View and manage ICPs per company with delete functionality
+- **Campaign Designer**: Create marketing campaigns based on ICP profiles
+- **Campaign Library**: Browse and manage campaign templates
 - **Local AI Processing**: Uses Ollama model locally; no external LLM calls
+- **Robust Error Handling**: Comprehensive error recovery and user feedback
 
 ## 🏃‍♂️ Quick Start
 
@@ -86,40 +90,55 @@ psql -h localhost -U icp_user -d icp_builder -f database/schema.sql
      - Value Proposition Alignment
      - Business Model Compatibility
      - Market Segment Relevance
-5. **Comprehensive ICP Profiles**: Each ICP includes:
+5. **Step-by-Step ICP Generation**: Each ICP is created using 12 separate LLM calls:
+   - Customer segments
+   - Pain points and challenges
+   - Jobs to be done
+   - Desired outcomes
+   - Buying triggers
+   - Common objections
+   - Value proposition
+   - Unique features
+   - Competitive advantages
+   - Go-to-market channels
+   - Key messages
+   - Content ideas
+6. **Comprehensive ICP Profiles**: Each ICP includes:
    - Fit definition (industries, company sizes, buyer personas)
    - Needs/pain/goals analysis
    - Buying triggers and common objections
    - Value proposition alignment
    - Go-to-market strategy
    - Fit scoring (0-100) with ABM tiering
-6. **View Results**: Switch to ICP Profiles tab to view generated profiles
+7. **View Results**: Switch to ICP Profiles tab to view generated profiles
 
 ## 🏗️ Project Structure
 
 ```text
-app/
-├── api/
-│   ├── company/        # Company CRUD operations
-│   ├── company-data/   # Company form data storage
-│   └── icp/            # ICP generation & management
-src/
-├── components/
-│   ├── agents/         # ICP rules and schema definitions
-│   ├── icp/            # ICP Generator and Profiles UI
-│   ├── campaign/       # Campaign designer & library
-│   ├── dialogs/        # Modal dialogs
-│   ├── layout/         # Header and layout
-│   └── ui/             # Reusable UI components
-├── hooks/
-│   └── useAppState.ts  # Centralized application state
-├── services/
-│   ├── ai/             # AI services (ICP generator, Ollama client)
-│   ├── companies-service.ts
-│   ├── company-data-service.ts
-│   ├── icp-profiles-service.ts
-│   └── project-service.ts
-└── App.tsx             # Main application component
+icp/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   │   ├── company/       # Company management
+│   │   ├── company-data/  # Company data storage
+│   │   └── icp/          # ICP generation
+│   ├── globals.css       # Global styles
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Main page
+├── database/             # Database schema and config
+│   ├── config.ts         # Database connection
+│   └── schema.sql        # PostgreSQL schema
+├── src/
+│   ├── components/       # React components
+│   │   ├── campaign/     # Campaign components
+│   │   ├── icp/         # ICP components
+│   │   ├── layout/      # Layout components
+│   │   └── ui/          # UI components
+│   ├── hooks/           # React hooks
+│   ├── lib/             # Utility libraries
+│   └── services/        # Business logic
+│       ├── ai/          # AI services
+│       └── ...          # Other services
+└── package.json         # Dependencies
 ```
 
 ## 🎯 Key Components
@@ -132,9 +151,17 @@ src/
 ## 🤖 AI Processing
 
 - **Local LLM**: Uses Ollama with `llama3.2:3b-instruct-q4_K_M` model
-- **ICP Generation**: Comprehensive analysis using 140+ ICP templates
+- **Step-by-Step Generation**: 12 separate LLM calls per ICP to avoid JSON parsing issues
 - **Template Selection**: AI-driven selection of 3 best-fitting ICP types
-- **Business Intelligence**: Generates actionable insights for marketing, sales, and product teams
+- **Error Recovery**: Robust error handling with retry logic and fallback values
+- **Performance**: ~30-60 seconds per ICP profile generation
+
+### Technical Implementation
+
+- **OllamaClient**: Singleton-pattern LLM communication
+- **ICPGenerator**: Main logic for ICP generation with step-by-step approach
+- **Error Handling**: Comprehensive error recovery and user feedback
+- **Response Parsing**: Simple comma-separated outputs instead of complex JSON
 
 ## 🔧 API Endpoints
 
@@ -181,13 +208,22 @@ src/
 - ICPs are tied to specific companies - switch companies to view different results
 - Use the ICP Profiles tab to manage and delete generated profiles
 - Generated ICPs provide actionable insights for marketing and sales teams
+- The "Generate More" button creates additional ICP profiles for the same company
 
 ## 🔧 Tech Stack
 
 - **Frontend**: Next.js (App Router) + React + TypeScript + Tailwind CSS
-- **AI**: Local Ollama via custom client
+- **AI**: Local Ollama via custom client with step-by-step generation
 - **Database**: PostgreSQL with automatic migrations
 - **State Management**: Centralized React hooks
+- **UI Components**: Radix UI primitives with custom styling
+
+## 🛡️ Security & Privacy
+
+- **Local AI Processing**: All LLM processing happens locally with Ollama
+- **No External API Calls**: No data sent to external AI services
+- **Database Security**: PostgreSQL with proper access controls
+- **Input Validation**: All user inputs are validated
 
 ## 📝 License
 
