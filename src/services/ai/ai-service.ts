@@ -20,8 +20,8 @@ export class AIService {
   }
 
   // Generate ICP profiles
-  async generateICPs(reviews: CustomerReview[] = []): Promise<ICP[]> {
-    return this.icpGenerator.generateICPs(reviews);
+  async generateICPs(companyData: any): Promise<ICP[]> {
+    return this.icpGenerator.generateICPs(companyData);
   }
 
   // Competitor analysis removed
