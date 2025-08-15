@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { OwnCompany } from '@/services/project-service';
+import type { OwnCompany } from '@/services/project';
 import { ExternalLink, Save, RotateCcw } from 'lucide-react';
 
 interface OwnCompanyFormProps {

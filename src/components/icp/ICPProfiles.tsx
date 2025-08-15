@@ -16,7 +16,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { CompanySelector } from '@/components/ui/company-selector';
-import type { OwnCompany } from '@/services/project-service';
+import type { OwnCompany } from '@/services/project';
 import type { StoredICPProfile } from '@/services';
 import type { ICP } from '@/services/ai/types';
 import { useEffect, useState } from 'react';

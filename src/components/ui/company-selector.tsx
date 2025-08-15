@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from './select';
 import { Button } from './button';
-import type { OwnCompany } from '@/services/project-service';
+import type { OwnCompany } from '@/services/project';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 

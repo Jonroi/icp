@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { companiesService } from '@/services/companies-service';
-import type { OwnCompany } from '@/services/project-service';
+import { companiesService } from '@/services/database';
+import type { OwnCompany } from '@/services/project';
 
 export const companyRouter = createTRPCRouter({
   // List all companies for the current user

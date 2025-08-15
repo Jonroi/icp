@@ -1,15 +1,11 @@
 // AI Services
 export * from './ai';
 
-// Company Services
-export * from './companies-service';
-export * from './company-data-service';
+// Database Services
+export * from './database';
 
-// ICP Services
-export * from './icp-profiles-service';
+// Cache Services
+export * from './cache';
 
 // Project Services
-export * from './project-service';
-
-// Redis Service
-export * from './redis-service';
+export * from './project';

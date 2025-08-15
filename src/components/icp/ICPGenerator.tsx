@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Wand2, Save, Loader2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
-import type { OwnCompany } from '@/services/project-service';
+import type { OwnCompany } from '@/services/project';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;

@@ -2,7 +2,7 @@ import { initTRPC } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { z } from 'zod';
 import superjson from 'superjson';
-import { redisService } from '@/services/redis-service';
+import { redisService } from '@/services/cache';
 import { databaseManager } from '../../database/config';
 
 /**

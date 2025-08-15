@@ -1,6 +1,143 @@
 import type { ICP } from './types';
 import { OllamaClient } from './ollama-client';
 import { AIServiceErrorFactory, InputValidator } from './error-types';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load ICP rules dynamically from markdown file
+function loadICPRules(): any {
+  try {
+    const rulesPath = join(
+      process.cwd(),
+      'src',
+      'components',
+      'agents',
+      'icp_rules.md',
+    );
+    const rulesContent = readFileSync(rulesPath, 'utf-8');
+
+    // Parse the markdown content to extract rules
+    // This is a simplified parser - you could use a proper markdown parser
+    const rules: any = {};
+
+    // Extract business model logic
+    const businessModelMatch = rulesContent.match(
+      /business_model.*?\{[\s\S]*?\}/,
+    );
+    if (businessModelMatch) {
+      try {
+        rules.business_model_logic = JSON.parse(businessModelMatch[0]);
+      } catch (e) {
+        // Fallback to hardcoded rules
+        rules.business_model_logic = {
+          B2B: 'If Target Market contains organizations/professional titles',
+          B2C: 'If contains consumer groups',
+          B2B2C: 'If both',
+        };
+      }
+    }
+
+    return rules;
+  } catch (error) {
+    console.warn(
+      'Failed to load ICP rules from file, using hardcoded rules:',
+      error,
+    );
+    return getHardcodedICPRules();
+  }
+}
+
+// Fallback hardcoded rules
+function getHardcodedICPRules() {
+  return {
+    business_model_logic: {
+      B2B: 'If Target Market contains organizations/professional titles',
+      B2C: 'If contains consumer groups',
+      B2B2C: 'If both',
+    },
+
+    b2b_characteristics: [
+      'Industry: The specific industry or niche your ideal customer operates in',
+      'Company Size: Number of employees, annual revenue, or other relevant size metrics',
+      'Location/Geography: Where your ideal customer is based',
+      'Budget/Spending Power: Their ability and willingness to spend on your product or service',
+      'Pain Points/Challenges: Specific problems your product or service solves',
+      'Goals and Objectives: What your ideal customer is trying to achieve',
+      'Decision-Maker/Buyer Persona: Identifying the key people involved in the purchase',
+      'Buying Process Insights: Understanding how they typically go from problem to purchase',
+    ],
+
+    b2c_characteristics: [
+      'Demographics: Age, gender, education level, marital status',
+      'Income Range: Economic status and purchasing power',
+      'Buying Behavior: Loyalty, product usage frequency, and shopping preferences',
+      'Geographic Location: Their location and how it might influence their choices',
+    ],
+
+    other_considerations: [
+      'Company Culture and Values: Does their culture align with your brand?',
+      'Technology Stack: What tools are they already using?',
+      'Growth Stage: Are they a startup, a scaling company, or established?',
+      'Customer Lifetime Value: Consider the long-term value of these customers',
+    ],
+
+    fit_scoring_formula: {
+      formula:
+        'score = 0.35*industry_fit + 0.2*size_fit + 0.15*geo_fit + 0.15*pain_alignment + 0.15*goal_alignment',
+      scales: {
+        industry_fit: '0–100 (100 = industry matches perfectly)',
+        size_fit: '0–100 (100 = company size matches perfectly)',
+        geo_fit: '0–100 (100 = geography matches perfectly)',
+        pain_alignment:
+          '0–100 (100 = solved pains match customer pains perfectly)',
+        goal_alignment: '0–100 (100 = strongly support goals)',
+      },
+      tiers: {
+        'Tier 1': 'score >= 80',
+        'Tier 2': '60 <= score < 80',
+        'Tier 3': '40 <= score < 60',
+        'N/A': '< 40',
+      },
+    },
+
+    buying_triggers: [
+      'New regulation or certification requirement',
+      'Budget cycle start or cost pressure',
+      'Technical migration/legacy system end-of-life',
+      'Rapid growth or market expansion',
+      'Quality/safety incident or audit',
+    ],
+
+    common_objections: [
+      'Price/ROI uncertainty',
+      'Integration and implementation effort',
+      'Security and compliance concerns',
+      'Vendor lock-in',
+      'Resource shortage for user training',
+    ],
+
+    b2b_personas: [
+      'Economic Buyer (e.g., CEO/CFO)',
+      'Decision Maker (e.g., VP/Director)',
+      'Influencer (e.g., Team Lead)',
+      'User (daily user)',
+      'Gatekeeper (IT/Legal/Procurement)',
+    ],
+
+    usage_guidelines: {
+      targeting:
+        'Focus your marketing and sales efforts on prospects that match your ICP',
+      personalization:
+        'Tailor your messaging and content to resonate with their specific needs and pain points',
+      lead_qualification:
+        'Use the ICP to identify leads that are a good fit and those that are not',
+      content_creation:
+        'Develop content that addresses their specific challenges and goals',
+      reporting:
+        'Track your results and see how well your marketing and sales efforts are performing with your ideal customers',
+    },
+  };
+}
 
 // Comprehensive ICP Template Library - Dozens of variations
 const ICP_TEMPLATES = {
@@ -1292,101 +1429,13 @@ const ICP_TEMPLATES = {
   ],
 };
 
-// ICP Generation Rules from agents/icp_rules.md
-const ICP_RULES = {
-  business_model_logic: {
-    B2B: 'If Target Market contains organizations/professional titles',
-    B2C: 'If contains consumer groups',
-    B2B2C: 'If both',
-  },
-
-  b2b_characteristics: [
-    'Industry: The specific industry or niche your ideal customer operates in',
-    'Company Size: Number of employees, annual revenue, or other relevant size metrics',
-    'Location/Geography: Where your ideal customer is based',
-    'Budget/Spending Power: Their ability and willingness to spend on your product or service',
-    'Pain Points/Challenges: Specific problems your product or service solves',
-    'Goals and Objectives: What your ideal customer is trying to achieve',
-    'Decision-Maker/Buyer Persona: Identifying the key people involved in the purchase',
-    'Buying Process Insights: Understanding how they typically go from problem to purchase',
-  ],
-
-  b2c_characteristics: [
-    'Demographics: Age, gender, education level, marital status',
-    'Income Range: Economic status and purchasing power',
-    'Buying Behavior: Loyalty, product usage frequency, and shopping preferences',
-    'Geographic Location: Their location and how it might influence their choices',
-  ],
-
-  other_considerations: [
-    'Company Culture and Values: Does their culture align with your brand?',
-    'Technology Stack: What tools are they already using?',
-    'Growth Stage: Are they a startup, a scaling company, or established?',
-    'Customer Lifetime Value: Consider the long-term value of these customers',
-  ],
-
-  fit_scoring_formula: {
-    formula:
-      'score = 0.35*industry_fit + 0.2*size_fit + 0.15*geo_fit + 0.15*pain_alignment + 0.15*goal_alignment',
-    scales: {
-      industry_fit: '0–100 (100 = industry matches perfectly)',
-      size_fit: '0–100 (100 = company size matches perfectly)',
-      geo_fit: '0–100 (100 = geography matches perfectly)',
-      pain_alignment:
-        '0–100 (100 = solved pains match customer pains perfectly)',
-      goal_alignment: '0–100 (100 = strongly support goals)',
-    },
-    tiers: {
-      'Tier 1': 'score >= 80',
-      'Tier 2': '60 <= score < 80',
-      'Tier 3': '40 <= score < 60',
-      'N/A': '< 40',
-    },
-  },
-
-  buying_triggers: [
-    'New regulation or certification requirement',
-    'Budget cycle start or cost pressure',
-    'Technical migration/legacy system end-of-life',
-    'Rapid growth or market expansion',
-    'Quality/safety incident or audit',
-  ],
-
-  common_objections: [
-    'Price/ROI uncertainty',
-    'Integration and implementation effort',
-    'Security and compliance concerns',
-    'Vendor lock-in',
-    'Resource shortage for user training',
-  ],
-
-  b2b_personas: [
-    'Economic Buyer (e.g., CEO/CFO)',
-    'Decision Maker (e.g., VP/Director)',
-    'Influencer (e.g., Team Lead)',
-    'User (daily user)',
-    'Gatekeeper (IT/Legal/Procurement)',
-  ],
-
-  usage_guidelines: {
-    targeting:
-      'Focus your marketing and sales efforts on prospects that match your ICP',
-    personalization:
-      'Tailor your messaging and content to resonate with their specific needs and pain points',
-    lead_qualification:
-      'Use the ICP to identify leads that are a good fit and those that are not',
-    content_creation:
-      'Develop content that addresses their specific challenges and goals',
-    reporting:
-      'Track your results and see how well your marketing and sales efforts are performing with your ideal customers',
-  },
-};
-
 export class ICPGenerator {
   private ollamaClient: OllamaClient;
+  private icpRules: any;
 
   constructor() {
     this.ollamaClient = OllamaClient.getInstance();
+    this.icpRules = loadICPRules();
   }
 
   /**

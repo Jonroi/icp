@@ -3,7 +3,7 @@ import {
   databaseManager,
   getDatabaseConfig,
   DatabaseMigration,
-} from '../../database/config';
+} from '../../../database/config';
 
 const CURRENT_USER_ID =
   process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
