@@ -116,6 +116,7 @@ export function ICPProfiles({
               }}
               selectedCompanyId={companyId}
               allowCreate={false}
+              allowDelete={false}
               className='min-w-[260px]'
             />
             <Button size='sm' className='flex items-center gap-2' disabled>

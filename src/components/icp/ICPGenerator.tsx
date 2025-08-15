@@ -9,7 +9,7 @@ import {
 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Wand2, Save } from 'lucide-react';
+import { Sparkles, Wand2, Save, Loader2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project-service';
 // Agent button removed during reset
@@ -22,6 +22,7 @@ interface ICPGeneratorProps {
   onSaveOwnCompany?: (company: OwnCompany) => Promise<void>;
   onResetOwnCompany?: () => Promise<void>;
   onGenerateICPs: () => Promise<void>;
+  onCompanyDeleted?: () => void;
 }
 
 export function ICPGenerator({
@@ -32,6 +33,7 @@ export function ICPGenerator({
   onSaveOwnCompany,
   onResetOwnCompany,
   onGenerateICPs,
+  onCompanyDeleted,
 }: ICPGeneratorProps) {
   return (
     <Card className='mt-4'>
@@ -78,6 +80,7 @@ export function ICPGenerator({
                 await onResetOwnCompany();
               }
             }}
+            onCompanyDeleted={onCompanyDeleted}
           />
         </div>
 
@@ -94,8 +97,14 @@ export function ICPGenerator({
               }
             }}
             disabled={isLoading}>
-            <Sparkles className='mr-2 h-4 w-4' />
-            {isLoading ? 'Generating...' : 'Generate Ideal Customer Personas'}
+            {isLoading ? (
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+            ) : (
+              <Sparkles className='mr-2 h-4 w-4' />
+            )}
+            {isLoading
+              ? 'Generating ICPs...'
+              : 'Generate Ideal Customer Personas'}
           </Button>
         </div>
         {error && (
