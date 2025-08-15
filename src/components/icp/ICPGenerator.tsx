@@ -51,6 +51,7 @@ export function ICPGenerator({
           <Button
             size='sm'
             className='flex items-center gap-2'
+            title='Save current company data to database'
             onClick={async () => {
               try {
                 if (onSaveOwnCompany && ownCompany) {
@@ -64,7 +65,11 @@ export function ICPGenerator({
             <Save className='h-4 w-4' />
             Save
           </Button>
-          <Button size='sm' className='flex items-center gap-2' disabled>
+          <Button
+            size='sm'
+            className='flex items-center gap-2'
+            title='Automatically fill company data using AI (coming soon)'
+            disabled>
             Fill with AI (coming soon)
           </Button>
         </div>
@@ -89,6 +94,7 @@ export function ICPGenerator({
         <div className='flex flex-wrap gap-2'>
           <Button
             className='flex-1'
+            title='Generate Ideal Customer Profiles using current company data'
             onClick={async () => {
               try {
                 await onGenerateICPs();

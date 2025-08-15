@@ -471,6 +471,7 @@ export function OwnCompanyForm({
                 variant='outline'
                 size='sm'
                 className='text-xs h-6 px-2'
+                title={`Add ${channel} to marketing channels`}
                 onClick={() => {
                   const current = company.currentMarketingChannels || '';
                   const newValue = current ? `${current}, ${channel}` : channel;
