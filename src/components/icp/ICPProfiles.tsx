@@ -163,7 +163,9 @@ export function ICPProfiles({
             <div className='flex items-center gap-3'>
               <Loader2 className='h-6 w-6 animate-spin text-primary' />
               <span className='text-muted-foreground'>
-                {isGeneratingMore ? 'Generating new ICP profiles...' : 'Loading ICP profiles...'}
+                {isGeneratingMore
+                  ? 'Generating new ICP profiles...'
+                  : 'Loading ICP profiles...'}
               </span>
             </div>
           </div>
