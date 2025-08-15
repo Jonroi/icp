@@ -12,7 +12,10 @@
     "db:seed": "echo 'Database seeding not implemented yet'",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f"
+    "docker:logs": "docker-compose logs -f",
+    "dev:full": "npm run docker:up && npm run dev",
+    "dev:docker": "docker-compose up -d postgres redis && npm run dev",
+    "dev:services": "docker-compose up -d postgres redis ollama && npm run dev"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",

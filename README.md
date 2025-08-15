@@ -53,32 +53,43 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
    cd icp
    ```
 
-2. **Start all services with Docker**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Download the LLM model** (required for ICP generation)
-
-   ```bash
-   docker exec icp_ollama ollama pull llama3.2:3b-instruct-q4_K_M
-   ```
-
-4. **Install Node.js dependencies**
+2. **Install Node.js dependencies**
 
    ```bash
    npm install
    ```
 
-5. **Start the development server**
+3. **Start everything with one command**
 
    ```bash
-   npm run dev
+   npm run dev:services
    ```
 
-6. **Open your browser**
+   This command will:
+
+   - Start PostgreSQL database
+   - Start Redis cache
+   - Start Ollama AI service
+   - Download the required LLM model
+   - Start the Next.js development server
+
+4. **Open your browser**
    Navigate to `http://localhost:3000`
+
+### Alternative Docker Commands
+
+```bash
+# Start only database services (no AI)
+npm run dev:docker
+
+# Start all services manually
+npm run docker:up && npm run dev
+
+# Start services and download model separately
+npm run docker:up
+docker exec icp_ollama ollama pull llama3.2:3b-instruct-q4_K_M
+npm run dev
+```
 
 ### 🔧 Manual Setup (Alternative)
 
@@ -224,6 +235,16 @@ npm run dev              # Start development server
 npm run build            # Build for production
 npm run start            # Start production server
 
+# Docker Development (Recommended)
+npm run dev:full         # Start all Docker services + dev server
+npm run dev:docker       # Start PostgreSQL + Redis + dev server
+npm run dev:services     # Start PostgreSQL + Redis + Ollama + dev server
+
+# Manual Docker Commands
+npm run docker:up        # Start all Docker services
+npm run docker:down      # Stop all Docker services
+npm run docker:logs      # View service logs
+
 # Database
 npm run db:migrate       # Run database migrations
 npm run db:seed          # Seed database with sample data
@@ -231,11 +252,6 @@ npm run db:seed          # Seed database with sample data
 # Type checking
 npm run type-check       # Run TypeScript type checking
 npm run lint             # Run ESLint
-
-# Docker
-docker-compose up -d     # Start all services
-docker-compose down      # Stop all services
-docker-compose logs      # View service logs
 ```
 
 ## 🔍 API Documentation
