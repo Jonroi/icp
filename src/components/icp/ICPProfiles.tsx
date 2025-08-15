@@ -177,17 +177,91 @@ export function ICPProfiles({
               ).map((p) => (
                 <Card key={p.id} className='bg-muted/30'>
                   <CardHeader className='pb-3'>
-                    <CardTitle className='text-2xl'>
-                      ICP: {p.profileData.name}
-                    </CardTitle>
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <CardTitle className='text-xl'>
+                          {p.profileData.icp_name || p.profileData.name}
+                        </CardTitle>
+                        <p className='text-sm text-muted-foreground'>
+                          {p.profileData.business_model} •{' '}
+                          {p.profileData.abm_tier || 'N/A'} • Score:{' '}
+                          {p.profileData.fit_scoring?.score || 'N/A'}
+                        </p>
+                      </div>
+                      <div className='flex items-center gap-1'>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            p.profileData.confidence === 'high'
+                              ? 'bg-green-100 text-green-800'
+                              : p.profileData.confidence === 'medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                          {p.profileData.confidence || 'medium'}
+                        </span>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className='space-y-4'>
-                    <p className='text-sm text-muted-foreground line-clamp-4'>
-                      {p.profileData.description}
-                    </p>
-                    <div className='flex items-center gap-2'>
-                      <Button className='flex-1' variant='default'>
-                        <Sparkles className='mr-2 h-4 w-4' /> Use in Designer
+                    {/* Business Model & Segments */}
+                    <div className='space-y-2'>
+                      <h4 className='font-medium text-sm'>Segments</h4>
+                      <div className='flex flex-wrap gap-1'>
+                        {p.profileData.segments
+                          ?.slice(0, 3)
+                          .map((segment, i) => (
+                            <span
+                              key={i}
+                              className='px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs'>
+                              {segment}
+                            </span>
+                          ))}
+                        {p.profileData.segments?.length > 3 && (
+                          <span className='px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs'>
+                            +{p.profileData.segments.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Key Pain Points */}
+                    {p.profileData.needs_pain_goals?.pains && (
+                      <div className='space-y-2'>
+                        <h4 className='font-medium text-sm'>Key Pain Points</h4>
+                        <ul className='text-sm text-muted-foreground space-y-1'>
+                          {p.profileData.needs_pain_goals.pains
+                            .slice(0, 2)
+                            .map((pain, i) => (
+                              <li key={i} className='flex items-start gap-2'>
+                                <span className='text-red-500 mt-1'>•</span>
+                                <span>{pain}</span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Buying Triggers */}
+                    {p.profileData.buying_triggers && (
+                      <div className='space-y-2'>
+                        <h4 className='font-medium text-sm'>Buying Triggers</h4>
+                        <ul className='text-sm text-muted-foreground space-y-1'>
+                          {p.profileData.buying_triggers
+                            .slice(0, 2)
+                            .map((trigger, i) => (
+                              <li key={i} className='flex items-start gap-2'>
+                                <span className='text-green-500 mt-1'>•</span>
+                                <span>{trigger}</span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className='flex items-center gap-2 pt-2'>
+                      <Button className='flex-1' variant='default' size='sm'>
+                        <Sparkles className='mr-2 h-4 w-4' /> View Details
                       </Button>
                       <Button
                         variant='outline'
