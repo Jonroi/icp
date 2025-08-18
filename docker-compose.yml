@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: icp_builder
       POSTGRES_USER: icp_user
-      POSTGRES_PASSWORD: P@ssw0rd123!
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-P@ssw0rd123!}
     ports:
       - '5432:5432'
     volumes:

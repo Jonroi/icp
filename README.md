@@ -100,29 +100,49 @@ npm run dev
    cd icp
    ```
 
-2. **Install dependencies**
+2. **Set up environment variables**
+
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env.local
+
+   # Edit .env.local with your actual values
+   # IMPORTANT: Never commit .env.local to git!
+   ```
+
+3. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-3. **Set up PostgreSQL**
+   ```
+
+   ```
+
+4. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+5. **Set up PostgreSQL**
 
    - Install PostgreSQL 15+
    - Create database: `icp_builder`
-   - Create user: `icp_user` with password `P@ssw0rd123!`
+     - Create user: `icp_user` with password `your_secure_password_here`
 
-4. **Set up Redis**
+6. **Set up Redis**
 
    - Install Redis 7+
    - Start Redis service
 
-5. **Install Ollama**
+7. **Install Ollama**
 
    - Download from [ollama.ai](https://ollama.ai)
    - Pull the model: `ollama pull llama3.2:3b-instruct-q4_K_M`
 
-6. **Configure environment**
+8. **Configure environment**
    Create `.env.local`:
 
    ```env
@@ -130,16 +150,16 @@ npm run dev
    DB_PORT=5432
    DB_NAME=icp_builder
    DB_USER=icp_user
-   DB_PASSWORD=P@ssw0rd123!
+       DB_PASSWORD=your_secure_password_here
    DB_SSL=false
    TEST_USER_ID=11111111-1111-1111-1111-111111111111
    OPENAI_BASE_URL=http://localhost:11434
-   OPENAI_API_KEY=ollama
+       OPENAI_API_KEY=your_openai_api_key_here
    OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
    REDIS_URL=redis://localhost:6379
    ```
 
-7. **Start the development server**
+9. **Start the development server**
 
    ```bash
    npm run dev
@@ -295,13 +315,22 @@ trpc.icp.generateMore.mutate({ companyId: string });
 
 ### Environment Variables
 
+**⚠️ Security Warning**: Never commit `.env.local` to git! Use `.env.example` as a template.
+
+```bash
+# Copy the example file and edit with your values
+cp .env.example .env.local
+```
+
+**Required Variables**:
+
 ```env
 # Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=icp_builder
 DB_USER=icp_user
-DB_PASSWORD=P@ssw0rd123!
+DB_PASSWORD=your_secure_password_here
 DB_SSL=false
 
 # Redis
@@ -309,12 +338,18 @@ REDIS_URL=redis://localhost:6379
 
 # AI/LLM
 OPENAI_BASE_URL=http://localhost:11434
-OPENAI_API_KEY=ollama
+OPENAI_API_KEY=your_openai_api_key_here
 OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
+
+# External APIs
+VITE_APIFY_API_TOKEN=your_apify_api_token_here
 
 # Development
 TEST_USER_ID=11111111-1111-1111-1111-111111111111
 NODE_ENV=development
+
+# Docker PostgreSQL
+POSTGRES_PASSWORD=your_secure_postgres_password_here
 ```
 
 ### Docker Configuration
@@ -343,6 +378,8 @@ The application follows strict error handling principles:
 - **Database**: Prepared statements and proper indexing
 - **Local AI**: All LLM processing happens locally with Ollama
 - **No External APIs**: No data sent to external AI services
+- **Environment Security**: Sensitive data stored in `.env.local` (not committed to git)
+- **API Key Protection**: All API keys and passwords in environment variables
 
 ## 🐳 Docker Deployment
 
