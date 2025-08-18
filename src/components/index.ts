@@ -9,6 +9,12 @@ export { OwnCompanyForm } from './icp/OwnCompanyForm';
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
 export { CampaignLibrary } from './campaign/CampaignLibrary';
+export { CampaignForm } from './campaign/CampaignForm';
+export { CampaignDisplay } from './campaign/CampaignDisplay';
+// Marketing
+export { MarketingLanding } from './marketing/MarketingLanding';
+// Shop
+export { Shop } from './shop/Shop';
 
 // UI components
 export { Button } from './ui/button';

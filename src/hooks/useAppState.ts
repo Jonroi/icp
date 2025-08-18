@@ -43,6 +43,12 @@ export function useAppState() {
   const generateICPsMutation = trpc.icp.generate.useMutation();
   const generateMoreICPsMutation = trpc.icp.generateMore.useMutation();
 
+  // Campaign queries and mutations
+  const campaignsQuery = trpc.campaign.getAll.useQuery();
+  const generateCampaignMutation = trpc.campaign.generate.useMutation();
+  const updateCampaignMutation = trpc.campaign.update.useMutation();
+  const deleteCampaignMutation = trpc.campaign.delete.useMutation();
+
   // Initialize state from tRPC data
   // Note: We don't auto-populate the form on page load anymore
   // The form will start empty and only populate when user selects a company
@@ -279,15 +285,89 @@ export function useAppState() {
     }
   };
 
+  // Campaign management
+  const handleGenerateCampaign = async (campaignData: any) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const campaign = await generateCampaignMutation.mutateAsync(campaignData);
+
+      // Refresh campaigns list
+      await campaignsQuery.refetch();
+
+      return campaign;
+    } catch (error) {
+      console.error('Error generating campaign:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to generate campaign';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateCampaign = async (id: string, updates: any) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const campaign = await updateCampaignMutation.mutateAsync({
+        id,
+        updates,
+      });
+
+      // Refresh campaigns list
+      await campaignsQuery.refetch();
+
+      return campaign;
+    } catch (error) {
+      console.error('Error updating campaign:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to update campaign';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteCampaign = async (id: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      await deleteCampaignMutation.mutateAsync({ id });
+
+      // Refresh campaigns list
+      await campaignsQuery.refetch();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete campaign';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     // State
     ownCompany,
     generatedICPs,
     activeCompanyId,
     isLoading:
-      isLoading || companyListQuery.isLoading || icpListQuery.isLoading,
+      isLoading ||
+      companyListQuery.isLoading ||
+      icpListQuery.isLoading ||
+      campaignsQuery.isLoading,
     error:
-      error || companyListQuery.error?.message || icpListQuery.error?.message,
+      error ||
+      companyListQuery.error?.message ||
+      icpListQuery.error?.message ||
+      campaignsQuery.error?.message,
 
     // Company data
     companies: companyListQuery.data?.list || [],
@@ -301,5 +381,11 @@ export function useAppState() {
     generateMoreICPs: handleGenerateMoreICPs,
     setActiveCompanyId,
     onCompanyDeleted: handleCompanyDeleted,
+
+    // Campaign data and actions
+    campaigns: campaignsQuery.data || [],
+    generateCampaign: handleGenerateCampaign,
+    updateCampaign: handleUpdateCampaign,
+    deleteCampaign: handleDeleteCampaign,
   };
 }

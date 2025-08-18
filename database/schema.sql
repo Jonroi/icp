@@ -58,6 +58,28 @@ CREATE TABLE IF NOT EXISTS icp_profiles (
 CREATE INDEX IF NOT EXISTS idx_icp_profiles_company_id ON icp_profiles(company_id);
 CREATE INDEX IF NOT EXISTS idx_icp_profiles_created_at ON icp_profiles(created_at);
 
+-- Campaigns table (generated from ICP profiles)
+CREATE TABLE IF NOT EXISTS campaigns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL,
+    icp_id UUID NOT NULL REFERENCES icp_profiles(id) ON DELETE CASCADE,
+    copy_style VARCHAR(50) NOT NULL CHECK (copy_style IN ('facts', 'humour', 'smart', 'emotional', 'professional')),
+    media_type VARCHAR(50) NOT NULL CHECK (media_type IN ('google-ads', 'linkedin', 'email', 'print', 'social-media')),
+    ad_copy TEXT NOT NULL,
+    image_prompt TEXT,
+    image_url TEXT,
+    cta TEXT NOT NULL,
+    hooks TEXT NOT NULL,
+    landing_page_copy TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for campaigns
+CREATE INDEX IF NOT EXISTS idx_campaigns_icp_id ON campaigns(icp_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_created_at ON campaigns(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_campaigns_media_type ON campaigns(media_type);
+
 -- Function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -82,6 +104,10 @@ CREATE TRIGGER update_company_data_updated_at BEFORE UPDATE ON company_data
 
 DROP TRIGGER IF EXISTS update_icp_profiles_updated_at ON icp_profiles;
 CREATE TRIGGER update_icp_profiles_updated_at BEFORE UPDATE ON icp_profiles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_campaigns_updated_at ON campaigns;
+CREATE TRIGGER update_campaigns_updated_at BEFORE UPDATE ON campaigns
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to get company data as JSON

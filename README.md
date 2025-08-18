@@ -11,7 +11,10 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **PostgreSQL Database**: Robust data persistence with proper schema management
 - **Single LLM Call Generation**: Efficient ICP generation with one call per profile
 - **Company Management**: Create, update, and manage multiple companies
-- **Campaign Design**: Design marketing campaigns based on generated ICPs
+- **AI Campaign Generation**: Generate complete marketing campaigns using AI
+- **Campaign Management**: Create, edit, delete, and organize campaigns
+- **Multi-Media Support**: Google Ads, LinkedIn, Email, Print, and Social Media campaigns
+- **Copy Style Options**: Facts, Humour, Smart, Emotional, and Professional styles
 - **Modern UI**: Built with Radix UI primitives and Tailwind CSS
 - **Docker Support**: Complete containerized setup for easy deployment
 
@@ -198,11 +201,25 @@ Each generated ICP includes:
 - **Go-to-Market Strategy**: Channels, messages, and content ideas
 - **Fit Scoring**: 0-100 score with ABM tiering
 
-### 4. Campaign Design
+### 4. Campaign Generation
 
-1. Use generated ICPs to design targeted campaigns
-2. Access campaign templates and ideas
-3. Export campaign data for marketing tools
+1. Navigate to "Campaign Designer" tab
+2. Select an ICP from your generated profiles
+3. Choose copy style and media type
+4. Add optional image prompt and campaign details
+5. Click "Generate Campaign" to create AI-powered campaigns
+6. View, edit, and manage your campaigns
+
+### 5. Campaign Management
+
+Each generated campaign includes:
+
+- **Ad Copy**: Compelling copy for selected media type
+- **Call-to-Action**: Clear and action-oriented CTAs
+- **Landing Page Hooks**: Attention-grabbing hooks for landing pages
+- **Landing Page Copy**: Persuasive copy for conversion
+- **Image Suggestions**: AI-generated image descriptions
+- **Export Options**: Download campaigns as JSON files
 
 ## 🔧 Development
 
@@ -232,6 +249,7 @@ src/
 - `company.*` - Company management (CRUD operations)
 - `companyData.*` - Form data management
 - `icp.*` - ICP generation and management
+- `campaign.*` - Campaign generation and management
 
 #### Redis Caching Strategy
 
@@ -311,6 +329,33 @@ trpc.icp.getAll.query();
 trpc.icp.generateMore.mutate({ companyId: string });
 ```
 
+### Campaign Endpoints
+
+````typescript
+// Generate campaign
+trpc.campaign.generate.mutate({
+  icpId: string,
+  copyStyle: 'facts' | 'humour' | 'smart' | 'emotional' | 'professional',
+  mediaType: 'google-ads' | 'linkedin' | 'email' | 'print' | 'social-media',
+  imagePrompt?: string,
+  campaignDetails?: string
+});
+
+// Get all campaigns
+trpc.campaign.getAll.query();
+
+// Get campaign by ID
+trpc.campaign.getById.query({ id: string });
+
+// Get campaigns by ICP
+trpc.campaign.getByIcpId.query({ icpId: string });
+
+// Update campaign
+trpc.campaign.update.mutate({ id: string, updates: object });
+
+// Delete campaign
+trpc.campaign.delete.mutate({ id: string });
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -320,7 +365,7 @@ trpc.icp.generateMore.mutate({ companyId: string });
 ```bash
 # Copy the example file and edit with your values
 cp .env.example .env.local
-```
+````
 
 **Required Variables**:
 
