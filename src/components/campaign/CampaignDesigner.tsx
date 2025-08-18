@@ -20,9 +20,9 @@ interface CampaignDesignerProps {
   onCompanyIdChange?: (id: string) => void;
 }
 
-export function CampaignDesigner({ 
-  activeCompanyId, 
-  onCompanyIdChange 
+export function CampaignDesigner({
+  activeCompanyId,
+  onCompanyIdChange,
 }: CampaignDesignerProps) {
   const [generatedCampaign, setGeneratedCampaign] =
     useState<StoredCampaign | null>(null);
@@ -34,7 +34,7 @@ export function CampaignDesigner({
   const companyListQuery = trpc.company.list.useQuery();
   const icpListQuery = trpc.icp.getByCompany.useQuery(
     { companyId },
-    { enabled: !!companyId }
+    { enabled: !!companyId },
   );
   const campaignsQuery = trpc.campaign.getAll.useQuery();
 
@@ -116,10 +116,11 @@ export function CampaignDesigner({
     updateCampaignMutation.isLoading ||
     deleteCampaignMutation.isLoading;
 
-  const icpOptions = icpListQuery.data?.map(icp => ({
-    id: icp.id,
-    name: icp.name
-  })) || [];
+  const icpOptions =
+    icpListQuery.data?.map((icp) => ({
+      id: icp.id,
+      name: icp.name,
+    })) || [];
 
   return (
     <div className='space-y-6'>
@@ -170,7 +171,8 @@ export function CampaignDesigner({
           <CardHeader>
             <CardTitle>Generate New Campaign</CardTitle>
             <CardDescription>
-              Fill in the details below to generate a new campaign for {companyName}.
+              Fill in the details below to generate a new campaign for{' '}
+              {companyName}.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -189,7 +191,8 @@ export function CampaignDesigner({
           <CardHeader>
             <CardTitle>Select a Company</CardTitle>
             <CardDescription>
-              Please select a company from the dropdown above to start generating campaigns.
+              Please select a company from the dropdown above to start
+              generating campaigns.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -236,7 +239,8 @@ export function CampaignDesigner({
           <CardHeader>
             <CardTitle>No Campaigns Yet</CardTitle>
             <CardDescription>
-              You haven't generated any campaigns for {companyName} yet. Create your first campaign above.
+              You haven't generated any campaigns for {companyName} yet. Create
+              your first campaign above.
             </CardDescription>
           </CardHeader>
         </Card>
