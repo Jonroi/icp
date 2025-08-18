@@ -11,7 +11,10 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **PostgreSQL Database**: Robust data persistence with proper schema management
 - **Single LLM Call Generation**: Efficient ICP generation with one call per profile
 - **Company Management**: Create, update, and manage multiple companies
-- **Campaign Design**: Design marketing campaigns based on generated ICPs
+- **AI Campaign Generation**: Generate complete marketing campaigns using AI
+- **Campaign Management**: Create, edit, delete, and organize campaigns
+- **Multi-Media Support**: Google Ads, LinkedIn, Email, Print, and Social Media campaigns
+- **Copy Style Options**: Facts, Humour, Smart, Emotional, and Professional styles
 - **Modern UI**: Built with Radix UI primitives and Tailwind CSS
 - **Docker Support**: Complete containerized setup for easy deployment
 
@@ -100,29 +103,49 @@ npm run dev
    cd icp
    ```
 
-2. **Install dependencies**
+2. **Set up environment variables**
+
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env.local
+
+   # Edit .env.local with your actual values
+   # IMPORTANT: Never commit .env.local to git!
+   ```
+
+3. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-3. **Set up PostgreSQL**
+   ```
+
+   ```
+
+4. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+5. **Set up PostgreSQL**
 
    - Install PostgreSQL 15+
    - Create database: `icp_builder`
-   - Create user: `icp_user` with password `P@ssw0rd123!`
+     - Create user: `icp_user` with password `your_secure_password_here`
 
-4. **Set up Redis**
+6. **Set up Redis**
 
    - Install Redis 7+
    - Start Redis service
 
-5. **Install Ollama**
+7. **Install Ollama**
 
    - Download from [ollama.ai](https://ollama.ai)
    - Pull the model: `ollama pull llama3.2:3b-instruct-q4_K_M`
 
-6. **Configure environment**
+8. **Configure environment**
    Create `.env.local`:
 
    ```env
@@ -130,16 +153,16 @@ npm run dev
    DB_PORT=5432
    DB_NAME=icp_builder
    DB_USER=icp_user
-   DB_PASSWORD=P@ssw0rd123!
+       DB_PASSWORD=your_secure_password_here
    DB_SSL=false
    TEST_USER_ID=11111111-1111-1111-1111-111111111111
    OPENAI_BASE_URL=http://localhost:11434
-   OPENAI_API_KEY=ollama
+       OPENAI_API_KEY=your_openai_api_key_here
    OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
    REDIS_URL=redis://localhost:6379
    ```
 
-7. **Start the development server**
+9. **Start the development server**
 
    ```bash
    npm run dev
@@ -178,11 +201,25 @@ Each generated ICP includes:
 - **Go-to-Market Strategy**: Channels, messages, and content ideas
 - **Fit Scoring**: 0-100 score with ABM tiering
 
-### 4. Campaign Design
+### 4. Campaign Generation
 
-1. Use generated ICPs to design targeted campaigns
-2. Access campaign templates and ideas
-3. Export campaign data for marketing tools
+1. Navigate to "Campaign Designer" tab
+2. Select an ICP from your generated profiles
+3. Choose copy style and media type
+4. Add optional image prompt and campaign details
+5. Click "Generate Campaign" to create AI-powered campaigns
+6. View, edit, and manage your campaigns
+
+### 5. Campaign Management
+
+Each generated campaign includes:
+
+- **Ad Copy**: Compelling copy for selected media type
+- **Call-to-Action**: Clear and action-oriented CTAs
+- **Landing Page Hooks**: Attention-grabbing hooks for landing pages
+- **Landing Page Copy**: Persuasive copy for conversion
+- **Image Suggestions**: AI-generated image descriptions
+- **Export Options**: Download campaigns as JSON files
 
 ## 🔧 Development
 
@@ -212,6 +249,7 @@ src/
 - `company.*` - Company management (CRUD operations)
 - `companyData.*` - Form data management
 - `icp.*` - ICP generation and management
+- `campaign.*` - Campaign generation and management
 
 #### Redis Caching Strategy
 
@@ -291,9 +329,45 @@ trpc.icp.getAll.query();
 trpc.icp.generateMore.mutate({ companyId: string });
 ```
 
+### Campaign Endpoints
+
+````typescript
+// Generate campaign
+trpc.campaign.generate.mutate({
+  icpId: string,
+  copyStyle: 'facts' | 'humour' | 'smart' | 'emotional' | 'professional',
+  mediaType: 'google-ads' | 'linkedin' | 'email' | 'print' | 'social-media',
+  imagePrompt?: string,
+  campaignDetails?: string
+});
+
+// Get all campaigns
+trpc.campaign.getAll.query();
+
+// Get campaign by ID
+trpc.campaign.getById.query({ id: string });
+
+// Get campaigns by ICP
+trpc.campaign.getByIcpId.query({ icpId: string });
+
+// Update campaign
+trpc.campaign.update.mutate({ id: string, updates: object });
+
+// Delete campaign
+trpc.campaign.delete.mutate({ id: string });
+
 ## 🔧 Configuration
 
 ### Environment Variables
+
+**⚠️ Security Warning**: Never commit `.env.local` to git! Use `.env.example` as a template.
+
+```bash
+# Copy the example file and edit with your values
+cp .env.example .env.local
+````
+
+**Required Variables**:
 
 ```env
 # Database
@@ -301,7 +375,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=icp_builder
 DB_USER=icp_user
-DB_PASSWORD=P@ssw0rd123!
+DB_PASSWORD=your_secure_password_here
 DB_SSL=false
 
 # Redis
@@ -309,12 +383,18 @@ REDIS_URL=redis://localhost:6379
 
 # AI/LLM
 OPENAI_BASE_URL=http://localhost:11434
-OPENAI_API_KEY=ollama
+OPENAI_API_KEY=your_openai_api_key_here
 OLLAMA_MODEL=llama3.2:3b-instruct-q4_K_M
+
+# External APIs
+VITE_APIFY_API_TOKEN=your_apify_api_token_here
 
 # Development
 TEST_USER_ID=11111111-1111-1111-1111-111111111111
 NODE_ENV=development
+
+# Docker PostgreSQL
+POSTGRES_PASSWORD=your_secure_postgres_password_here
 ```
 
 ### Docker Configuration
@@ -343,6 +423,8 @@ The application follows strict error handling principles:
 - **Database**: Prepared statements and proper indexing
 - **Local AI**: All LLM processing happens locally with Ollama
 - **No External APIs**: No data sent to external AI services
+- **Environment Security**: Sensitive data stored in `.env.local` (not committed to git)
+- **API Key Protection**: All API keys and passwords in environment variables
 
 ## 🐳 Docker Deployment
 

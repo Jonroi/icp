@@ -10,7 +10,7 @@ async function ensureDatabaseInitialized() {
         port: parseInt(process.env.DB_PORT || '5432'),
         database: process.env.DB_NAME || 'icp_builder',
         user: process.env.DB_USER || 'icp_user',
-        password: process.env.DB_PASSWORD || 'P@ssw0rd123!',
+        password: process.env.DB_PASSWORD || '',
         ssl: process.env.DB_SSL === 'true',
       };
       await databaseManager.initialize(config);
