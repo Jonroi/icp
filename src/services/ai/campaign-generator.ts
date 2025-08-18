@@ -11,7 +11,7 @@ export class CampaignGenerator {
   private ollamaClient: OllamaClient;
 
   constructor() {
-    this.ollamaClient = new OllamaClient();
+    this.ollamaClient = OllamaClient.getInstance();
   }
 
   async generateCampaign(
@@ -32,7 +32,7 @@ export class CampaignGenerator {
         campaignDetails,
       });
 
-      const response = await this.ollamaClient.generate(prompt);
+      const response = await this.ollamaClient.generateResponse(prompt);
 
       const campaign = this.parseCampaignResponse(response, request);
 

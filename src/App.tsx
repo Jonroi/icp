@@ -5,8 +5,6 @@ import { ICPGenerator } from '@/components/icp/ICPGenerator';
 import { ICPProfiles } from '@/components/icp/ICPProfiles';
 import { CampaignDesigner } from '@/components/campaign/CampaignDesigner';
 import { CampaignLibrary } from '@/components/campaign/CampaignLibrary';
-import { MarketingLanding } from '@/components/marketing/MarketingLanding';
-import { Shop } from '@/components/shop/Shop';
 import { TRPCProvider } from '@/components/providers/TRPCProvider';
 
 import { useAppState } from '@/hooks/useAppState';
@@ -51,8 +49,6 @@ function AppContent() {
                 Campaign Designer
               </TabsTrigger>
               <TabsTrigger value='campaign-library'>Campaign Ideas</TabsTrigger>
-              <TabsTrigger value='landing'>Landing</TabsTrigger>
-              <TabsTrigger value='shop'>Shop</TabsTrigger>
             </TabsList>
 
             <TabsContent value='icp-generator' className='mt-6'>
@@ -94,14 +90,6 @@ function AppContent() {
 
             <TabsContent value='campaign-library' className='mt-6'>
               <CampaignLibrary />
-            </TabsContent>
-
-            <TabsContent value='landing' className='mt-6'>
-              <MarketingLanding />
-            </TabsContent>
-
-            <TabsContent value='shop' className='mt-6'>
-              <Shop />
             </TabsContent>
           </Tabs>
         </div>
