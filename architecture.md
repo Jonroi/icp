@@ -119,7 +119,7 @@ services:
     environment:
       POSTGRES_DB: icp_builder
       POSTGRES_USER: icp_user
-      POSTGRES_PASSWORD: P@ssw0rd123!
+      POSTGRES_PASSWORD: your_secure_password_here
     ports:
       - '5432:5432'
     volumes:

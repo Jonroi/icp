@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { estimateTokenCount, checkTokenLimit } from '@/lib/utils';
 
 export class OllamaClient {
   private ollamaUrl: string;
@@ -28,17 +29,28 @@ export class OllamaClient {
     prompt: string,
     systemPrompt?: string,
   ): Promise<string> {
+    const fullPrompt = systemPrompt
+      ? `<|system|>${systemPrompt}</s><|user|>${prompt}</s><|assistant|>`
+      : `<|user|>${prompt}</s><|assistant|>`;
+
+    const tokenInfo = checkTokenLimit(fullPrompt, 10000);
+
     console.log(`🚀 Starting LLM generation:`);
     console.log(`   📋 Model: ${this.model}`);
     console.log(`   🔗 URL: ${this.ollamaUrl}`);
     console.log(`   📝 Prompt length: ${prompt.length} chars`);
+    console.log(
+      `   🎯 Token count: ${tokenInfo.tokenCount}/${10000} (${
+        tokenInfo.percentage
+      }%)`,
+    );
     console.log(`   ⚙️  System prompt: ${systemPrompt ? 'Yes' : 'No'}`);
 
-    try {
-      const fullPrompt = systemPrompt
-        ? `<|system|>${systemPrompt}</s><|user|>${prompt}</s><|assistant|>`
-        : `<|user|>${prompt}</s><|assistant|>`;
+    if (!tokenInfo.isWithinLimit) {
+      console.warn(`⚠️  WARNING: Token count exceeds limit!`);
+    }
 
+    try {
       console.log(`📤 Sending request to Ollama...`);
 
       const startTime = Date.now();
@@ -49,7 +61,8 @@ export class OllamaClient {
         options: {
           temperature: 0.7,
           top_p: 0.9,
-          max_tokens: 2048,
+          max_tokens: 10000,
+          num_ctx: 10000,
         },
       });
 

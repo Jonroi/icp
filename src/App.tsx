@@ -82,7 +82,10 @@ function AppContent() {
             </TabsContent>
 
             <TabsContent value='campaign-designer' className='mt-6'>
-              <CampaignDesigner />
+              <CampaignDesigner
+                activeCompanyId={activeCompanyId}
+                onCompanyIdChange={setActiveCompanyId}
+              />
             </TabsContent>
 
             <TabsContent value='campaign-library' className='mt-6'>

@@ -57,3 +57,47 @@ export interface ICP {
   abm_tier: string;
   confidence: 'high' | 'medium' | 'low';
 }
+
+// Campaign Types
+export interface Campaign {
+  id: string;
+  name: string;
+  icpId: string;
+  copyStyle: CopyStyle;
+  mediaType: MediaType;
+  adCopy: string;
+  imagePrompt?: string;
+  imageUrl?: string;
+  cta: string;
+  hooks: string;
+  landingPageCopy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type CopyStyle =
+  | 'facts'
+  | 'humour'
+  | 'smart'
+  | 'emotional'
+  | 'professional';
+export type MediaType =
+  | 'google-ads'
+  | 'linkedin'
+  | 'email'
+  | 'print'
+  | 'social-media';
+
+export interface CampaignGenerationRequest {
+  icpId: string;
+  copyStyle: CopyStyle;
+  mediaType: MediaType;
+  imagePrompt?: string;
+  campaignDetails?: string;
+}
+
+export interface CampaignGenerationResponse {
+  campaign: Campaign;
+  success: boolean;
+  error?: string;
+}

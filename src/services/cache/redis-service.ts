@@ -219,6 +219,19 @@ export class RedisService {
     }
   }
 
+  // Generic cache methods for campaigns and other data
+  async set(key: string, value: string, ttl: number = 3600): Promise<void> {
+    await this.redis.setex(key, ttl, value);
+  }
+
+  async get(key: string): Promise<string | null> {
+    return await this.redis.get(key);
+  }
+
+  async del(key: string): Promise<void> {
+    await this.redis.del(key);
+  }
+
   // Cleanup
   async disconnect(): Promise<void> {
     await this.redis.quit();
