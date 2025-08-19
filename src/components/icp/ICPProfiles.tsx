@@ -55,6 +55,7 @@ export function ICPProfiles({
   );
   const deleteICPMutation = trpc.icp.delete.useMutation();
   const deleteAllICPsMutation = trpc.icp.deleteAllForCompany.useMutation();
+  const generateMoreICPsMutation = trpc.icp.generateMore.useMutation();
 
   // Update company state when activeCompanyId changes
   useEffect(() => {
@@ -75,13 +76,32 @@ export function ICPProfiles({
   }, [activeCompanyId, companyListQuery.data]);
 
   const handleGenerateMore = async () => {
-    if (onGenerateMore) {
-      await onGenerateMore();
+    if (!companyId) return;
+
+    try {
+      // Use the tRPC mutation directly for better loading state management
+      await generateMoreICPsMutation.mutateAsync({
+        companyId: companyId,
+      });
+
+      // Refresh the ICP list
+      await icpListQuery.refetch();
+
+      // Show success message
+      alert('Additional ICPs generated successfully!');
+
+      // Also call the parent callback if provided
+      if (onGenerateMore) {
+        await onGenerateMore();
+      }
+    } catch (error) {
+      console.error('Error generating more ICPs:', error);
+      alert('Failed to generate more ICPs. Please try again.');
     }
   };
 
   const isLoadingProfiles = icpListQuery.isLoading;
-  const isGeneratingMore = false; // This would be set by the parent component
+  const isGeneratingMore = generateMoreICPsMutation?.isPending || false;
   const isDeleting = deleteAllICPsMutation.isPending;
 
   const profiles = icpListQuery.data || [];
@@ -115,15 +135,21 @@ export function ICPProfiles({
           <div className='flex flex-col space-y-3 sm:flex-row sm:items-end sm:space-y-0 sm:gap-2'>
             <Button
               className='flex items-center gap-2 h-10'
-              disabled={!companyId || isGeneratingMore}
+              disabled={
+                !companyId ||
+                isGeneratingMore ||
+                generateMoreICPsMutation.isPending
+              }
               onClick={handleGenerateMore}
-              title='Generate more ICP profiles using current company data'>
-              {isGeneratingMore ? (
+              title='Generate ICP profiles using current company data'>
+              {isGeneratingMore || generateMoreICPsMutation.isPending ? (
                 <Loader2 className='h-4 w-4 animate-spin' />
               ) : (
                 <Plus className='h-4 w-4' />
               )}
-              {isGeneratingMore ? 'Generating...' : 'Generate'}
+              {isGeneratingMore || generateMoreICPsMutation.isPending
+                ? 'Generating...'
+                : 'Generate ICPs'}
             </Button>
             <Button
               variant='destructive'
@@ -152,12 +178,14 @@ export function ICPProfiles({
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingProfiles || isGeneratingMore ? (
+          {isLoadingProfiles ||
+          isGeneratingMore ||
+          generateMoreICPsMutation.isPending ? (
             <div className='flex items-center justify-center py-12'>
               <div className='flex items-center gap-3'>
                 <Loader2 className='h-6 w-6 animate-spin text-primary' />
                 <span className='text-muted-foreground'>
-                  {isGeneratingMore
+                  {isGeneratingMore || generateMoreICPsMutation.isPending
                     ? 'Generating new ICP profiles...'
                     : 'Loading ICP profiles...'}
                 </span>
@@ -331,19 +359,9 @@ export function ICPProfiles({
                 No ICP Profiles Yet
               </h3>
               <p className='text-muted-foreground mb-4'>
-                Generate your first ICP profile to get started.
+                Use the "Generate" button in the header above to create your
+                first ICP profile.
               </p>
-              <Button
-                onClick={handleGenerateMore}
-                disabled={isGeneratingMore}
-                className='flex items-center gap-2'>
-                {isGeneratingMore ? (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                ) : (
-                  <Plus className='h-4 w-4' />
-                )}
-                {isGeneratingMore ? 'Generating...' : 'Generate ICPs'}
-              </Button>
             </div>
           ) : (
             <div className='text-center py-12'>

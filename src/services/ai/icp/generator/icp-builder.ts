@@ -33,49 +33,86 @@ Target Market: ${companyData.targetMarket || 'Businesses'}
 Value Proposition: ${companyData.valueProposition || 'Software solutions'}
 Main Offerings: ${companyData.mainOfferings || 'Software services'}
 Pricing Model: ${companyData.pricingModel || 'Subscription-based'}
+Company Size: ${companyData.companySize || 'Small to Medium Business'}
+Market Segment: ${companyData.marketSegment || 'B2B'}
+Unique Features: ${companyData.uniqueFeatures || 'Innovative technology'}
+Competitive Advantages: ${
+      companyData.competitiveAdvantages || 'Proven track record'
+    }
+Current Customers: ${companyData.currentCustomers || 'Various businesses'}
+Pain Points Solved: ${
+      companyData.painPointsSolved || 'Operational inefficiencies'
+    }
+Customer Goals: ${
+      companyData.customerGoals || 'Improve efficiency and reduce costs'
+    }
 
 Template: ${template.name} - ${template.description}
 
-Generate the following in a single response, separated by "---":
+You MUST generate ALL of the following sections. Each section must contain specific, actionable content based on the company data and template:
 
-SEGMENTS: 2-3 customer segments (comma-separated)
-PAINS: 3-4 pain points (comma-separated)  
-JOBS: 3-4 jobs to be done (comma-separated)
-OUTCOMES: 3-4 desired outcomes (comma-separated)
-TRIGGERS: 3-4 buying triggers (comma-separated)
-OBJECTIONS: 3-4 common objections (comma-separated)
-VALUE_PROP: 1 sentence value proposition
-FEATURES: 3 unique features (comma-separated)
-ADVANTAGES: 3 competitive advantages (comma-separated)
-CHANNELS: 3 go-to-market channels (comma-separated)
-MESSAGES: 3 key messages (comma-separated)
-CONTENT: 3 content ideas (comma-separated)
+SEGMENTS: 2-3 specific customer segments (comma-separated)
+PAINS: 3-4 specific pain points this company solves (comma-separated)  
+JOBS: 3-4 specific jobs to be done (comma-separated)
+OUTCOMES: 3-4 specific desired outcomes (comma-separated)
+TRIGGERS: 3-4 specific buying triggers (comma-separated)
+OBJECTIONS: 3-4 specific common objections (comma-separated)
+VALUE_PROP: 1 specific value proposition sentence
+FEATURES: 3 specific unique features (comma-separated)
+ADVANTAGES: 3 specific competitive advantages (comma-separated)
+CHANNELS: 3 specific go-to-market channels (comma-separated)
+MESSAGES: 3 specific key messages (comma-separated)
+CONTENT: 3 specific content ideas (comma-separated)
 
 Example format:
 SEGMENTS: Startup Founders, Tech Entrepreneurs, Small Business Owners
-PAINS: High operational costs, Limited scalability, Complex compliance
----`;
+PAINS: High operational costs, Limited scalability, Complex compliance requirements
+JOBS: Optimize business processes, Scale operations efficiently, Ensure regulatory compliance
+OUTCOMES: 30% cost reduction, 50% faster operations, Full compliance assurance
+TRIGGERS: Business expansion, Regulatory changes, Cost pressure from competitors
+OBJECTIONS: High upfront investment, Implementation complexity, ROI uncertainty
+VALUE_PROP: Transform your business operations with our AI-powered platform that reduces costs by 30% while ensuring full compliance.
+FEATURES: AI-powered automation, Real-time compliance monitoring, Scalable cloud infrastructure
+ADVANTAGES: 10+ years industry experience, 99.9% uptime guarantee, 24/7 expert support
+CHANNELS: LinkedIn advertising, Industry conferences, Partner referrals
+MESSAGES: "Join 500+ companies saving 30% on operations", "Compliance made simple", "Scale without limits"
+CONTENT: Customer success case studies, Industry compliance guides, ROI calculator tools`;
 
     const systemPrompt = `You are an expert Ideal Customer Profile (ICP) strategist and B2B/B2C market analyst.
 Your job is to convert structured company inputs and an ICP template into a COMPLETE, PRACTICAL, and INTERNALLY CONSISTENT ICP.
 
+CRITICAL REQUIREMENTS:
+- You MUST generate ALL 12 sections (SEGMENTS, PAINS, JOBS, OUTCOMES, TRIGGERS, OBJECTIONS, VALUE_PROP, FEATURES, ADVANTAGES, CHANNELS, MESSAGES, CONTENT)
+- Each section must contain specific, actionable content - NO generic placeholder text
+- Base all content on the provided company data and template
+- Make reasonable inferences from the company data when specific information is missing
+
 Output policy:
 - Language: English only.
-- Be specific and practical; avoid fluff.
-- Make reasonable domain-consistent inferences when data is missing; do not contradict provided inputs.
+- Be specific and practical; avoid generic fluff.
+- Use the company's actual offerings, pain points, and value propositions when provided.
 - Never output markdown, code fences, tables, or extra commentary.
-- Strictly follow the section labels provided by the user prompt (SEGMENTS, PAINS, JOBS, OUTCOMES, TRIGGERS, OBJECTIONS, VALUE_PROP, FEATURES, ADVANTAGES, CHANNELS, MESSAGES, CONTENT).
-- For list sections, return 2–4 items, comma-separated on a single line.
+- Strictly follow the section labels provided by the user prompt.
+- For list sections, return 2–4 specific items, comma-separated on a single line.
 - Ensure sections align with the business model (B2B/B2C/B2B2C) and the provided template.
-- Keep terminology consistent (e.g., segments, triggers, objections) and avoid redundancy across sections.
-- The ICP must reflect: industry, company size, geography hints, pains, jobs-to-be-done, outcomes, value prop alignment, buying triggers, objections, go-to-market hints, and fit scoring themes.
+- Keep terminology consistent and avoid redundancy across sections.
+- The ICP must reflect the actual company's industry, size, offerings, and target market.
 - Do not include any headings beyond the required prefixes.
-`;
+
+Quality standards:
+- PAINS: Must be specific pain points the company actually solves
+- JOBS: Must be specific jobs customers hire the company to do
+- OUTCOMES: Must be specific, measurable outcomes customers achieve
+- VALUE_PROP: Must be a compelling, specific value proposition
+- FEATURES: Must be actual unique features of the company's offerings
+- ADVANTAGES: Must be real competitive advantages the company has`;
 
     const response = await this.aiService.generateResponse(
       prompt,
       systemPrompt,
     );
+
+    console.log('🤖 AI Response:', response);
 
     // Parse the response
     const sections = response
@@ -116,7 +153,38 @@ Output policy:
     const messages = parseSection(response, 'MESSAGES:');
     const content = parseSection(response, 'CONTENT:');
 
-    // Create the ICP object
+    console.log('📊 Parsed Sections:');
+    console.log('Segments:', segments);
+    console.log('Pains:', pains);
+    console.log('Jobs:', jobs);
+    console.log('Outcomes:', outcomes);
+    console.log('Triggers:', triggers);
+    console.log('Objections:', objections);
+    console.log('Value Prop:', valueProp);
+    console.log('Features:', features);
+    console.log('Advantages:', advantages);
+    console.log('Channels:', channels);
+    console.log('Messages:', messages);
+    console.log('Content:', content);
+
+    // Validate that we have all required data
+    if (
+      segments.length === 0 ||
+      pains.length === 0 ||
+      jobs.length === 0 ||
+      outcomes.length === 0
+    ) {
+      console.error('❌ ICP generation failed: Missing required sections');
+      console.error('Segments:', segments);
+      console.error('Pains:', pains);
+      console.error('Jobs:', jobs);
+      console.error('Outcomes:', outcomes);
+      throw new Error(
+        'ICP generation failed: AI did not provide all required sections',
+      );
+    }
+
+    // Create the ICP object with actual AI-generated data
     const icp: ICP = {
       icp_id: icpId,
       icp_name: template.name,
@@ -125,14 +193,13 @@ Output policy:
         generated_at: new Date().toISOString(),
         source_company: companyData.name || 'Unknown Company',
       },
-      segments:
-        segments.length > 0
-          ? segments
-          : ['Business Professionals', 'Industry Leaders'],
+      segments: segments,
       fit_definition: {
         company_attributes: {
           industries: [companyData.industry || 'Technology'],
-          company_sizes: ['Small Business', 'Medium Business'],
+          company_sizes: companyData.companySize
+            ? [companyData.companySize]
+            : ['Small Business', 'Medium Business'],
           geographies: ['Global'],
           tech_stack_hints: ['Modern SaaS', 'Cloud-based'],
         },
@@ -146,18 +213,9 @@ Output policy:
         ],
       },
       needs_pain_goals: {
-        pains:
-          pains.length > 0
-            ? pains
-            : ['Operational inefficiency', 'High costs', 'Complex processes'],
-        jobs_to_be_done:
-          jobs.length > 0
-            ? jobs
-            : ['Optimize operations', 'Reduce costs', 'Improve efficiency'],
-        desired_outcomes:
-          outcomes.length > 0
-            ? outcomes
-            : ['Increased efficiency', 'Cost savings', 'Better performance'],
+        pains: pains,
+        jobs_to_be_done: jobs,
+        desired_outcomes: outcomes,
       },
       buying_triggers:
         triggers.length > 0
