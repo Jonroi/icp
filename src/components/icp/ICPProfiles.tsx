@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
+  X,
   Plus,
   Trash2,
   Loader2,
@@ -52,6 +53,7 @@ export function ICPProfiles({
     { companyId },
     { enabled: !!companyId },
   );
+  const deleteICPMutation = trpc.icp.delete.useMutation();
   const deleteAllICPsMutation = trpc.icp.deleteAllForCompany.useMutation();
 
   // Update company state when activeCompanyId changes
@@ -83,6 +85,19 @@ export function ICPProfiles({
   const isDeleting = deleteAllICPsMutation.isPending;
 
   const profiles = icpListQuery.data || [];
+
+  const handleDeleteICP = async (icpId: string) => {
+    if (!icpId) return;
+    const ok = confirm('Delete this ICP profile? This cannot be undone.');
+    if (!ok) return;
+    try {
+      await deleteICPMutation.mutateAsync({ id: icpId });
+      await icpListQuery.refetch();
+    } catch (error) {
+      console.error('Error deleting ICP:', error);
+      alert('Failed to delete ICP profile. Please try again.');
+    }
+  };
 
   return (
     <div className='space-y-6'>
@@ -163,9 +178,19 @@ export function ICPProfiles({
                     }
 
                     return (
-                      <Card key={p.id} className='bg-muted/30'>
-                        <CardHeader className='pb-3'>
-                          <div className='flex items-center justify-between'>
+                      <Card key={p.id} className='bg-muted/30 relative'>
+                        {/* Per-card delete button (top-right) */}
+                        <Button
+                          variant='destructive'
+                          size='icon'
+                          className='absolute top-3 right-3 h-7 w-7'
+                          title='Delete this ICP profile'
+                          onClick={() => handleDeleteICP(p.id)}
+                          disabled={deleteICPMutation.isPending}>
+                          <X className='h-4 w-4' />
+                        </Button>
+                        <CardHeader className='pb-3 pr-12 pt-2'>
+                          <div className='flex items-start justify-start'>
                             <div>
                               <CardTitle className='text-xl'>
                                 {p.profileData.icp_name ||
@@ -177,18 +202,21 @@ export function ICPProfiles({
                                 {p.profileData.abm_tier || 'N/A'} • Score:{' '}
                                 {p.profileData.fit_score || 'N/A'}
                               </p>
-                            </div>
-                            <div className='flex items-center gap-2'>
-                              <Badge
-                                variant={
-                                  p.profileData.confidence === 'high'
-                                    ? 'default'
-                                    : p.profileData.confidence === 'medium'
-                                    ? 'secondary'
-                                    : 'outline'
-                                }>
-                                {p.profileData.confidence || 'medium'}
-                              </Badge>
+                              <div className='mt-2'>
+                                <Badge
+                                  variant={
+                                    (p.profileData.confidence || 'medium') ===
+                                    'high'
+                                      ? 'default'
+                                      : (p.profileData.confidence ||
+                                          'medium') === 'medium'
+                                      ? 'secondary'
+                                      : 'outline'
+                                  }>
+                                  Confidence:{' '}
+                                  {p.profileData.confidence || 'medium'}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                         </CardHeader>
