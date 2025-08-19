@@ -4,20 +4,32 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 
 ## 🚀 Features
 
-- **AI-Powered ICP Generation**: Uses Ollama LLM for intelligent customer profile creation
+### 🧠 AI-Powered Intelligence
+- **Local LLM Processing**: Uses Ollama LLM for private, intelligent customer profile creation
 - **140+ ICP Templates**: Comprehensive library of B2B, B2C, and B2B2C customer profiles
+- **Single-Call Generation**: Efficient ICP generation with one comprehensive LLM call per profile
+- **AI Campaign Creation**: Generate complete marketing campaigns with context-aware AI
+- **Intelligent Template Selection**: AI-driven selection from 140+ templates based on 6 criteria
+
+### 📊 Business Intelligence
+- **Complete ICP Profiles**: Customer segments, pain points, jobs-to-be-done, buying triggers
+- **Fit Scoring**: 0-100 scoring with ABM tiering for prioritization
+- **Go-to-Market Strategy**: Channels, messages, and content ideas
+- **Campaign Analytics**: Multi-platform campaign generation and management
+
+### 🎯 Campaign Management
+- **Multi-Media Support**: Google Ads, LinkedIn, Email, Print, and Social Media campaigns
+- **Copy Style Options**: Facts, Humour, Smart, Emotional, and Professional styles
+- **Campaign Library**: Browse and manage all saved campaigns in organized grid layout
+- **Export Capabilities**: Download campaigns and ICPs for external use
+
+### 🛠️ Technical Excellence
 - **Type-Safe API**: Full end-to-end type safety with tRPC
 - **Redis Caching**: High-performance caching for companies, ICPs, and application state
 - **PostgreSQL Database**: Robust data persistence with proper schema management
-- **Single LLM Call Generation**: Efficient ICP generation with one call per profile
-- **Company Management**: Create, update, and manage multiple companies
-- **AI Campaign Generation**: Generate complete marketing campaigns using AI
-- **Campaign Management**: Create, edit, delete, and organize campaigns
-- **Campaign Library**: Browse and view all saved campaigns in an organized grid layout
-- **Multi-Media Support**: Google Ads, LinkedIn, Email, Print, and Social Media campaigns
-- **Copy Style Options**: Facts, Humour, Smart, Emotional, and Professional styles
 - **Modern UI**: Built with Radix UI primitives and Tailwind CSS
 - **Docker Support**: Complete containerized setup for easy deployment
+- **Privacy-First**: All AI processing happens locally - no external API dependencies
 
 ## 🏗️ Architecture
 
@@ -34,11 +46,18 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 
 ### Key Components
 
-- **tRPC Routers**: Type-safe API endpoints for companies, ICPs, and data management
-- **Redis Service**: Caching layer for performance optimization
-- **AI Service**: Efficient ICP generation with single LLM call per profile
-- **Database Layer**: PostgreSQL with proper schema and migrations
-- **AI SDK Integration**: Vercel AI SDK with Ollama for local LLM processing
+- **tRPC Routers**: Type-safe API endpoints for companies, ICPs, campaigns, and data management
+- **AI Services**: Comprehensive AI workflow for ICP and campaign generation
+- **Redis Service**: High-performance caching layer with TTL-based invalidation
+- **Database Layer**: PostgreSQL with normalized schema and proper migrations
+- **Template Library**: 140+ ICP templates with intelligent selection algorithm
+- **Campaign Engine**: Multi-platform campaign generation with context awareness
+
+### Architecture Documentation
+
+📖 **[Complete Architecture Guide](architecture.md)** - Detailed system architecture and design patterns
+
+🤖 **[AI Workflow Documentation](AI_Workflow.md)** - Comprehensive AI system overview and implementation details
 
 ## 📦 Installation & Setup
 
@@ -237,17 +256,27 @@ Each generated campaign includes:
 ```text
 src/
 ├── components/          # React components
-│   ├── icp/            # ICP-related components
-│   ├── campaign/       # Campaign components
+│   ├── icp/            # ICP generation and management
+│   ├── campaign/       # Campaign creation and library
 │   ├── ui/             # Reusable UI components
+│   ├── layout/         # Layout components
 │   └── providers/      # Context providers
 ├── server/             # tRPC server
 │   ├── routers/        # API route handlers
 │   └── trpc.ts         # tRPC configuration
-├── services/           # Business logic
-│   ├── ai/             # AI/LLM services
-│   └── redis-service.ts # Redis caching
+├── services/           # Organized business logic
+│   ├── ai/             # AI services and workflow
+│   │   ├── core/       # Core AI SDK service
+│   │   ├── icp/        # ICP generation system
+│   │   └── campaign-generator.ts # Campaign AI
+│   ├── database/       # Database services
+│   │   ├── campaign/   # Campaign data management
+│   │   ├── company/    # Company data services
+│   │   └── icp/        # ICP data persistence
+│   ├── cache/          # Redis caching services
+│   └── project/        # Project management
 ├── hooks/              # Custom React hooks
+│   └── useAppState.ts  # Centralized app state
 └── lib/                # Utilities and configurations
 ```
 
@@ -256,23 +285,24 @@ src/
 #### tRPC API Endpoints
 
 - `company.*` - Company management (CRUD operations)
-- `companyData.*` - Form data management
+- `companyData.*` - Form data management  
 - `icp.*` - ICP generation and management
 - `campaign.*` - Campaign generation and management
 
 #### Redis Caching Strategy
 
-- **Company Cache**: 1-hour TTL for company data
+- **Company Cache**: 30-minute TTL for company-specific data
 - **ICP Cache**: 2-hour TTL for generated profiles
-- **State Cache**: 24-hour TTL for application state
-- **Session Cache**: 30-minute TTL for user sessions
+- **Campaign Cache**: 1-hour TTL for individual campaigns
+- **Application Cache**: 24-hour TTL for application state
 
-#### AI Processing
+#### AI Processing Workflow
 
-- **Single LLM Call per ICP**: Efficient generation with one comprehensive prompt
-- **140+ Template Library**: B2B, B2C, and B2B2C variations
-- **Intelligent Selection**: AI-driven template selection based on company data
-- **Robust Error Handling**: Fallback values and comprehensive error management
+- **Template Selection**: AI analyzes company data to select optimal ICP templates
+- **Single-Call Generation**: One comprehensive LLM call per ICP for efficiency
+- **Campaign Context**: AI combines ICP data with company context for targeted campaigns
+- **Multi-Platform Output**: Generates campaigns optimized for different media types
+- **Quality Assurance**: Robust parsing with fallback values and error recovery
 
 ## 🛠️ Development Commands
 

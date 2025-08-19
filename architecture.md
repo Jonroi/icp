@@ -19,39 +19,104 @@ src/
 ├── components/          # React components
 │   ├── agents/         # ICP rules and schema definitions
 │   ├── ui/             # Reusable UI components
-│   ├── layout/         # Layout components
-│   ├── icp/            # ICP-related components
-│   ├── campaign/       # Campaign components
+│   ├── layout/         # Layout components (Header)
+│   ├── icp/            # ICP generation and management
+│   │   ├── ICPGenerator.tsx     # Company form + ICP generation
+│   │   ├── ICPProfiles.tsx      # ICP display and management
+│   │   ├── ICPDetailsModal.tsx  # Detailed ICP view
+│   │   └── OwnCompanyForm.tsx   # Company data form
+│   ├── campaign/       # Campaign system
+│   │   ├── CampaignDesigner.tsx # Campaign generation interface
+│   │   ├── CampaignLibrary.tsx  # Campaign browsing and management
+│   │   ├── CampaignForm.tsx     # Campaign configuration form
+│   │   └── CampaignDisplay.tsx  # Campaign detail view
+│   ├── providers/      # Context providers (tRPC, state)
 │   └── index.ts        # Component exports
-├── services/           # Business logic and DB services
-│   ├── ai/             # AI services (Ollama client, ICP generator)
-│   ├── companies-service.ts
-│   ├── company-data-service.ts
-│   ├── icp-profiles-service.ts
-│   └── index.ts        # Service exports
+├── services/           # Organized business logic
+│   ├── ai/             # AI services and workflow
+│   │   ├── core/       # Core AI infrastructure
+│   │   │   ├── ai-sdk-service.ts   # Base AI SDK service
+│   │   │   └── types.ts            # AI-related types
+│   │   ├── icp/        # ICP generation system
+│   │   │   ├── generator/          # ICP generation logic
+│   │   │   ├── templates/          # 140+ ICP template library
+│   │   │   └── rules/              # Business model detection
+│   │   ├── campaign-generator.ts   # Campaign AI service
+│   │   └── index.ts               # AI service exports
+│   ├── database/       # Database services
+│   │   ├── campaign/   # Campaign data management
+│   │   │   └── campaign-service.ts
+│   │   ├── company/    # Company data services
+│   │   │   ├── companies-service.ts
+│   │   │   └── company-data-service.ts
+│   │   ├── icp/        # ICP data persistence
+│   │   │   └── icp-profiles-service.ts
+│   │   └── index.ts    # Database service exports
+│   ├── cache/          # Redis caching services
+│   │   ├── redis-service.ts        # Core Redis operations
+│   │   └── index.ts               # Cache service exports
+│   ├── project/        # Project management
+│   │   └── project-service.ts     # Project state management
+│   └── index.ts        # All service exports
+├── server/             # tRPC server configuration
+│   ├── routers/        # API route handlers
+│   │   ├── _app.ts     # Main router aggregation
+│   │   ├── company.ts  # Company management endpoints
+│   │   ├── company-data.ts # Company data endpoints
+│   │   ├── icp.ts      # ICP generation and management
+│   │   └── campaign.ts # Campaign generation and management
+│   └── trpc.ts         # tRPC configuration
 ├── hooks/              # Custom React hooks
 │   └── useAppState.ts  # Centralized application state
 ├── lib/                # Shared utilities
-└── App.tsx             # Main application component used by app/page.tsx
+│   ├── trpc.ts         # tRPC client configuration
+│   └── utils.ts        # General utilities
+└── App.tsx             # Main application component
 ```
 
 ## 🔄 Data Flow
 
 ```text
 User Input → UI Components → useAppState → tRPC → Services → PostgreSQL
-                                    ↘︎ AIService → Ollama → ICPs → DB
+                                    ↘︎ AI Services → Ollama → ICPs/Campaigns → DB
+                                    ↗︎ Redis Cache ← Performance Optimization
 ```
 
-### Component Communication
+### Application Architecture
 
 ```typescript
 App.tsx
-├── Header
-├── Tabs
-│   ├── ICPGenerator (company form + generate ICPs)
-│   ├── ICPProfiles (view/manage ICPs for selected company)
-│   ├── CampaignDesigner
-│   └── CampaignLibrary
+├── Header (navigation and company selection)
+├── Tabs (main application interface)
+│   ├── ICP Generator
+│   │   ├── OwnCompanyForm (company data input)
+│   │   └── ICP Generation (AI-powered profile creation)
+│   ├── ICP Profiles
+│   │   ├── ICPProfiles (grid view of generated profiles)
+│   │   └── ICPDetailsModal (detailed profile inspection)
+│   ├── Campaign Designer
+│   │   ├── CampaignForm (campaign configuration)
+│   │   └── Campaign Generation (AI-powered campaign creation)
+│   └── Campaign Library
+│       └── CampaignLibrary (campaign browsing and management)
+```
+
+### Service Layer Architecture
+
+```text
+Services Layer
+├── AI Services
+│   ├── Core AI (AISDKService + Ollama integration)
+│   ├── ICP Generator (template selection + profile generation)
+│   └── Campaign Generator (context-aware campaign creation)
+├── Database Services
+│   ├── Company Management (CRUD operations)
+│   ├── ICP Profiles (generation results storage)
+│   └── Campaign Management (campaign storage and retrieval)
+├── Cache Services
+│   └── Redis (performance optimization with TTL-based invalidation)
+└── Project Services
+    └── State Management (application-wide state coordination)
 ```
 
 ## 🧠 AI Service Architecture
