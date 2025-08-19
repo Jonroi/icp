@@ -13,6 +13,7 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **Company Management**: Create, update, and manage multiple companies
 - **AI Campaign Generation**: Generate complete marketing campaigns using AI
 - **Campaign Management**: Create, edit, delete, and organize campaigns
+- **Campaign Library**: Browse and view all saved campaigns in an organized grid layout
 - **Multi-Media Support**: Google Ads, LinkedIn, Email, Print, and Social Media campaigns
 - **Copy Style Options**: Facts, Humour, Smart, Emotional, and Professional styles
 - **Modern UI**: Built with Radix UI primitives and Tailwind CSS
@@ -119,10 +120,6 @@ npm run dev
    npm install
    ```
 
-   ```
-
-   ```
-
 4. **Install dependencies**
 
    ```bash
@@ -210,7 +207,18 @@ Each generated ICP includes:
 5. Click "Generate Campaign" to create AI-powered campaigns
 6. View, edit, and manage your campaigns
 
-### 5. Campaign Management
+### 5. Campaign Browsing
+
+1. In the "Campaign Designer" tab, click "View Campaigns" to browse all saved campaigns
+2. Campaigns are organized in a grid layout showing:
+   - Campaign name and creation date
+   - Copy style and media type with visual indicators
+   - Preview of ad copy content
+   - Quick action buttons for view, edit, and delete
+3. Click on any campaign to view full details
+4. Use the "New Campaign" button to create additional campaigns
+
+### 6. Campaign Management
 
 Each generated campaign includes:
 
@@ -220,6 +228,7 @@ Each generated campaign includes:
 - **Landing Page Copy**: Persuasive copy for conversion
 - **Image Suggestions**: AI-generated image descriptions
 - **Export Options**: Download campaigns as JSON files
+- **Campaign Library**: Browse and manage all campaigns for each company
 
 ## 🔧 Development
 
@@ -349,6 +358,9 @@ trpc.campaign.getById.query({ id: string });
 
 // Get campaigns by ICP
 trpc.campaign.getByIcpId.query({ icpId: string });
+
+// Get campaigns by company
+trpc.campaign.getByCompany.query({ companyId: string });
 
 // Update campaign
 trpc.campaign.update.mutate({ id: string, updates: object });
