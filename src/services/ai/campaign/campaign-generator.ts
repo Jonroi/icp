@@ -1,4 +1,5 @@
 import { AISDKService } from '../core/ai-sdk-service';
+import { icpProfilesService, companiesService } from '../../database';
 import type {
   Campaign,
   CampaignGenerationRequest,
@@ -21,47 +22,41 @@ export class CampaignGenerator {
       const { icpId, copyStyle, mediaType, imagePrompt, campaignDetails } =
         request;
 
-      // Get ICP data from database (this would be injected or fetched)
+      // Get ICP data from database
       const icpData = await this.getICPData(icpId);
+
+      // Get company data for additional context
+      const companyData = await this.getCompanyData(icpId);
+
+      console.log(
+        'ICP Data size:',
+        JSON.stringify(icpData).length,
+        'characters',
+      );
+      console.log(
+        'Company Data size:',
+        companyData ? JSON.stringify(companyData).length : 0,
+        'characters',
+      );
 
       const prompt = this.buildCampaignPrompt({
         icpData,
+        companyData,
         copyStyle,
         mediaType,
         imagePrompt,
         campaignDetails,
       });
 
-      // System prompt to enforce quality, safety and structure
-      const systemPrompt = `You are a senior performance marketer and copy chief.
-Your goals:
-- Generate high-converting, platform-specific campaign copy using the provided ICP.
-- Be precise, benefit-led, and free of fluff or clichés.
-
-Hard constraints:
-- Language: English only.
-- No markdown, no code fences, no extra commentary.
-- Output must be a single valid JSON object that matches the requested schema.
-- Do not invent facts outside the ICP/context; make reasonable, domain-consistent assumptions only.
-- Respect tone (copyStyle) strictly:
-  - facts: authoritative, evidence-driven, specific metrics when plausible
-  - humour: light, clever, never offensive; keep brand-safe
-  - smart: insightful, concise, consultative
-  - emotional: outcome-oriented, empathetic, motivational
-  - professional: formal, clear, decision-maker friendly
-- Adapt to mediaType:
-  - google-ads: compact, punchy ad copy; avoid walls of text; CTA crisp
-  - linkedin: professional tone; insight-led; light formatting implied, but return as plain text
-  - email: persuasive single-message flow; a strong lead-in and clear CTA in body
-  - print: scannable headline + persuasive body; timeless tone
-  - social-media: concise hooks; conversational energy without slang overload
-- Safety: do not include discriminatory, unsafe, or medical/financial advice beyond general marketing claims.
-`;
+      // Simplified system prompt
+      const systemPrompt = `You are a marketing copywriter. Generate ONLY a valid JSON object with the exact structure requested. No explanations, no markdown, no extra text. Use double quotes for all strings.`;
 
       const response = await this.aiService.generateResponse(
         prompt,
         systemPrompt,
       );
+
+      console.log('AI Response received:', response.substring(0, 500) + '...');
 
       const campaign = this.parseCampaignResponse(response, request);
 
@@ -84,48 +79,61 @@ Hard constraints:
 
   private buildCampaignPrompt(params: {
     icpData: any;
+    companyData: any;
     copyStyle: CopyStyle;
     mediaType: MediaType;
     imagePrompt?: string;
     campaignDetails?: string;
   }): string {
-    const { icpData, copyStyle, mediaType, imagePrompt, campaignDetails } =
-      params;
+    const {
+      icpData,
+      companyData,
+      copyStyle,
+      mediaType,
+      imagePrompt,
+      campaignDetails,
+    } = params;
+
+    // Create a simplified, focused prompt to reduce parsing errors
+    const icpSummary = {
+      name: icpData.icp_name,
+      businessModel: icpData.business_model,
+      segments: icpData.segments?.slice(0, 3),
+      painPoints: icpData.needs_pain_goals?.pains?.slice(0, 3),
+      goals: icpData.needs_pain_goals?.desired_outcomes?.slice(0, 3),
+      buyingTriggers: icpData.buying_triggers?.slice(0, 3),
+    };
+
+    const companySummary = companyData
+      ? {
+          name: companyData.name,
+          industry: companyData.industry,
+          valueProposition: companyData.valueProposition,
+          mainOfferings: companyData.mainOfferings,
+        }
+      : null;
 
     return `
-You are an expert marketing copywriter specializing in creating high-converting campaigns. You have extensive experience in digital marketing, conversion optimization, and creating compelling copy that drives results.
+Create a marketing campaign for ${mediaType} platform with ${copyStyle} tone.
 
-TARGET AUDIENCE (ICP) - Detailed Profile:
-${JSON.stringify(icpData, null, 2)}
+TARGET AUDIENCE:
+${JSON.stringify(icpSummary, null, 2)}
 
-CAMPAIGN SPECIFICATIONS:
-- Copy Style: ${copyStyle} (create copy that matches this tone and approach)
-- Media Type: ${mediaType} (optimize for this specific platform)
-${imagePrompt ? `- Image Prompt: ${imagePrompt}` : ''}
-${campaignDetails ? `- Campaign Details: ${campaignDetails}` : ''}
+${companySummary ? `COMPANY: ${JSON.stringify(companySummary, null, 2)}` : ''}
 
-REQUIRED OUTPUT STRUCTURE (STRICT):
+${imagePrompt ? `IMAGE CONTEXT: ${imagePrompt}` : ''}
+${campaignDetails ? `CAMPAIGN DETAILS: ${campaignDetails}` : ''}
 
-1. AD COPY: Create compelling, platform-optimized copy that speaks directly to the ICP's pain points and goals. Make it engaging and conversion-focused.
-
-2. CALL-TO-ACTION: Design a clear, action-oriented CTA that motivates the target audience to take the desired action. Make it specific and compelling.
-
-3. HOOKS: Generate 5 attention-grabbing hooks for the landing page that will immediately capture the ICP's attention and address their specific needs.
-
-4. LANDING PAGE COPY: Write persuasive, benefit-focused copy for the landing page that builds trust, addresses objections, and drives conversions.
-
-5. IMAGE SUGGESTION: Provide a detailed, creative description for AI image generation that will complement the campaign and resonate with the target audience.
-
-Respond with ONLY a single valid JSON object and nothing else (no explanations, no markdown, no code fences). The JSON must strictly match this schema and use double quotes for all keys/strings:
+Generate ONLY a JSON object with this exact structure:
 {
-  "adCopy": "Your detailed ad copy here",
-  "cta": "Your compelling call-to-action here",
+  "adCopy": "Compelling ad copy for ${mediaType}",
+  "cta": "Clear call-to-action",
   "hooks": "Hook 1|Hook 2|Hook 3|Hook 4|Hook 5",
-  "landingPageCopy": "Your comprehensive landing page copy here",
-  "imageSuggestion": "Your detailed image suggestion here"
+  "landingPageCopy": "Persuasive landing page content",
+  "imageSuggestion": "Image description for AI generation"
 }
 
-Ensure all copy is tailored specifically to the ICP profile and optimized for the selected media type and copy style.
+Return ONLY the JSON object, no other text.
 `;
   }
 
@@ -158,6 +166,10 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
       };
     } catch (error) {
       console.error('Error parsing campaign response:', error);
+      console.error(
+        'Raw response that failed to parse:',
+        response.substring(0, 1000),
+      );
       throw new Error('Failed to parse campaign response');
     }
   }
@@ -171,6 +183,8 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
     imageSuggestion?: string;
   } {
     let text = responseText?.trim() || '';
+
+    console.log('Raw AI response:', text.substring(0, 1000));
 
     // Remove markdown code fences if present
     if (text.startsWith('```')) {
@@ -205,19 +219,84 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
     // Note: conservative replace for ",}\n" and ",]\n"
     text = text.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
 
-    const parsed = JSON.parse(text);
-    return parsed;
+    console.log('Cleaned text for parsing:', text.substring(0, 500));
+
+    try {
+      const parsed = JSON.parse(text);
+      return parsed;
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Failed to parse text:', text);
+
+      // Fallback: return a basic structure with error message
+      return {
+        adCopy: 'Error: Could not parse AI response. Please try again.',
+        cta: 'Learn More',
+        hooks:
+          'Discover how we can help|Transform your business today|Get started now|See the difference|Contact us today',
+        landingPageCopy:
+          'We apologize, but there was an issue generating the campaign content. Please try generating the campaign again.',
+        imageSuggestion: 'Professional business meeting or collaboration scene',
+      };
+    }
   }
 
   private async getICPData(icpId: string): Promise<any> {
-    // This would typically fetch from database
-    // For now, return mock data
-    return {
-      name: 'Sample ICP',
-      demographics: 'Business owners, 25-45 years old',
-      painPoints: 'Time management, cost efficiency',
-      goals: 'Increase productivity, reduce costs',
-    };
+    try {
+      const icpProfile = await icpProfilesService.getProfileById(icpId);
+
+      if (!icpProfile) {
+        throw new Error(`ICP profile with id ${icpId} not found`);
+      }
+
+      // Return the actual ICP data
+      return icpProfile.profileData;
+    } catch (error) {
+      console.error('Error fetching ICP data:', error);
+      throw new Error(
+        `Failed to fetch ICP data for id ${icpId}: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      );
+    }
+  }
+
+  private async getCompanyData(icpId: string): Promise<any> {
+    try {
+      // First get the ICP profile to find the company ID
+      const icpProfile = await icpProfilesService.getProfileById(icpId);
+
+      if (!icpProfile || !icpProfile.companyId) {
+        console.warn(`No company ID found for ICP ${icpId}`);
+        return null;
+      }
+
+      // Get company data using the company ID
+      const companyData = await companiesService.getCompanyWithData(
+        icpProfile.companyId.toString(),
+      );
+
+      if (!companyData) {
+        console.warn(
+          `No company data found for company ID ${icpProfile.companyId}`,
+        );
+        return null;
+      }
+
+      // Return only essential company data for campaign generation
+      return {
+        name: companyData.name,
+        industry: companyData.data?.industry,
+        valueProposition: companyData.data?.valueProposition,
+        mainOfferings: companyData.data?.mainOfferings,
+        uniqueFeatures: companyData.data?.uniqueFeatures,
+        competitiveAdvantages: companyData.data?.competitiveAdvantages,
+      };
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+      // Don't throw error for company data - it's optional context
+      return null;
+    }
   }
 
   private generateId(): string {

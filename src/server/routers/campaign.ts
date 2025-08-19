@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { CampaignGenerator } from '@/services/ai';
-import { CampaignService } from '@/services/database';
+import { CampaignService, icpProfilesService } from '@/services/database';
 import { redisService } from '@/services/cache';
 
 const campaignGenerator = new CampaignGenerator();
@@ -53,6 +53,8 @@ export const campaignRouter = createTRPCRouter({
           landingPageCopy: result.campaign.landingPageCopy,
         });
 
+        console.log('Campaign saved to database:', savedCampaign.id);
+
         // Cache the result
         await redisService.set(
           `campaign:${savedCampaign.id}`,
@@ -60,7 +62,25 @@ export const campaignRouter = createTRPCRouter({
           3600, // 1 hour TTL
         );
 
-        // Cache invalidation temporarily disabled during reorganization
+        // Invalidate related caches so library shows new campaign
+        await redisService.del('campaigns:all');
+        await redisService.del(`campaigns:icp:${savedCampaign.icp_id}`);
+
+        // Get company ID from ICP to invalidate company cache
+        try {
+          const icpProfile = await icpProfilesService.getProfileById(
+            savedCampaign.icp_id,
+          );
+          if (icpProfile && icpProfile.companyId) {
+            await redisService.del(`campaigns:company:${icpProfile.companyId}`);
+            console.log(
+              'Invalidated company cache for company ID:',
+              icpProfile.companyId,
+            );
+          }
+        } catch (e) {
+          console.warn('Failed to invalidate company cache:', e);
+        }
 
         return savedCampaign;
       } catch (error) {
@@ -244,21 +264,64 @@ export const campaignRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       try {
-        const success = await campaignService.delete(input.id);
+        console.log('Attempting to delete campaign:', input.id);
 
+        // Get campaign details BEFORE deleting to invalidate specific caches
+        const campaign = await campaignService.getById(input.id);
+        if (!campaign) {
+          throw new Error('Campaign not found');
+        }
+
+        // Store campaign info for cache invalidation
+        const icpId = campaign.icp_id;
+        console.log('Campaign ICP ID for cache invalidation:', icpId);
+        let companyId: string | null = null;
+
+        try {
+          const icpProfile = await icpProfilesService.getProfileById(icpId);
+          console.log('ICP Profile found:', icpProfile ? 'yes' : 'no');
+          if (icpProfile) {
+            console.log('ICP Profile companyId:', icpProfile.companyId);
+            companyId = icpProfile.companyId || null;
+          }
+        } catch (e) {
+          console.warn('Failed to get ICP profile for cache invalidation:', e);
+        }
+
+        // Now delete the campaign
+        const success = await campaignService.delete(input.id);
         if (!success) {
           throw new Error('Campaign not found');
         }
 
+        console.log('Campaign deleted successfully:', input.id);
+
         // Clear cache
+        console.log('Clearing caches for deleted campaign...');
         await redisService.del(`campaign:${input.id}`);
         await redisService.del('campaigns:all');
+        await redisService.del(`campaigns:icp:${icpId}`);
+        console.log('Basic caches cleared');
 
-        // Cache invalidation temporarily disabled during reorganization
+        if (companyId) {
+          await redisService.del(`campaigns:company:${companyId}`);
+          console.log(
+            'Invalidated company cache for deleted campaign, company ID:',
+            companyId,
+          );
+        } else {
+          console.log(
+            'No company ID found, skipping company cache invalidation',
+          );
+        }
 
         return { success: true };
       } catch (error) {
         console.error('Error deleting campaign:', error);
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         throw new Error(
           error instanceof Error ? error.message : 'Failed to delete campaign',
         );

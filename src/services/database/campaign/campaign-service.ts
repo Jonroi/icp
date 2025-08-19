@@ -148,8 +148,10 @@ export class CampaignService {
 
   async delete(id: string): Promise<boolean> {
     await ensureDatabaseInitialized();
+    console.log('CampaignService: Deleting campaign with ID:', id);
     const query = 'DELETE FROM campaigns WHERE id = $1';
     const result = await databaseManager.query(query, [id]);
+    console.log('CampaignService: Delete result rowCount:', result.rowCount);
     return result.rowCount > 0;
   }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -35,17 +35,49 @@ export function CampaignLibrary({
     { enabled: !!companyId },
   );
 
+  // Debug logging for campaign loading
+  React.useEffect(() => {
+    if (campaignsQuery.data) {
+      console.log(
+        'Campaign Library loaded campaigns:',
+        campaignsQuery.data.length,
+        'campaigns for company:',
+        companyId,
+      );
+    }
+  }, [campaignsQuery.data, companyId]);
+
+  React.useEffect(() => {
+    if (campaignsQuery.error) {
+      console.error(
+        'Campaign Library failed to load campaigns:',
+        campaignsQuery.error,
+      );
+    }
+  }, [campaignsQuery.error]);
+
   const deleteCampaignMutation = trpc.campaign.delete.useMutation();
 
   const handleDeleteCampaign = async (campaignId: string) => {
+    console.log(
+      'CampaignLibrary: Delete button clicked for campaign:',
+      campaignId,
+    );
     if (confirm('Are you sure you want to delete this campaign?')) {
       try {
+        console.log('CampaignLibrary: Confirmed delete, calling mutation...');
         await deleteCampaignMutation.mutateAsync({ id: campaignId });
+        console.log(
+          'CampaignLibrary: Delete mutation successful, refetching campaigns...',
+        );
         await campaignsQuery.refetch();
+        console.log('CampaignLibrary: Campaigns refetched successfully');
       } catch (error) {
-        console.error('Error deleting campaign:', error);
+        console.error('CampaignLibrary: Error deleting campaign:', error);
         alert('Failed to delete campaign. Please try again.');
       }
+    } else {
+      console.log('CampaignLibrary: Delete cancelled by user');
     }
   };
 

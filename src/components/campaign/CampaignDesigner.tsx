@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bot, Plus } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { CampaignForm, type CampaignFormData } from './CampaignForm';
 import { CampaignDisplay } from './CampaignDisplay';
@@ -62,13 +62,22 @@ export function CampaignDesigner({
   const handleGenerateCampaign = async (formData: CampaignFormData) => {
     try {
       const campaign = await generateCampaignMutation.mutateAsync(formData);
-      setGeneratedCampaign(campaign);
-      setShowForm(false);
-      // Switch to campaign library so user can see the saved item
-      onSwitchToLibrary?.();
+
+      // Only proceed if campaign was successfully generated
+      if (campaign && campaign.id) {
+        setGeneratedCampaign(campaign);
+        setShowForm(false);
+        // Switch to campaign library only after successful generation
+        onSwitchToLibrary?.();
+      } else {
+        throw new Error('Campaign generation failed - no campaign returned');
+      }
     } catch (error) {
       console.error('Error generating campaign:', error);
       alert('Failed to generate campaign. Please try again.');
+      // Keep user on the form page when generation fails
+      setShowForm(true);
+      setGeneratedCampaign(null);
     }
   };
 
@@ -106,11 +115,6 @@ export function CampaignDesigner({
     }
   };
 
-  const handleShowForm = () => {
-    setShowForm(true);
-    setGeneratedCampaign(null);
-  };
-
   const isLoading =
     generateCampaignMutation.isPending ||
     updateCampaignMutation.isPending ||
@@ -136,16 +140,6 @@ export function CampaignDesigner({
               Generate a full campaign based on your ICP.
             </CardDescription>
           </div>
-          <div className='flex gap-2'>
-            <Button
-              size='sm'
-              className='flex items-center gap-2'
-              onClick={handleShowForm}
-              disabled={!companyId}>
-              <Plus className='h-4 w-4' />
-              New Campaign
-            </Button>
-          </div>
         </CardHeader>
       </Card>
 
@@ -155,8 +149,9 @@ export function CampaignDesigner({
           <CardHeader>
             <CardTitle>Generate New Campaign</CardTitle>
             <CardDescription>
-              Fill in the details below to generate a new campaign for{' '}
-              {companyName}.
+              {isLoading
+                ? 'Generating your campaign... This may take a few moments.'
+                : `Fill in the details below to generate a new campaign for ${companyName}.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
