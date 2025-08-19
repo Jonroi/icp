@@ -60,6 +60,21 @@ export const campaignRouter = createTRPCRouter({
           3600, // 1 hour TTL
         );
 
+        // Invalidate company-specific and ICP caches so library reflects new item
+        try {
+          const icpService = await import(
+            '@/services/database/icp-profiles-service'
+          );
+          const icp = await icpService.icpProfilesService.getProfileById(
+            savedCampaign.icp_id,
+          );
+          if (icp) {
+            await redisService.del(`campaigns:company:${icp.companyId}`);
+          }
+        } catch (e) {
+          console.warn('Cache invalidation after create failed:', e);
+        }
+
         return savedCampaign;
       } catch (error) {
         console.error('Error in campaign generation:', error);
