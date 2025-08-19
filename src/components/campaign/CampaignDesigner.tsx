@@ -130,7 +130,7 @@ export function CampaignDesigner({
     })) || [];
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pt-4'>
       {/* Header */}
       <Card className='max-w-4xl mx-auto mb-6'>
         <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>

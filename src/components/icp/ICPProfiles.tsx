@@ -136,7 +136,7 @@ export function ICPProfiles({
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pt-4'>
       <Card className='max-w-6xl mx-auto'>
         <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
           <div>
@@ -193,234 +193,234 @@ export function ICPProfiles({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoadingProfiles ||
-          isGeneratingMore ||
-          generateMoreICPsMutation.isPending ? (
-            <div className='flex items-center justify-center py-12'>
-              <div className='flex items-center gap-3'>
-                <Loader2 className='h-6 w-6 animate-spin text-primary' />
-                <span className='text-muted-foreground'>
-                  {isGeneratingMore || generateMoreICPsMutation.isPending
-                    ? 'Generating new ICP profiles...'
-                    : 'Loading ICP profiles...'}
-                </span>
-              </div>
-            </div>
-          ) : companyId && profiles.length > 0 ? (
-            <div className='space-y-4'>
-              <h3 className='font-semibold'>
-                Generated ICPs for {companyName} ({profiles.length})
-              </h3>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch'>
-                {profiles
-                  .map((p: any) => {
-                    // Ensure profile_data exists and has the expected structure
-                    if (!p.profile_data) {
-                      console.warn('Profile data is missing for profile:', p);
-                      return null;
-                    }
+      </Card>
 
-                    return (
-                      <Card
-                        key={p.id}
-                        className='bg-muted/30 relative flex flex-col'>
-                        {/* Action buttons (top-right) */}
-                        <div className='absolute top-3 right-3 flex gap-1'>
+      {/* ICP Profiles Content */}
+      <div className='max-w-6xl mx-auto'>
+        {isLoadingProfiles ||
+        isGeneratingMore ||
+        generateMoreICPsMutation.isPending ? (
+          <div className='flex items-center justify-center py-12'>
+            <div className='flex items-center gap-3'>
+              <Loader2 className='h-6 w-6 animate-spin text-primary' />
+              <span className='text-muted-foreground'>
+                {isGeneratingMore || generateMoreICPsMutation.isPending
+                  ? 'Generating new ICP profiles...'
+                  : 'Loading ICP profiles...'}
+              </span>
+            </div>
+          </div>
+        ) : companyId && profiles.length > 0 ? (
+          <div className='space-y-4'>
+            <h3 className='font-semibold'>
+              Generated ICPs for {companyName} ({profiles.length})
+            </h3>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch'>
+              {profiles
+                .map((p: any) => {
+                  // Ensure profile_data exists and has the expected structure
+                  if (!p.profile_data) {
+                    console.warn('Profile data is missing for profile:', p);
+                    return null;
+                  }
+
+                  return (
+                    <Card
+                      key={p.id}
+                      className='bg-muted/30 relative flex flex-col'>
+                      {/* Action buttons (top-right) */}
+                      <div className='absolute top-3 right-3 flex gap-1'>
+                        <Button
+                          variant='destructive'
+                          size='icon'
+                          className='h-7 w-7'
+                          title='Delete this ICP profile'
+                          onClick={() => handleDeleteICP(p.id)}
+                          disabled={deleteICPMutation.isPending}>
+                          <X className='h-4 w-4' />
+                        </Button>
+                      </div>
+                      <CardHeader className='pb-3 pr-20 pt-2'>
+                        <div className='flex items-start justify-start'>
+                          <div>
+                            <CardTitle className='text-xl'>
+                              {p.profile_data.icp_name ||
+                                p.profile_data.name ||
+                                'Unnamed ICP'}
+                            </CardTitle>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.business_model || 'N/A'} •{' '}
+                              {p.profile_data.abm_tier || 'N/A'} • Score:{' '}
+                              {p.profile_data.fit_score || 'N/A'}
+                            </p>
+                            <div className='mt-2'>
+                              <Badge
+                                variant={
+                                  (p.profile_data.confidence || 'medium') ===
+                                  'high'
+                                    ? 'default'
+                                    : (p.profile_data.confidence ||
+                                        'medium') === 'medium'
+                                    ? 'secondary'
+                                    : 'outline'
+                                }>
+                                Confidence:{' '}
+                                {p.profile_data.confidence || 'medium'}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className='flex flex-col h-full'>
+                        <div className='space-y-4 flex-1'>
+                          {/* Customer Segments */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <Target className='h-4 w-4' />
+                              Customer Segments
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.segments?.join(', ') ||
+                                p.profile_data.customer_segments ||
+                                'No segments defined'}
+                            </p>
+                          </div>
+
+                          {/* Pain Points */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <AlertTriangle className='h-4 w-4' />
+                              Pain Points
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.needs_pain_goals?.pains?.join(
+                                ', ',
+                              ) ||
+                                p.profile_data.pain_points ||
+                                'No pain points defined'}
+                            </p>
+                          </div>
+
+                          {/* Jobs to be Done */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <CheckCircle className='h-4 w-4' />
+                              Jobs to be Done
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.needs_pain_goals?.jobs_to_be_done?.join(
+                                ', ',
+                              ) ||
+                                p.profile_data.jobs_to_be_done ||
+                                'No jobs defined'}
+                            </p>
+                          </div>
+
+                          {/* Desired Outcomes */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <TrendingUp className='h-4 w-4' />
+                              Desired Outcomes
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.needs_pain_goals?.desired_outcomes?.join(
+                                ', ',
+                              ) ||
+                                p.profile_data.desired_outcomes ||
+                                'No outcomes defined'}
+                            </p>
+                          </div>
+
+                          {/* Buying Triggers */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <Target className='h-4 w-4' />
+                              Buying Triggers
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.buying_triggers?.join(', ') ||
+                                'No triggers defined'}
+                            </p>
+                          </div>
+
+                          {/* Common Objections */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <XCircle className='h-4 w-4' />
+                              Common Objections
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.common_objections?.join(', ') ||
+                                'No objections defined'}
+                            </p>
+                          </div>
+
+                          {/* Value Proposition */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <CheckCircle className='h-4 w-4' />
+                              Value Proposition
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.value_prop_alignment
+                                ?.value_prop ||
+                                p.profile_data.value_proposition ||
+                                'No value proposition defined'}
+                            </p>
+                          </div>
+
+                          {/* Go-to-Market Strategy */}
+                          <div>
+                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                              <TrendingUp className='h-4 w-4' />
+                              Go-to-Market Strategy
+                            </h4>
+                            <p className='text-sm text-muted-foreground'>
+                              {p.profile_data.go_to_market?.primary_channels?.join(
+                                ', ',
+                              ) ||
+                                p.profile_data.go_to_market_strategy ||
+                                'No strategy defined'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Details Button */}
+                        <div className='pt-4 border-t mt-auto'>
                           <Button
-                            variant='destructive'
-                            size='icon'
-                            className='h-7 w-7'
-                            title='Delete this ICP profile'
-                            onClick={() => handleDeleteICP(p.id)}
-                            disabled={deleteICPMutation.isPending}>
-                            <X className='h-4 w-4' />
+                            variant='default'
+                            className='w-full'
+                            onClick={() => handleViewDetails(p)}>
+                            View Details
                           </Button>
                         </div>
-                        <CardHeader className='pb-3 pr-20 pt-2'>
-                          <div className='flex items-start justify-start'>
-                            <div>
-                              <CardTitle className='text-xl'>
-                                {p.profile_data.icp_name ||
-                                  p.profile_data.name ||
-                                  'Unnamed ICP'}
-                              </CardTitle>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.business_model || 'N/A'} •{' '}
-                                {p.profile_data.abm_tier || 'N/A'} • Score:{' '}
-                                {p.profile_data.fit_score || 'N/A'}
-                              </p>
-                              <div className='mt-2'>
-                                <Badge
-                                  variant={
-                                    (p.profile_data.confidence || 'medium') ===
-                                    'high'
-                                      ? 'default'
-                                      : (p.profile_data.confidence ||
-                                          'medium') === 'medium'
-                                      ? 'secondary'
-                                      : 'outline'
-                                  }>
-                                  Confidence:{' '}
-                                  {p.profile_data.confidence || 'medium'}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className='flex flex-col h-full'>
-                          <div className='space-y-4 flex-1'>
-                            {/* Customer Segments */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <Target className='h-4 w-4' />
-                                Customer Segments
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.segments?.join(', ') ||
-                                  p.profile_data.customer_segments ||
-                                  'No segments defined'}
-                              </p>
-                            </div>
-
-                            {/* Pain Points */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <AlertTriangle className='h-4 w-4' />
-                                Pain Points
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.needs_pain_goals?.pains?.join(
-                                  ', ',
-                                ) ||
-                                  p.profile_data.pain_points ||
-                                  'No pain points defined'}
-                              </p>
-                            </div>
-
-                            {/* Jobs to be Done */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <CheckCircle className='h-4 w-4' />
-                                Jobs to be Done
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.needs_pain_goals?.jobs_to_be_done?.join(
-                                  ', ',
-                                ) ||
-                                  p.profile_data.jobs_to_be_done ||
-                                  'No jobs defined'}
-                              </p>
-                            </div>
-
-                            {/* Desired Outcomes */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <TrendingUp className='h-4 w-4' />
-                                Desired Outcomes
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.needs_pain_goals?.desired_outcomes?.join(
-                                  ', ',
-                                ) ||
-                                  p.profile_data.desired_outcomes ||
-                                  'No outcomes defined'}
-                              </p>
-                            </div>
-
-                            {/* Buying Triggers */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <Target className='h-4 w-4' />
-                                Buying Triggers
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.buying_triggers?.join(', ') ||
-                                  'No triggers defined'}
-                              </p>
-                            </div>
-
-                            {/* Common Objections */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <XCircle className='h-4 w-4' />
-                                Common Objections
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.common_objections?.join(', ') ||
-                                  'No objections defined'}
-                              </p>
-                            </div>
-
-                            {/* Value Proposition */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <CheckCircle className='h-4 w-4' />
-                                Value Proposition
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.value_prop_alignment
-                                  ?.value_prop ||
-                                  p.profile_data.value_proposition ||
-                                  'No value proposition defined'}
-                              </p>
-                            </div>
-
-                            {/* Go-to-Market Strategy */}
-                            <div>
-                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                                <TrendingUp className='h-4 w-4' />
-                                Go-to-Market Strategy
-                              </h4>
-                              <p className='text-sm text-muted-foreground'>
-                                {p.profile_data.go_to_market?.primary_channels?.join(
-                                  ', ',
-                                ) ||
-                                  p.profile_data.go_to_market_strategy ||
-                                  'No strategy defined'}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Details Button */}
-                          <div className='pt-4 border-t mt-auto'>
-                            <Button
-                              variant='default'
-                              className='w-full'
-                              onClick={() => handleViewDetails(p)}>
-                              View Details
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                  .filter(Boolean)}
-              </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+                .filter(Boolean)}
             </div>
-          ) : companyId && profiles.length === 0 ? (
-            <div className='text-center py-12'>
-              <Users className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-              <h3 className='text-lg font-semibold mb-2'>
-                No ICP Profiles Yet
-              </h3>
-              <p className='text-muted-foreground mb-4'>
-                Use the &quot;Generate&quot; button in the header above to
-                create your first ICP profile.
-              </p>
-            </div>
-          ) : (
-            <div className='text-center py-12'>
-              <Users className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-              <h3 className='text-lg font-semibold mb-2'>Select a Company</h3>
-              <p className='text-muted-foreground'>
-                Please select a company from the header above to view ICP
-                profiles.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : companyId && profiles.length === 0 ? (
+          <div className='text-center py-12'>
+            <Users className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
+            <h3 className='text-lg font-semibold mb-2'>No ICP Profiles Yet</h3>
+            <p className='text-muted-foreground mb-4'>
+              Use the &quot;Generate&quot; button in the header above to create
+              your first ICP profile.
+            </p>
+          </div>
+        ) : (
+          <div className='text-center py-12'>
+            <Users className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
+            <h3 className='text-lg font-semibold mb-2'>Select a Company</h3>
+            <p className='text-muted-foreground'>
+              Please select a company from the header above to view ICP
+              profiles.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* ICP Details Modal */}
       <ICPDetailsModal

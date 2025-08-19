@@ -83,7 +83,7 @@ function AppContent() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value='icp-generator' className='mt-6'>
+            <TabsContent value='icp-generator' className='mt-8'>
               <ICPGenerator
                 ownCompany={ownCompany}
                 isLoading={isLoading}
@@ -104,7 +104,7 @@ function AppContent() {
               />
             </TabsContent>
 
-            <TabsContent value='demographics' className='mt-6'>
+            <TabsContent value='demographics' className='mt-8'>
               <ICPProfiles
                 generatedICPs={generatedICPs}
                 activeCompanyId={activeCompanyId}
@@ -113,7 +113,7 @@ function AppContent() {
               />
             </TabsContent>
 
-            <TabsContent value='campaign-designer' className='mt-6'>
+            <TabsContent value='campaign-designer' className='mt-8'>
               <CampaignDesigner
                 activeCompanyId={activeCompanyId}
                 onCompanyIdChange={setActiveCompanyId}
@@ -121,7 +121,7 @@ function AppContent() {
               />
             </TabsContent>
 
-            <TabsContent value='campaign-library' className='mt-6'>
+            <TabsContent value='campaign-library' className='mt-8'>
               <CampaignLibrary
                 companyId={activeCompanyId || ''}
                 companyName={activeCompanyData?.name || ''}

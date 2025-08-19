@@ -25,6 +25,7 @@ interface CompanySelectorProps {
   allowDelete?: boolean;
   onCompanyDeleted?: (companyId: string) => void;
   hideLoadingSpinner?: boolean;
+  hideLabel?: boolean;
 }
 
 export function CompanySelector({
@@ -39,6 +40,7 @@ export function CompanySelector({
   className = '',
   onCompanyDeleted,
   hideLoadingSpinner = false,
+  hideLabel = false,
 }: CompanySelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -167,13 +169,15 @@ export function CompanySelector({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label htmlFor='company-selector'>
-        Company{' '}
-        <span className='text-red-600' aria-hidden='true'>
-          *
-        </span>
-      </Label>
+    <div className={`${hideLabel ? '' : 'space-y-2'} ${className}`}>
+      {!hideLabel && (
+        <Label htmlFor='company-selector'>
+          Company{' '}
+          <span className='text-red-600' aria-hidden='true'>
+            *
+          </span>
+        </Label>
+      )}
 
       {allowCreate && isCreatingNew ? (
         <div className='flex gap-2'>

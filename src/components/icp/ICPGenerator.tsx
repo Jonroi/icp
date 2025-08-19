@@ -52,9 +52,9 @@ export function ICPGenerator({
   );
 
   return (
-    <Card className='mt-4 max-w-4xl mx-auto'>
-      <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
-        <div>
+    <div className='space-y-6 pt-4'>
+      <Card className='max-w-4xl mx-auto'>
+        <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             <Wand2 className='h-5 w-5 text-primary' />
             ICP Generator
@@ -62,75 +62,86 @@ export function ICPGenerator({
           <CardDescription>
             Input your company information to generate Ideal Customer Personas.
           </CardDescription>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Button
-            size='sm'
-            className='flex items-center gap-2'
-            title='Save current company data to database'
-            onClick={async () => {
-              try {
-                if (onSaveOwnCompany && ownCompany) {
-                  await onSaveOwnCompany(ownCompany);
-                }
-              } catch (error) {
-                console.error('Error saving company data:', error);
-              }
-            }}
-            disabled={isLoading}>
-            <Save className='h-4 w-4' />
-            Save
-          </Button>
-          <Button
-            size='sm'
-            className='flex items-center gap-2'
-            title='Automatically fill company data using AI (coming soon)'
-            disabled>
-            Fill with AI (coming soon)
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className='space-y-6'>
-        <div className='space-y-2'>
-          <OwnCompanyForm
-            company={ownCompany || { name: '', website: '', social: '' }}
-            companies={companies}
-            activeCompany={activeCompany}
-            onChange={handleOwnCompanyChange}
-            onSaveCompany={onSaveOwnCompany}
-            onReset={async () => {
-              if (onResetOwnCompany) {
-                await onResetOwnCompany();
-              }
-            }}
-            onCompanyDeleted={onCompanyDeleted}
-            activeCompanyId={activeCompanyId}
-            onCompanyIdChange={onCompanyIdChange}
-          />
-        </div>
+        </CardHeader>
+      </Card>
 
-        {/* Additional context section removed */}
-
-        <div className='flex flex-wrap gap-2'>
-          <Button
-            onClick={onGenerateICPs}
-            disabled={isLoading || !ownCompany?.name?.trim()}
-            className='flex items-center gap-2'>
-            {isLoading ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            ) : (
-              <Sparkles className='h-4 w-4' />
-            )}
-            Generate ICPs
-          </Button>
-        </div>
-
-        {error && (
-          <div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>
-            {error}
+      <Card className='max-w-4xl mx-auto'>
+        <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
+          <div>
+            <CardTitle>Company Information</CardTitle>
+            <CardDescription>
+              Fill in your company details to generate accurate ICPs.
+            </CardDescription>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <div className='flex items-center gap-2'>
+            <Button
+              size='sm'
+              className='flex items-center gap-2'
+              title='Save current company data to database'
+              onClick={async () => {
+                try {
+                  if (onSaveOwnCompany && ownCompany) {
+                    await onSaveOwnCompany(ownCompany);
+                  }
+                } catch (error) {
+                  console.error('Error saving company data:', error);
+                }
+              }}
+              disabled={isLoading}>
+              <Save className='h-4 w-4' />
+              Save
+            </Button>
+            <Button
+              size='sm'
+              className='flex items-center gap-2'
+              title='Automatically fill company data using AI (coming soon)'
+              disabled>
+              Fill with AI (coming soon)
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          <div className='space-y-2'>
+            <OwnCompanyForm
+              company={ownCompany || { name: '', website: '', social: '' }}
+              companies={companies}
+              activeCompany={activeCompany}
+              onChange={handleOwnCompanyChange}
+              onSaveCompany={onSaveOwnCompany}
+              onReset={async () => {
+                if (onResetOwnCompany) {
+                  await onResetOwnCompany();
+                }
+              }}
+              onCompanyDeleted={onCompanyDeleted}
+              activeCompanyId={activeCompanyId}
+              onCompanyIdChange={onCompanyIdChange}
+            />
+          </div>
+
+          {/* Additional context section removed */}
+
+          <div className='flex flex-wrap gap-2'>
+            <Button
+              onClick={onGenerateICPs}
+              disabled={isLoading || !ownCompany?.name?.trim()}
+              className='flex items-center gap-2'>
+              {isLoading ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Sparkles className='h-4 w-4' />
+              )}
+              Generate ICPs
+            </Button>
+          </div>
+
+          {error && (
+            <div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>
+              {error}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

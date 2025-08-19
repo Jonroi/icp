@@ -1,5 +1,6 @@
 // Layout components
 export { Header } from './layout/Header';
+export { CompanyToolbar } from './layout/CompanyToolbar';
 
 // ICP components
 export { ICPGenerator } from './icp/ICPGenerator';

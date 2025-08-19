@@ -181,7 +181,7 @@ export function CampaignLibrary({
   }
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pt-4'>
       <Card className='max-w-4xl mx-auto'>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
