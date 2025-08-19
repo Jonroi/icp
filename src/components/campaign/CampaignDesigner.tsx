@@ -16,11 +16,13 @@ import type { StoredCampaign } from '@/services/database/campaign-service';
 interface CampaignDesignerProps {
   activeCompanyId?: string;
   onCompanyIdChange?: (id: string) => void;
+  onSwitchToLibrary?: () => void;
 }
 
 export function CampaignDesigner({
   activeCompanyId,
   onCompanyIdChange,
+  onSwitchToLibrary,
 }: CampaignDesignerProps) {
   const [generatedCampaign, setGeneratedCampaign] =
     useState<StoredCampaign | null>(null);
@@ -62,6 +64,8 @@ export function CampaignDesigner({
       const campaign = await generateCampaignMutation.mutateAsync(formData);
       setGeneratedCampaign(campaign);
       setShowForm(false);
+      // Switch to campaign library so user can see the saved item
+      onSwitchToLibrary?.();
     } catch (error) {
       console.error('Error generating campaign:', error);
       alert('Failed to generate campaign. Please try again.');
