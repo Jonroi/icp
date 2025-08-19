@@ -34,6 +34,7 @@ export { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 export { Textarea } from './ui/textarea';
 export { CompanySelector } from './ui/company-selector';
 export { LocationSelector } from './ui/location-selector';
+export { Badge } from './ui/badge';
 
 // Providers
 export { TRPCProvider } from './providers/TRPCProvider';
