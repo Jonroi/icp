@@ -1,33 +1,6 @@
-import { databaseManager } from '../../../../database/config';
-import type { OwnCompany } from '../../project/management/project-service';
-
-// Ensure database is initialized
-async function ensureDatabaseInitialized() {
-  if (!databaseManager.isReady()) {
-    try {
-      const config = {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        database: process.env.DB_NAME || 'icp_builder',
-        user: process.env.DB_USER || 'icp_user',
-        password: process.env.DB_PASSWORD || '',
-        ssl: process.env.DB_SSL === 'true',
-      };
-      await databaseManager.initialize(config);
-    } catch (error) {
-      console.error('Failed to initialize database:', error);
-      throw new Error('Database initialization failed');
-    }
-  }
-}
-
-export interface Company {
-  id: number;
-  name: string;
-  user_id: string;
-  created_at: Date;
-  updated_at: Date;
-}
+import { prisma } from '@/services/database/prisma-service';
+import type { OwnCompany } from '@/services/project/management/project-service';
+import type { Company, CompanyData } from '@prisma/client';
 
 export interface CompanyWithData extends Company {
   data: OwnCompany;
@@ -40,43 +13,41 @@ class CompaniesService {
    * Get all companies for the current user
    */
   async getCompanies(): Promise<Company[]> {
-    await ensureDatabaseInitialized();
-    const result = await databaseManager.query(
-      'SELECT id, name, user_id::text AS user_id, created_at, updated_at FROM companies WHERE user_id = $1 ORDER BY created_at DESC',
-      [this.TEST_USER_ID],
-    );
-    return result.rows;
+    const companies = await prisma.company.findMany({
+      where: { userId: this.TEST_USER_ID },
+      orderBy: { createdAt: 'desc' },
+    });
+    return companies;
   }
 
   /**
    * Get a specific company by ID
    */
   async getCompanyById(companyId: string): Promise<Company | null> {
-    await ensureDatabaseInitialized();
-    const result = await databaseManager.query(
-      'SELECT id, name, user_id::text AS user_id, created_at, updated_at FROM companies WHERE id = $1 AND user_id = $2',
-      [parseInt(companyId), this.TEST_USER_ID],
-    );
-    return result.rows[0] || null;
+    const company = await prisma.company.findFirst({
+      where: {
+        id: parseInt(companyId),
+        userId: this.TEST_USER_ID,
+      },
+    });
+    return company;
   }
 
   /**
    * Get company data (all fields) for a specific company
    */
   async getCompanyData(companyId: string): Promise<OwnCompany | null> {
-    await ensureDatabaseInitialized();
-    const result = await databaseManager.query(
-      'SELECT field_name, field_value FROM company_data WHERE company_id = $1',
-      [parseInt(companyId)],
-    );
+    const companyData = await prisma.companyData.findMany({
+      where: { companyId: parseInt(companyId) },
+    });
 
-    if (result.rows.length === 0) {
+    if (companyData.length === 0) {
       return null;
     }
 
     const data = {} as OwnCompany;
-    for (const row of result.rows) {
-      (data as any)[row.field_name] = row.field_value;
+    for (const field of companyData) {
+      (data as any)[field.fieldName] = field.fieldValue;
     }
 
     return data;
@@ -102,12 +73,13 @@ class CompaniesService {
    * Create a new company
    */
   async createCompany(name: string): Promise<Company> {
-    await ensureDatabaseInitialized();
-    const result = await databaseManager.query(
-      'INSERT INTO companies (user_id, name) VALUES ($1, $2) RETURNING id, name, user_id::text AS user_id, created_at, updated_at',
-      [this.TEST_USER_ID, name],
-    );
-    return result.rows[0];
+    const company = await prisma.company.create({
+      data: {
+        userId: this.TEST_USER_ID,
+        name,
+      },
+    });
+    return company;
   }
 
   /**
@@ -118,47 +90,60 @@ class CompaniesService {
     field: keyof OwnCompany,
     value: string,
   ): Promise<void> {
-    await ensureDatabaseInitialized();
-    await databaseManager.query(
-      `INSERT INTO company_data (company_id, field_name, field_value, created_at, updated_at, version)
-       VALUES ($1, $2, $3, NOW(), NOW(), 1)
-       ON CONFLICT (company_id, field_name)
-       DO UPDATE SET field_value = EXCLUDED.field_value,
-                     updated_at = NOW(),
-                     version = company_data.version + 1`,
-      [parseInt(companyId), field as string, value],
-    );
+    await prisma.companyData.upsert({
+      where: {
+        companyId_fieldName: {
+          companyId: parseInt(companyId),
+          fieldName: field as string,
+        },
+      },
+      update: {
+        fieldValue: value,
+        version: { increment: 1 },
+      },
+      create: {
+        companyId: parseInt(companyId),
+        fieldName: field as string,
+        fieldValue: value,
+      },
+    });
   }
 
   /**
    * Delete a company and all its data
    */
   async deleteCompany(companyId: string): Promise<void> {
-    await ensureDatabaseInitialized();
-    await databaseManager.query(
-      'DELETE FROM companies WHERE id = $1 AND user_id = $2',
-      [parseInt(companyId), this.TEST_USER_ID],
-    );
+    await prisma.company.delete({
+      where: {
+        id: parseInt(companyId),
+        userId: this.TEST_USER_ID,
+      },
+    });
   }
 
   /**
    * Get all companies with their data
    */
   async getAllCompaniesWithData(): Promise<CompanyWithData[]> {
-    const companies = await this.getCompanies();
-    const companiesWithData: CompanyWithData[] = [];
+    const companies = await prisma.company.findMany({
+      where: { userId: this.TEST_USER_ID },
+      include: {
+        companyData: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    for (const company of companies) {
-      const data = await this.getCompanyData(company.id.toString());
-      if (data) {
-        companiesWithData.push({
-          ...company,
-          data,
-        });
-      }
-    }
+    return companies.map((company) => {
+      const data = {} as OwnCompany;
+      company.companyData.forEach((field) => {
+        (data as any)[field.fieldName] = field.fieldValue;
+      });
 
-    return companiesWithData;
+      return {
+        ...company,
+        data,
+      };
+    });
   }
 }
 

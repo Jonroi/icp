@@ -1,21 +1,9 @@
-import type { ICP } from '../../ai/core/types';
-import {
-  databaseManager,
-  getDatabaseConfig,
-  DatabaseMigration,
-} from '../../../../database/config';
+import type { ICP } from '@/services/ai/core/types';
+import { prisma } from '@/services/database/prisma-service';
+import type { ICPProfile } from '@prisma/client';
 
 const CURRENT_USER_ID =
   process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
-
-let isDbInitialized = false;
-async function ensureDb(): Promise<void> {
-  if (isDbInitialized) return;
-  await databaseManager.initialize(getDatabaseConfig());
-  const migrator = new DatabaseMigration();
-  await migrator.runMigrations();
-  isDbInitialized = true;
-}
 
 export interface StoredICPProfile {
   id: string;
@@ -33,40 +21,30 @@ export const icpProfilesService = {
     companyId: string,
     profiles: ICP[],
   ): Promise<StoredICPProfile[]> {
-    await ensureDb();
     const inserted: StoredICPProfile[] = [];
+
     for (const p of profiles) {
       const confidenceLevel = p.confidence || 'medium';
-      const res = await databaseManager.query(
-        `INSERT INTO icp_profiles (company_id, name, description, profile_data, confidence_level, created_at, updated_at)
-				 VALUES ($1, $2, $3, $4::jsonb, $5, NOW(), NOW())
-				 RETURNING id::text AS id, name, description, profile_data, confidence_level, created_at, updated_at`,
-        [
-          parseInt(companyId),
-          p.icp_name,
-          p.segments?.join(', ') || 'ICP Profile',
-          JSON.stringify(p),
+
+      const profile = await prisma.iCPProfile.create({
+        data: {
+          companyId: parseInt(companyId),
+          name: p.icp_name,
+          description: p.segments?.join(', ') || 'ICP Profile',
+          profileData: p as any,
           confidenceLevel,
-        ],
-      );
-      const row = res.rows[0] as {
-        id: string;
-        name: string;
-        description: string;
-        profile_data: ICP;
-        confidence_level: 'high' | 'medium' | 'low';
-        created_at: Date;
-        updated_at: Date;
-      };
+        },
+      });
+
       inserted.push({
-        id: row.id,
-        companyId: parseInt(companyId), // Keep for interface compatibility
-        name: row.name,
-        description: row.description,
-        profileData: row.profile_data,
-        confidenceLevel: row.confidence_level,
-        createdAt: row.created_at.toISOString(),
-        updatedAt: row.updated_at.toISOString(),
+        id: profile.id,
+        companyId: parseInt(companyId),
+        name: profile.name,
+        description: profile.description || '',
+        profileData: profile.profileData as unknown as ICP,
+        confidenceLevel: profile.confidenceLevel as 'high' | 'medium' | 'low',
+        createdAt: profile.createdAt.toISOString(),
+        updatedAt: profile.updatedAt.toISOString(),
       });
     }
 
@@ -74,75 +52,55 @@ export const icpProfilesService = {
   },
 
   async listProfilesByCompany(companyId: string): Promise<StoredICPProfile[]> {
-    await ensureDb();
-    const res = await databaseManager.query(
-      `SELECT id::text AS id, name, description, profile_data, confidence_level, created_at, updated_at
-			 FROM icp_profiles WHERE company_id = $1 ORDER BY created_at DESC`,
-      [parseInt(companyId)],
-    );
-    return res.rows.map((row: any) => ({
-      id: row.id,
-      companyId: parseInt(companyId), // Keep for interface compatibility
-      name: row.name,
-      description: row.description,
-      profileData: row.profile_data as ICP,
-      confidenceLevel: row.confidence_level as 'high' | 'medium' | 'low',
-      createdAt:
-        row.created_at instanceof Date
-          ? row.created_at.toISOString()
-          : new Date(row.created_at).toISOString(),
-      updatedAt:
-        row.updated_at instanceof Date
-          ? row.updated_at.toISOString()
-          : new Date(row.updated_at).toISOString(),
+    const profiles = await prisma.iCPProfile.findMany({
+      where: { companyId: parseInt(companyId) },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return profiles.map((profile) => ({
+      id: profile.id,
+      companyId: parseInt(companyId),
+      name: profile.name,
+      description: profile.description || '',
+      profileData: profile.profileData as unknown as ICP,
+      confidenceLevel: profile.confidenceLevel as 'high' | 'medium' | 'low',
+      createdAt: profile.createdAt.toISOString(),
+      updatedAt: profile.updatedAt.toISOString(),
     }));
   },
 
   async getProfileById(id: string): Promise<StoredICPProfile | null> {
-    await ensureDb();
-    const res = await databaseManager.query(
-      `SELECT id::text AS id, company_id, name, description, profile_data, confidence_level, created_at, updated_at
-			 FROM icp_profiles WHERE id = $1`,
-      [id],
-    );
+    const profile = await prisma.iCPProfile.findUnique({
+      where: { id },
+    });
 
-    if (res.rows.length === 0) {
+    if (!profile) {
       return null;
     }
 
-    const row = res.rows[0];
     return {
-      id: row.id,
-      companyId: row.company_id,
-      name: row.name,
-      description: row.description,
-      profileData: row.profile_data as ICP,
-      confidenceLevel: row.confidence_level as 'high' | 'medium' | 'low',
-      createdAt:
-        row.created_at instanceof Date
-          ? row.created_at.toISOString()
-          : new Date(row.created_at).toISOString(),
-      updatedAt:
-        row.updated_at instanceof Date
-          ? row.updated_at.toISOString()
-          : new Date(row.updated_at).toISOString(),
+      id: profile.id,
+      companyId: profile.companyId,
+      name: profile.name,
+      description: profile.description || '',
+      profileData: profile.profileData as unknown as ICP,
+      confidenceLevel: profile.confidenceLevel as 'high' | 'medium' | 'low',
+      createdAt: profile.createdAt.toISOString(),
+      updatedAt: profile.updatedAt.toISOString(),
     };
   },
 
   async deleteProfileById(id: string): Promise<void> {
-    await ensureDb();
-    await databaseManager.query(`DELETE FROM icp_profiles WHERE id = $1`, [id]);
+    await prisma.iCPProfile.delete({
+      where: { id },
+    });
   },
 
   async deleteProfilesByCompany(companyId: string): Promise<number> {
-    await ensureDb();
-    const res = await databaseManager.query(
-      `DELETE FROM icp_profiles WHERE company_id = $1`,
-      [parseInt(companyId)],
-    );
-    // node-postgres doesn't return rowCount on some setups; fallback to 0
-    return (
-      res && typeof res.rowCount === 'number' ? res.rowCount : 0
-    ) as number;
+    const result = await prisma.iCPProfile.deleteMany({
+      where: { companyId: parseInt(companyId) },
+    });
+
+    return result.count;
   },
 };

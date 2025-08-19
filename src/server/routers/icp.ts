@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure } from '../trpc';
-import { icpProfilesService } from '@/services/database';
-import { companiesService } from '@/services/database';
+import { createTRPCRouter, publicProcedure } from '@/server/trpc';
+import { prisma } from '@/services/database/prisma-service';
 import { ICPGenerator } from '@/services/ai';
 import type { ICP } from '@/services/ai';
+import type { ICPProfile } from '@prisma/client';
 
 // Create ICP generator instance
 const icpGenerator = new ICPGenerator();
@@ -14,27 +14,52 @@ export const icpRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       try {
         // Get company data
-        const companyData = await companiesService.getCompanyData(
-          input.companyId,
-        );
-        if (!companyData || Object.keys(companyData).length === 0) {
+        const company = await prisma.company.findUnique({
+          where: { id: parseInt(input.companyId) },
+          include: {
+            companyData: true,
+          },
+        });
+
+        if (!company) {
+          throw new Error('Company not found');
+        }
+
+        // Transform company data to the format expected by ICP generator
+        const companyData: Record<string, string> = {};
+        company.companyData.forEach((field) => {
+          companyData[field.fieldName] = field.fieldValue;
+        });
+
+        if (Object.keys(companyData).length === 0) {
           throw new Error('Company data not found');
         }
 
         // Generate ICPs
         const icps = await icpGenerator.generateICPs(companyData);
 
-        // Cache ICPs in Redis
-        await ctx.redis.setCompanyICPs(
-          input.companyId,
-          icps.map((icp) => icp.icp_name),
-        );
-
         // Save to database
-        const savedProfiles = await icpProfilesService.saveProfilesForCompany(
-          input.companyId,
-          icps,
-        );
+        const savedProfiles: ICPProfile[] = [];
+        for (const icp of icps) {
+          const profile = await prisma.iCPProfile.create({
+            data: {
+              companyId: company.id,
+              name: icp.icp_name,
+              description: '',
+              profileData: icp as any, // Store the full ICP data as JSON
+              confidenceLevel: 'medium',
+            },
+          });
+          savedProfiles.push(profile);
+        }
+
+        // Cache ICPs in Redis if available
+        if (ctx.redis) {
+          await ctx.redis.setCompanyICPs(
+            input.companyId,
+            icps.map((icp) => icp.icp_name),
+          );
+        }
 
         return icps;
       } catch (error) {
@@ -48,51 +73,41 @@ export const icpRouter = createTRPCRouter({
 
   getAll: publicProcedure.query(async ({ ctx }) => {
     try {
-      // Get all companies for the user
-      const companies = await companiesService.getCompanies();
+      // Get all ICP profiles with company data
+      const icpProfiles = await prisma.iCPProfile.findMany({
+        include: {
+          company: {
+            include: {
+              companyData: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
-      const allIcpProfiles = [];
+      // Transform to match expected format
+      const transformedProfiles = icpProfiles.map((profile) => ({
+        id: profile.id,
+        name: profile.name,
+        description: profile.description,
+        profile_data: profile.profileData,
+        confidence_level: profile.confidenceLevel,
+        company_id: profile.companyId.toString(),
+        created_at: profile.createdAt,
+        updated_at: profile.updatedAt,
+        company: {
+          id: profile.company.id.toString(),
+          name: profile.company.name,
+          data: profile.company.companyData.reduce((acc, field) => {
+            acc[field.fieldName] = field.fieldValue;
+            return acc;
+          }, {} as Record<string, string>),
+        },
+      }));
 
-      for (const company of companies) {
-        const companyId = company.id;
-
-        // Try to get from Redis cache first
-        const cachedIcpIds = await ctx.redis.getCompanyICPs(
-          companyId.toString(),
-        );
-        if (cachedIcpIds && cachedIcpIds.length > 0) {
-          console.log(
-            `[Redis] Found ${cachedIcpIds.length} ICPs for company ${companyId}`,
-          );
-
-          // Get the full ICP data from database since cache only has names
-          const storedProfiles = await icpProfilesService.listProfilesByCompany(
-            companyId.toString(),
-          );
-          if (storedProfiles.length > 0) {
-            allIcpProfiles.push(...storedProfiles);
-          }
-          continue;
-        }
-
-        // Get from database
-        const storedProfiles = await icpProfilesService.listProfilesByCompany(
-          companyId.toString(),
-        );
-        if (storedProfiles.length > 0) {
-          console.log(
-            `[DB] Found ${storedProfiles.length} ICPs for company ${companyId}`,
-          );
-
-          // Cache in Redis
-          const icpNames = storedProfiles.map((profile) => profile.name);
-          await ctx.redis.setCompanyICPs(companyId.toString(), icpNames);
-
-          allIcpProfiles.push(...storedProfiles);
-        }
-      }
-
-      return allIcpProfiles;
+      return transformedProfiles;
     } catch (error) {
       throw new Error(
         `Failed to get ICPs: ${
@@ -107,42 +122,55 @@ export const icpRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       try {
         // Verify company exists
-        const company = await companiesService.getCompanyById(input.companyId);
+        const company = await prisma.company.findUnique({
+          where: { id: parseInt(input.companyId) },
+        });
         if (!company) {
           throw new Error('Company not found');
         }
 
-        // Try to get from Redis cache first
-        const cachedIcpIds = await ctx.redis.getCompanyICPs(input.companyId);
-        if (cachedIcpIds && cachedIcpIds.length > 0) {
-          console.log(
-            `[Redis] Found ${cachedIcpIds.length} ICPs for company ${input.companyId}`,
-          );
+        // Get ICP profiles for the company
+        const profiles = await prisma.iCPProfile.findMany({
+          where: { companyId: parseInt(input.companyId) },
+          include: {
+            company: {
+              include: {
+                companyData: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
 
-          // Get the full ICP data from database since cache only has names
-          const storedProfiles = await icpProfilesService.listProfilesByCompany(
-            input.companyId,
-          );
-          if (storedProfiles.length > 0) {
-            return storedProfiles;
-          }
-        }
+        // Transform to match expected format
+        const transformedProfiles = profiles.map((profile) => ({
+          id: profile.id,
+          name: profile.name,
+          description: profile.description,
+          profile_data: profile.profileData,
+          confidence_level: profile.confidenceLevel,
+          company_id: profile.companyId.toString(),
+          created_at: profile.createdAt,
+          updated_at: profile.updatedAt,
+          company: {
+            id: profile.company.id.toString(),
+            name: profile.company.name,
+            data: profile.company.companyData.reduce((acc, field) => {
+              acc[field.fieldName] = field.fieldValue;
+              return acc;
+            }, {} as Record<string, string>),
+          },
+        }));
 
-        // Get from database
-        const storedProfiles = await icpProfilesService.listProfilesByCompany(
-          input.companyId,
-        );
-        if (storedProfiles.length > 0) {
-          console.log(
-            `[DB] Found ${storedProfiles.length} ICPs for company ${input.companyId}`,
-          );
-
-          // Cache in Redis
-          const icpNames = storedProfiles.map((profile) => profile.name);
+        // Cache in Redis if available
+        if (ctx.redis && transformedProfiles.length > 0) {
+          const icpNames = transformedProfiles.map((profile) => profile.name);
           await ctx.redis.setCompanyICPs(input.companyId, icpNames);
         }
 
-        return storedProfiles;
+        return transformedProfiles;
       } catch (error) {
         throw new Error(
           `Failed to get ICPs for company: ${
@@ -156,15 +184,51 @@ export const icpRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       try {
-        // Try cache first
-        const cached = await ctx.redis.getCachedICP(input.id);
-        if (cached) {
-          return cached.data;
+        // Try cache first if available
+        if (ctx.redis) {
+          const cached = await ctx.redis.getCachedICP(input.id);
+          if (cached) {
+            return cached.data;
+          }
         }
 
-        // Fallback to database - this would need to be implemented
-        // For now, we'll throw an error
-        throw new Error('ICP not found');
+        // Get from database
+        const profile = await prisma.iCPProfile.findUnique({
+          where: { id: input.id },
+          include: {
+            company: {
+              include: {
+                companyData: true,
+              },
+            },
+          },
+        });
+
+        if (!profile) {
+          throw new Error('ICP not found');
+        }
+
+        // Transform to match expected format
+        const transformedProfile = {
+          id: profile.id,
+          name: profile.name,
+          description: profile.description,
+          profile_data: profile.profileData,
+          confidence_level: profile.confidenceLevel,
+          company_id: profile.companyId.toString(),
+          created_at: profile.createdAt,
+          updated_at: profile.updatedAt,
+          company: {
+            id: profile.company.id.toString(),
+            name: profile.company.name,
+            data: profile.company.companyData.reduce((acc, field) => {
+              acc[field.fieldName] = field.fieldValue;
+              return acc;
+            }, {} as Record<string, string>),
+          },
+        };
+
+        return transformedProfile;
       } catch (error) {
         throw new Error(
           `Failed to get ICP: ${
@@ -179,10 +243,14 @@ export const icpRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await icpProfilesService.deleteProfileById(input.id);
+        await prisma.iCPProfile.delete({
+          where: { id: input.id },
+        });
 
-        // Invalidate cache
-        await ctx.redis.invalidateICPCache(input.id);
+        // Invalidate cache if available
+        if (ctx.redis) {
+          await ctx.redis.invalidateICPCache(input.id);
+        }
 
         return { success: true };
       } catch (error) {
@@ -200,23 +268,51 @@ export const icpRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       try {
         // Get company data
-        const companyData = await companiesService.getCompanyData(
-          input.companyId,
-        );
-        if (!companyData || Object.keys(companyData).length === 0) {
+        const company = await prisma.company.findUnique({
+          where: { id: parseInt(input.companyId) },
+          include: {
+            companyData: true,
+          },
+        });
+
+        if (!company) {
+          throw new Error('Company not found');
+        }
+
+        // Transform company data
+        const companyData: Record<string, string> = {};
+        company.companyData.forEach((field) => {
+          companyData[field.fieldName] = field.fieldValue;
+        });
+
+        if (Object.keys(companyData).length === 0) {
           throw new Error('Company data not found');
         }
 
         // Generate additional ICPs
         const icps = await icpGenerator.generateICPs(companyData);
 
-        // Cache each new ICP
+        // Save to database
+        const savedProfiles: ICPProfile[] = [];
         for (const icp of icps) {
-          await ctx.redis.cacheICP(icp.icp_id, input.companyId, icp);
+          const profile = await prisma.iCPProfile.create({
+            data: {
+              companyId: company.id,
+              name: icp.icp_name,
+              description: '',
+              profileData: icp as any,
+              confidenceLevel: 'medium',
+            },
+          });
+          savedProfiles.push(profile);
         }
 
-        // Save to database
-        await icpProfilesService.saveProfilesForCompany(input.companyId, icps);
+        // Cache each new ICP if Redis is available
+        if (ctx.redis) {
+          for (const icp of icps) {
+            await ctx.redis.cacheICP(icp.icp_id, input.companyId, icp);
+          }
+        }
 
         return icps;
       } catch (error) {
@@ -233,16 +329,22 @@ export const icpRouter = createTRPCRouter({
     .input(z.object({ companyId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        // Get all ICP IDs for this company
-        const icpIds = await ctx.redis.getCompanyICPs(input.companyId);
+        // Get count before deletion
+        const count = await prisma.iCPProfile.count({
+          where: { companyId: parseInt(input.companyId) },
+        });
 
         // Delete from database
-        await icpProfilesService.deleteProfilesByCompany(input.companyId);
+        await prisma.iCPProfile.deleteMany({
+          where: { companyId: parseInt(input.companyId) },
+        });
 
-        // Clear cache
-        await ctx.redis.invalidateCompanyData(input.companyId);
+        // Clear cache if available
+        if (ctx.redis) {
+          await ctx.redis.invalidateCompanyData(input.companyId);
+        }
 
-        return { success: true, deletedCount: icpIds.length };
+        return { success: true, deletedCount: count };
       } catch (error) {
         throw new Error(
           `Failed to clear ICPs: ${
@@ -257,15 +359,22 @@ export const icpRouter = createTRPCRouter({
     .input(z.object({ companyId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
+        // Get count before deletion
+        const count = await prisma.iCPProfile.count({
+          where: { companyId: parseInt(input.companyId) },
+        });
+
         // Delete from database
-        const deletedCount = await icpProfilesService.deleteProfilesByCompany(
-          input.companyId,
-        );
+        await prisma.iCPProfile.deleteMany({
+          where: { companyId: parseInt(input.companyId) },
+        });
 
-        // Clear cache
-        await ctx.redis.invalidateCompanyData(input.companyId);
+        // Clear cache if available
+        if (ctx.redis) {
+          await ctx.redis.invalidateCompanyData(input.companyId);
+        }
 
-        return { success: true, deletedCount };
+        return { success: true, deletedCount: count };
       } catch (error) {
         throw new Error(
           `Failed to delete all ICPs: ${

@@ -5,10 +5,10 @@ export * from './generator/template-selector';
 export * from './generator/icp-builder';
 
 // Main ICP Generator class
-import type { ICP } from '../core/types';
-import { determineBusinessModel } from './rules/business-model';
-import { TemplateSelector } from './generator/template-selector';
-import { ICPBuilder } from './generator/icp-builder';
+import type { ICP } from '@/services/ai/core/types';
+import { determineBusinessModel } from '@/services/ai/icp/rules/business-model';
+import { TemplateSelector } from '@/services/ai/icp/generator/template-selector';
+import { ICPBuilder } from '@/services/ai/icp/generator/icp-builder';
 
 export class ICPGenerator {
   private templateSelector: TemplateSelector;

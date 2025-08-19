@@ -1,6 +1,6 @@
-import type { ICPTemplate } from '../templates';
-import { ICP_TEMPLATES } from '../templates';
-import { AISDKService } from '../../core/ai-sdk-service';
+import type { ICPTemplate } from '@/services/ai/icp/templates';
+import { ICP_TEMPLATES } from '@/services/ai/icp/templates';
+import { AISDKService } from '@/services/ai/core/ai-sdk-service';
 
 export class TemplateSelector {
   private aiService: AISDKService;

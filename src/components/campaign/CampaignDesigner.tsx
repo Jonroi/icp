@@ -9,8 +9,11 @@ import {
 } from '@/components/ui/card';
 import { Bot } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { CampaignForm, type CampaignFormData } from './CampaignForm';
-import { CampaignDisplay } from './CampaignDisplay';
+import {
+  CampaignForm,
+  type CampaignFormData,
+} from '@/components/campaign/CampaignForm';
+import { CampaignDisplay } from '@/components/campaign/CampaignDisplay';
 import type { StoredCampaign } from '@/services/database';
 
 interface CampaignDesignerProps {

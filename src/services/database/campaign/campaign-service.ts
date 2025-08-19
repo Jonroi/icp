@@ -1,25 +1,6 @@
-import { databaseManager } from '../../../../database/config';
+import { prisma } from '@/services/database/prisma-service';
 import type { Campaign, CopyStyle, MediaType } from '@/services/ai';
-
-// Ensure database is initialized
-async function ensureDatabaseInitialized() {
-  if (!databaseManager.isReady()) {
-    try {
-      const config = {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        database: process.env.DB_NAME || 'icp_builder',
-        user: process.env.DB_USER || 'icp_user',
-        password: process.env.DB_PASSWORD || '',
-        ssl: process.env.DB_SSL === 'true',
-      };
-      await databaseManager.initialize(config);
-    } catch (error) {
-      console.error('Failed to initialize database:', error);
-      throw new Error('Database initialization failed');
-    }
-  }
-}
+import type { Campaign as PrismaCampaign } from '@prisma/client';
 
 export interface StoredCampaign {
   id: string;
@@ -41,80 +22,77 @@ export class CampaignService {
   async create(
     campaign: Omit<Campaign, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<StoredCampaign> {
-    await ensureDatabaseInitialized();
-    const query = `
-      INSERT INTO campaigns (
-        name, icp_id, copy_style, media_type, ad_copy, 
-        image_prompt, image_url, cta, hooks, landing_page_copy
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *
-    `;
+    const createdCampaign = await prisma.campaign.create({
+      data: {
+        name: campaign.name,
+        icpId: campaign.icpId,
+        copyStyle: campaign.copyStyle,
+        mediaType: campaign.mediaType,
+        adCopy: campaign.adCopy,
+        imagePrompt: campaign.imagePrompt,
+        imageUrl: campaign.imageUrl,
+        cta: campaign.cta,
+        hooks: campaign.hooks,
+        landingPageCopy: campaign.landingPageCopy,
+      },
+    });
 
-    const values = [
-      campaign.name,
-      campaign.icpId,
-      campaign.copyStyle,
-      campaign.mediaType,
-      campaign.adCopy,
-      campaign.imagePrompt,
-      campaign.imageUrl,
-      campaign.cta,
-      campaign.hooks,
-      campaign.landingPageCopy,
-    ];
-
-    const result = await databaseManager.query(query, values);
-    return this.mapToStoredCampaign(result.rows[0]);
+    return this.mapToStoredCampaign(createdCampaign);
   }
 
   async getById(id: string): Promise<StoredCampaign | null> {
-    await ensureDatabaseInitialized();
-    const query = 'SELECT * FROM campaigns WHERE id = $1';
-    const result = await databaseManager.query(query, [id]);
+    const campaign = await prisma.campaign.findUnique({
+      where: { id },
+    });
 
-    if (result.rows.length === 0) {
+    if (!campaign) {
       return null;
     }
 
-    return this.mapToStoredCampaign(result.rows[0]);
+    return this.mapToStoredCampaign(campaign);
   }
 
   async getByIcpId(icpId: string): Promise<StoredCampaign[]> {
-    await ensureDatabaseInitialized();
-    const query =
-      'SELECT * FROM campaigns WHERE icp_id = $1 ORDER BY created_at DESC';
-    const result = await databaseManager.query(query, [icpId]);
+    const campaigns = await prisma.campaign.findMany({
+      where: { icpId },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
+    return campaigns.map((campaign) => this.mapToStoredCampaign(campaign));
   }
 
   async getAll(): Promise<StoredCampaign[]> {
-    await ensureDatabaseInitialized();
-    const query = 'SELECT * FROM campaigns ORDER BY created_at DESC';
-    const result = await databaseManager.query(query);
+    const campaigns = await prisma.campaign.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
+    return campaigns.map((campaign) => this.mapToStoredCampaign(campaign));
   }
 
   async getByCompanyId(companyId: string): Promise<StoredCampaign[]> {
-    await ensureDatabaseInitialized();
-    const query = `
-      SELECT c.* 
-      FROM campaigns c
-      JOIN icp_profiles i ON c.icp_id = i.id
-      WHERE i.company_id = $1
-      ORDER BY c.created_at DESC
-    `;
-    const result = await databaseManager.query(query, [companyId]);
+    const campaigns = await prisma.campaign.findMany({
+      where: {
+        icpProfile: {
+          companyId: parseInt(companyId),
+        },
+      },
+      include: {
+        icpProfile: {
+          include: {
+            company: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
+    return campaigns.map((campaign) => this.mapToStoredCampaign(campaign));
   }
 
   async update(
     id: string,
     updates: Partial<Campaign>,
   ): Promise<StoredCampaign | null> {
-    await ensureDatabaseInitialized();
     const fields = Object.keys(updates).filter(
       (key) => key !== 'id' && key !== 'createdAt' && key !== 'updatedAt',
     );
@@ -123,53 +101,50 @@ export class CampaignService {
       return this.getById(id);
     }
 
-    const setClause = fields
-      .map((field, index) => `${this.camelToSnake(field)} = $${index + 2}`)
-      .join(', ');
-    const query = `
-      UPDATE campaigns 
-      SET ${setClause}, updated_at = NOW()
-      WHERE id = $1
-      RETURNING *
-    `;
+    const updateData: any = {};
+    fields.forEach((field) => {
+      const snakeField = this.camelToSnake(field);
+      updateData[snakeField] = updates[field as keyof Campaign];
+    });
 
-    const values = [
-      id,
-      ...fields.map((field) => updates[field as keyof Campaign]),
-    ];
-    const result = await databaseManager.query(query, values);
+    const updatedCampaign = await prisma.campaign.update({
+      where: { id },
+      data: updateData,
+    });
 
-    if (result.rows.length === 0) {
-      return null;
-    }
-
-    return this.mapToStoredCampaign(result.rows[0]);
+    return this.mapToStoredCampaign(updatedCampaign);
   }
 
   async delete(id: string): Promise<boolean> {
-    await ensureDatabaseInitialized();
     console.log('CampaignService: Deleting campaign with ID:', id);
-    const query = 'DELETE FROM campaigns WHERE id = $1';
-    const result = await databaseManager.query(query, [id]);
-    console.log('CampaignService: Delete result rowCount:', result.rowCount);
-    return result.rowCount > 0;
+
+    try {
+      await prisma.campaign.delete({
+        where: { id },
+      });
+      console.log('CampaignService: Campaign deleted successfully');
+      return true;
+    } catch (error) {
+      console.log('CampaignService: Campaign not found or already deleted');
+      return false;
+    }
   }
 
-  private mapToStoredCampaign(row: any): StoredCampaign {
+  private mapToStoredCampaign(campaign: PrismaCampaign): StoredCampaign {
     return {
-      id: row.id,
-      name: row.name,
-      icp_id: row.icp_id,
-      copy_style: row.copy_style,
-      media_type: row.media_type,
-      ad_copy: row.ad_copy,
-      image_prompt: row.image_prompt,
-      image_url: row.image_url,
-      cta: row.cta,
-      hooks: row.hooks,
-      landing_page_copy: row.landing_page_copy,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
+      id: campaign.id,
+      name: campaign.name,
+      icp_id: campaign.icpId,
+      copy_style: campaign.copyStyle as CopyStyle,
+      media_type: campaign.mediaType as MediaType,
+      ad_copy: campaign.adCopy,
+      image_prompt: campaign.imagePrompt || undefined,
+      image_url: campaign.imageUrl || undefined,
+      cta: campaign.cta,
+      hooks: campaign.hooks,
+      landing_page_copy: campaign.landingPageCopy,
+      created_at: campaign.createdAt,
+      updated_at: campaign.updatedAt,
     };
   }
 

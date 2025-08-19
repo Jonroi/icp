@@ -69,7 +69,8 @@ export function useAppState() {
             !prev.name && !prev.website && !prev.social && !prev.industry;
 
           // If we're switching to a different company (different ID), populate the form
-          const isDifferentCompany = prev.id !== selectedCompany.id;
+          const isDifferentCompany =
+            prev.id?.toString() !== selectedCompany.id.toString();
 
           if (isFormEmpty || isDifferentCompany) {
             return selectedCompany;
@@ -87,10 +88,10 @@ export function useAppState() {
       // Convert StoredICPProfile[] to ICP[] format
       const convertedICPs =
         icpListQuery.data?.map((profile) => ({
-          ...profile.profileData,
+          ...(profile.profile_data as any),
           icp_id: profile.id,
           icp_name: profile.name,
-          confidence: profile.confidenceLevel,
+          confidence: profile.confidence_level,
         })) || [];
       setGeneratedICPs(convertedICPs);
     }

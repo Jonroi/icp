@@ -1,8 +1,8 @@
-import { createTRPCRouter } from '../trpc';
-import { companyRouter } from './company';
-import { companyDataRouter } from './company-data';
-import { icpRouter } from './icp';
-import { campaignRouter } from './campaign';
+import { createTRPCRouter } from '@/server/trpc';
+import { companyRouter } from '@/server/routers/company';
+import { companyDataRouter } from '@/server/routers/company-data';
+import { icpRouter } from '@/server/routers/icp';
+import { campaignRouter } from '@/server/routers/campaign';
 
 export const appRouter = createTRPCRouter({
   company: companyRouter,

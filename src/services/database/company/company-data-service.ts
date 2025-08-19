@@ -1,5 +1,7 @@
-import type { OwnCompany } from '../../project/management/project-service';
-import { redisService } from '../../cache/redis/redis-service';
+import type { OwnCompany } from '@/services/project/management/project-service';
+import { redisService } from '@/services/cache/redis/redis-service';
+import { prisma } from '@/services/database/prisma-service';
+import type { CompanyData } from '@prisma/client';
 
 export interface CompanyDataState {
   currentData: OwnCompany;
@@ -32,62 +34,8 @@ export interface CompanyDataService {
   loadFromFile(): Promise<void>;
 }
 
-// PostgreSQL-ready schema design
-export interface CompanyDataRow {
-  id: string; // UUID primary key
-  user_id: string; // UUID foreign key to users table
-  field_name: keyof OwnCompany;
-  field_value: string;
-  created_at: Date;
-  updated_at: Date;
-  version: number; // For optimistic locking
-}
-
-export interface CompanyDataTable {
-  id: string;
-  user_id: string;
-  field_name: string;
-  field_value: string;
-  created_at: Date;
-  updated_at: Date;
-  version: number;
-}
-
-// Database integration
-import {
-  databaseManager,
-  getDatabaseConfig,
-  DatabaseMigration,
-} from '../../../../database/config';
-
 const CURRENT_USER_ID =
   process.env.TEST_USER_ID || '11111111-1111-1111-1111-111111111111';
-
-async function ensureDatabaseInitialized(): Promise<void> {
-  // Try a lightweight probe; if it fails, (re)initialize and migrate
-  try {
-    if (databaseManager.isReady()) {
-      await databaseManager.query('SELECT 1');
-      return;
-    }
-  } catch (_) {}
-
-  console.log('[DB] Initializing PostgreSQL connection');
-  try {
-    await databaseManager.initialize(getDatabaseConfig());
-    const migrator = new DatabaseMigration();
-    console.log('[DB] Running migrations');
-    await migrator.runMigrations();
-    console.log('[DB] Initialization complete');
-  } catch (error) {
-    console.error('[DB] Failed to initialize database:', error);
-    throw new Error(
-      `Database initialization failed: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`,
-    );
-  }
-}
 
 class PostgreSQLCompanyDataService implements CompanyDataService {
   private readonly TEST_USER_ID = CURRENT_USER_ID;
@@ -115,8 +63,6 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
   ];
 
   async getCurrentData(): Promise<CompanyDataState> {
-    await ensureDatabaseInitialized();
-
     // Try to get from Redis cache first
     const cacheKey = `company_data:${this.TEST_USER_ID}`;
     const cached = await redisService.getSessionData(cacheKey);
@@ -127,17 +73,29 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
     }
 
     console.log('[DB] Fetching current company_data from PostgreSQL');
-    const result = await databaseManager.query(
-      'SELECT field_name, field_value FROM company_data WHERE user_id = $1',
-      [this.TEST_USER_ID],
-    );
+
+    // Get the first company for the user
+    const company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+      include: {
+        companyData: true,
+      },
+    });
+
+    if (!company) {
+      const state: CompanyDataState = {
+        currentData: {} as OwnCompany,
+        filledFields: [],
+        nextField: this.fieldOrder[0],
+        isComplete: false,
+        lastUpdated: new Date(),
+      };
+      return state;
+    }
 
     const data = {} as unknown as Record<string, string>;
-    for (const row of result.rows as Array<{
-      field_name: string;
-      field_value: string;
-    }>) {
-      data[row.field_name] = row.field_value;
+    for (const field of company.companyData) {
+      data[field.fieldName] = field.fieldValue;
     }
 
     const filledFields = this.fieldOrder.filter(
@@ -164,41 +122,68 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
     field: keyof OwnCompany,
     value: string,
   ): Promise<FormFieldUpdate> {
-    await ensureDatabaseInitialized();
     console.log(`[DB] Upserting company_data field: ${String(field)}`);
 
-    const result = await databaseManager.query(
-      `INSERT INTO company_data (user_id, field_name, field_value, created_at, updated_at, version)
-       VALUES ($1, $2, $3, NOW(), NOW(), 1)
-       ON CONFLICT (user_id, field_name)
-       DO UPDATE SET field_value = EXCLUDED.field_value,
-                     updated_at = NOW(),
-                     version = company_data.version + 1
-       RETURNING updated_at`,
-      [this.TEST_USER_ID, field as string, value],
-    );
+    // Get or create company first
+    let company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+    });
 
-    const updatedAt: Date = result.rows[0].updated_at as Date;
+    if (!company) {
+      company = await prisma.company.create({
+        data: {
+          userId: this.TEST_USER_ID,
+          name: 'Default Company',
+        },
+      });
+    }
+
+    // Upsert the field
+    const updatedField = await prisma.companyData.upsert({
+      where: {
+        companyId_fieldName: {
+          companyId: company.id,
+          fieldName: field as string,
+        },
+      },
+      update: {
+        fieldValue: value,
+        version: { increment: 1 },
+      },
+      create: {
+        companyId: company.id,
+        fieldName: field as string,
+        fieldValue: value,
+      },
+    });
 
     // Invalidate Redis cache
     const cacheKey = `company_data:${this.TEST_USER_ID}`;
     await redisService.deleteSession(cacheKey);
     console.log('[Redis] Invalidated company data cache');
 
-    return { field, value, timestamp: updatedAt };
+    return { field, value, timestamp: updatedField.updatedAt };
   }
 
   async getFieldValue(field: keyof OwnCompany): Promise<string | undefined> {
-    await ensureDatabaseInitialized();
     console.log(`[DB] Read company_data field: ${String(field)}`);
 
-    const result = await databaseManager.query(
-      'SELECT field_value FROM company_data WHERE user_id = $1 AND field_name = $2',
-      [this.TEST_USER_ID, field as string],
-    );
+    const company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+    });
 
-    if (result.rows.length > 0) return result.rows[0].field_value as string;
-    return undefined;
+    if (!company) return undefined;
+
+    const fieldData = await prisma.companyData.findUnique({
+      where: {
+        companyId_fieldName: {
+          companyId: company.id,
+          fieldName: field as string,
+        },
+      },
+    });
+
+    return fieldData?.fieldValue;
   }
 
   async isFieldFilled(field: keyof OwnCompany): Promise<boolean> {
@@ -207,19 +192,21 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
   }
 
   async getNextUnfilledField(): Promise<keyof OwnCompany | null> {
-    await ensureDatabaseInitialized();
-    const result = await databaseManager.query(
-      'SELECT field_name, field_value FROM company_data WHERE user_id = $1',
-      [this.TEST_USER_ID],
-    );
+    const company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+      include: {
+        companyData: true,
+      },
+    });
+
+    if (!company) return this.fieldOrder[0];
+
     const filledSet = new Set<string>();
-    for (const row of result.rows as Array<{
-      field_name: string;
-      field_value: string;
-    }>) {
-      if (row.field_value && row.field_value.trim() !== '')
-        filledSet.add(row.field_name);
+    for (const field of company.companyData) {
+      if (field.fieldValue && field.fieldValue.trim() !== '')
+        filledSet.add(field.fieldName);
     }
+
     for (const field of this.fieldOrder) {
       if (!filledSet.has(field)) return field;
     }
@@ -231,26 +218,40 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
     total: number;
     percentage: number;
   }> {
-    await ensureDatabaseInitialized();
     console.log('[DB] Calculating completion progress');
-    const result = await databaseManager.query(
-      `SELECT COUNT(*)::int AS filled
-       FROM company_data
-       WHERE user_id = $1 AND field_value != ''`,
-      [this.TEST_USER_ID],
-    );
-    const filled = (result.rows[0]?.filled as number) || 0;
+
+    const company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+      include: {
+        companyData: true,
+      },
+    });
+
+    if (!company) {
+      return { filled: 0, total: this.fieldOrder.length, percentage: 0 };
+    }
+
+    const filled = company.companyData.filter(
+      (field) => field.fieldValue && field.fieldValue.trim() !== '',
+    ).length;
+
     const total = this.fieldOrder.length;
     const percentage = Math.round((filled / total) * 100);
     return { filled, total, percentage };
   }
 
   async resetData(): Promise<void> {
-    await ensureDatabaseInitialized();
     console.log('[DB] Deleting all company_data rows for user');
-    await databaseManager.query('DELETE FROM company_data WHERE user_id = $1', [
-      this.TEST_USER_ID,
-    ]);
+
+    const company = await prisma.company.findFirst({
+      where: { userId: this.TEST_USER_ID },
+    });
+
+    if (company) {
+      await prisma.companyData.deleteMany({
+        where: { companyId: company.id },
+      });
+    }
 
     // Invalidate Redis cache
     const cacheKey = `company_data:${this.TEST_USER_ID}`;
@@ -259,7 +260,6 @@ class PostgreSQLCompanyDataService implements CompanyDataService {
   }
 
   async deleteCompanyData(companyId: string): Promise<void> {
-    await ensureDatabaseInitialized();
     console.log(`[DB] Deleting company_data for company: ${companyId}`);
     // Note: company_data is user-specific, not company-specific
     // This method is kept for interface consistency but doesn't need company-specific logic

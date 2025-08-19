@@ -30,7 +30,7 @@ import {
 import { trpc } from '@/lib/trpc';
 import type { ICP } from '@/services/ai';
 import type { OwnCompany } from '@/services/project';
-import { ICPDetailsModal } from './ICPDetailsModal';
+import { ICPDetailsModal } from '@/components/icp/ICPDetailsModal';
 
 interface ICPProfilesProps {
   generatedICPs: ICP[];
@@ -123,7 +123,15 @@ export function ICPProfiles({
   };
 
   const handleViewDetails = (icp: any) => {
-    setSelectedICP(icp);
+    // Transform the database format to ICP format
+    const transformedICP = {
+      ...icp.profile_data,
+      id: icp.id,
+      company_id: icp.company_id,
+      created_at: icp.created_at,
+      updated_at: icp.updated_at,
+    };
+    setSelectedICP(transformedICP);
     setIsDetailsModalOpen(true);
   };
 
@@ -207,8 +215,8 @@ export function ICPProfiles({
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch'>
                 {profiles
                   .map((p: any) => {
-                    // Ensure profileData exists and has the expected structure
-                    if (!p.profileData) {
+                    // Ensure profile_data exists and has the expected structure
+                    if (!p.profile_data) {
                       console.warn('Profile data is missing for profile:', p);
                       return null;
                     }
@@ -233,28 +241,28 @@ export function ICPProfiles({
                           <div className='flex items-start justify-start'>
                             <div>
                               <CardTitle className='text-xl'>
-                                {p.profileData.icp_name ||
-                                  p.profileData.name ||
+                                {p.profile_data.icp_name ||
+                                  p.profile_data.name ||
                                   'Unnamed ICP'}
                               </CardTitle>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.business_model || 'N/A'} •{' '}
-                                {p.profileData.abm_tier || 'N/A'} • Score:{' '}
-                                {p.profileData.fit_score || 'N/A'}
+                                {p.profile_data.business_model || 'N/A'} •{' '}
+                                {p.profile_data.abm_tier || 'N/A'} • Score:{' '}
+                                {p.profile_data.fit_score || 'N/A'}
                               </p>
                               <div className='mt-2'>
                                 <Badge
                                   variant={
-                                    (p.profileData.confidence || 'medium') ===
+                                    (p.profile_data.confidence || 'medium') ===
                                     'high'
                                       ? 'default'
-                                      : (p.profileData.confidence ||
+                                      : (p.profile_data.confidence ||
                                           'medium') === 'medium'
                                       ? 'secondary'
                                       : 'outline'
                                   }>
                                   Confidence:{' '}
-                                  {p.profileData.confidence || 'medium'}
+                                  {p.profile_data.confidence || 'medium'}
                                 </Badge>
                               </div>
                             </div>
@@ -269,8 +277,8 @@ export function ICPProfiles({
                                 Customer Segments
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.segments?.join(', ') ||
-                                  p.profileData.customer_segments ||
+                                {p.profile_data.segments?.join(', ') ||
+                                  p.profile_data.customer_segments ||
                                   'No segments defined'}
                               </p>
                             </div>
@@ -282,10 +290,10 @@ export function ICPProfiles({
                                 Pain Points
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.needs_pain_goals?.pains?.join(
+                                {p.profile_data.needs_pain_goals?.pains?.join(
                                   ', ',
                                 ) ||
-                                  p.profileData.pain_points ||
+                                  p.profile_data.pain_points ||
                                   'No pain points defined'}
                               </p>
                             </div>
@@ -297,10 +305,10 @@ export function ICPProfiles({
                                 Jobs to be Done
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.needs_pain_goals?.jobs_to_be_done?.join(
+                                {p.profile_data.needs_pain_goals?.jobs_to_be_done?.join(
                                   ', ',
                                 ) ||
-                                  p.profileData.jobs_to_be_done ||
+                                  p.profile_data.jobs_to_be_done ||
                                   'No jobs defined'}
                               </p>
                             </div>
@@ -312,10 +320,10 @@ export function ICPProfiles({
                                 Desired Outcomes
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.needs_pain_goals?.desired_outcomes?.join(
+                                {p.profile_data.needs_pain_goals?.desired_outcomes?.join(
                                   ', ',
                                 ) ||
-                                  p.profileData.desired_outcomes ||
+                                  p.profile_data.desired_outcomes ||
                                   'No outcomes defined'}
                               </p>
                             </div>
@@ -327,7 +335,7 @@ export function ICPProfiles({
                                 Buying Triggers
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.buying_triggers?.join(', ') ||
+                                {p.profile_data.buying_triggers?.join(', ') ||
                                   'No triggers defined'}
                               </p>
                             </div>
@@ -339,7 +347,7 @@ export function ICPProfiles({
                                 Common Objections
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.common_objections?.join(', ') ||
+                                {p.profile_data.common_objections?.join(', ') ||
                                   'No objections defined'}
                               </p>
                             </div>
@@ -351,9 +359,9 @@ export function ICPProfiles({
                                 Value Proposition
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.value_prop_alignment
+                                {p.profile_data.value_prop_alignment
                                   ?.value_prop ||
-                                  p.profileData.value_proposition ||
+                                  p.profile_data.value_proposition ||
                                   'No value proposition defined'}
                               </p>
                             </div>
@@ -365,10 +373,10 @@ export function ICPProfiles({
                                 Go-to-Market Strategy
                               </h4>
                               <p className='text-sm text-muted-foreground'>
-                                {p.profileData.go_to_market?.primary_channels?.join(
+                                {p.profile_data.go_to_market?.primary_channels?.join(
                                   ', ',
                                 ) ||
-                                  p.profileData.go_to_market_strategy ||
+                                  p.profile_data.go_to_market_strategy ||
                                   'No strategy defined'}
                               </p>
                             </div>

@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronDown, Search, X } from 'lucide-react';
-import { CONTINENTS, COUNTRIES_BY_REGION } from './location-data';
+import { CONTINENTS, COUNTRIES_BY_REGION } from '@/components/ui/location-data';
 
 interface LocationSelectorProps {
   value?: string;

@@ -1,8 +1,14 @@
-// Database Campaign Services
-export * from './campaign';
+// Export Prisma service and types
+export { prismaService, prisma } from './prisma-service';
+export type {
+  User,
+  Company,
+  CompanyData,
+  ICPProfile,
+  Campaign,
+} from './prisma-service';
 
-// Database Company Services
+// Export existing services for backward compatibility during migration
 export * from './company';
-
-// Database ICP Services
 export * from './icp';
+export * from './campaign';

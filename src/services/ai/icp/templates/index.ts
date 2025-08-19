@@ -1,7 +1,7 @@
-import type { ICPTemplate } from './b2b-templates';
-import { B2B_TEMPLATES } from './b2b-templates';
-import { B2C_TEMPLATES } from './b2c-templates';
-import { B2B2C_TEMPLATES } from './b2b2c-templates';
+import type { ICPTemplate } from '@/services/ai/icp/templates/b2b-templates';
+import { B2B_TEMPLATES } from '@/services/ai/icp/templates/b2b-templates';
+import { B2C_TEMPLATES } from '@/services/ai/icp/templates/b2c-templates';
+import { B2B2C_TEMPLATES } from '@/services/ai/icp/templates/b2b2c-templates';
 
 // Re-export types and templates
 export type { ICPTemplate };

@@ -56,3 +56,5 @@ next-env.d.ts
 .cursorrules
 cursor-tools.md
 src/utils/cursor-tools.ts
+
+/generated/prisma

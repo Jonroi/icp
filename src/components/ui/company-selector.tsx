@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Input } from './input';
-import { Label } from './label';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './select';
-import { Button } from './button';
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import type { OwnCompany } from '@/services/project';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';

@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure } from '../trpc';
+import { createTRPCRouter, publicProcedure } from '@/server/trpc';
 import { CampaignGenerator } from '@/services/ai';
-import { CampaignService, icpProfilesService } from '@/services/database';
+import { prisma } from '@/services/database/prisma-service';
 import { redisService } from '@/services/cache';
+import type { Campaign } from '@prisma/client';
 
 const campaignGenerator = new CampaignGenerator();
-const campaignService = new CampaignService();
 
 export const campaignRouter = createTRPCRouter({
   generate: publicProcedure
@@ -40,49 +40,80 @@ export const campaignRouter = createTRPCRouter({
         }
 
         // Save to database
-        const savedCampaign = await campaignService.create({
-          name: result.campaign.name,
-          icpId: result.campaign.icpId,
-          copyStyle: result.campaign.copyStyle,
-          mediaType: result.campaign.mediaType,
-          adCopy: result.campaign.adCopy,
-          imagePrompt: result.campaign.imagePrompt,
-          imageUrl: result.campaign.imageUrl,
-          cta: result.campaign.cta,
-          hooks: result.campaign.hooks,
-          landingPageCopy: result.campaign.landingPageCopy,
+        const savedCampaign = await prisma.campaign.create({
+          data: {
+            name: result.campaign.name,
+            icpId: result.campaign.icpId,
+            copyStyle: result.campaign.copyStyle,
+            mediaType: result.campaign.mediaType,
+            adCopy: result.campaign.adCopy,
+            imagePrompt: result.campaign.imagePrompt,
+            imageUrl: result.campaign.imageUrl,
+            cta: result.campaign.cta,
+            hooks: result.campaign.hooks,
+            landingPageCopy: result.campaign.landingPageCopy,
+          },
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
         });
 
         console.log('Campaign saved to database:', savedCampaign.id);
 
+        // Transform to match expected format
+        const transformedCampaign = {
+          id: savedCampaign.id,
+          name: savedCampaign.name,
+          icp_id: savedCampaign.icpId,
+          copy_style: savedCampaign.copyStyle as
+            | 'facts'
+            | 'humour'
+            | 'smart'
+            | 'emotional'
+            | 'professional',
+          media_type: savedCampaign.mediaType as
+            | 'google-ads'
+            | 'linkedin'
+            | 'email'
+            | 'print'
+            | 'social-media',
+          ad_copy: savedCampaign.adCopy,
+          image_prompt: savedCampaign.imagePrompt || undefined,
+          image_url: savedCampaign.imageUrl || undefined,
+          cta: savedCampaign.cta,
+          hooks: savedCampaign.hooks,
+          landing_page_copy: savedCampaign.landingPageCopy,
+          created_at: savedCampaign.createdAt,
+          updated_at: savedCampaign.updatedAt,
+        };
+
         // Cache the result
         await redisService.set(
           `campaign:${savedCampaign.id}`,
-          JSON.stringify(savedCampaign),
+          JSON.stringify(transformedCampaign),
           3600, // 1 hour TTL
         );
 
         // Invalidate related caches so library shows new campaign
         await redisService.del('campaigns:all');
-        await redisService.del(`campaigns:icp:${savedCampaign.icp_id}`);
+        await redisService.del(`campaigns:icp:${savedCampaign.icpId}`);
 
         // Get company ID from ICP to invalidate company cache
-        try {
-          const icpProfile = await icpProfilesService.getProfileById(
-            savedCampaign.icp_id,
+        if (savedCampaign.icpProfile?.company?.id) {
+          await redisService.del(
+            `campaigns:company:${savedCampaign.icpProfile.company.id}`,
           );
-          if (icpProfile && icpProfile.companyId) {
-            await redisService.del(`campaigns:company:${icpProfile.companyId}`);
-            console.log(
-              'Invalidated company cache for company ID:',
-              icpProfile.companyId,
-            );
-          }
-        } catch (e) {
-          console.warn('Failed to invalidate company cache:', e);
+          console.log(
+            'Invalidated company cache for company ID:',
+            savedCampaign.icpProfile.company.id,
+          );
         }
 
-        return savedCampaign;
+        return transformedCampaign;
       } catch (error) {
         console.error('Error in campaign generation:', error);
         throw new Error(
@@ -104,19 +135,56 @@ export const campaignRouter = createTRPCRouter({
         }
 
         // Fetch from database
-        const campaign = await campaignService.getById(input.id);
+        const campaign = await prisma.campaign.findUnique({
+          where: { id: input.id },
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
+        });
+
         if (!campaign) {
           throw new Error('Campaign not found');
         }
 
+        // Transform to match expected format
+        const transformedCampaign = {
+          id: campaign.id,
+          name: campaign.name,
+          icp_id: campaign.icpId,
+          copy_style: campaign.copyStyle as
+            | 'facts'
+            | 'humour'
+            | 'smart'
+            | 'emotional'
+            | 'professional',
+          media_type: campaign.mediaType as
+            | 'google-ads'
+            | 'linkedin'
+            | 'email'
+            | 'print'
+            | 'social-media',
+          ad_copy: campaign.adCopy,
+          image_prompt: campaign.imagePrompt || undefined,
+          image_url: campaign.imageUrl || undefined,
+          cta: campaign.cta,
+          hooks: campaign.hooks,
+          landing_page_copy: campaign.landingPageCopy,
+          created_at: campaign.createdAt,
+          updated_at: campaign.updatedAt,
+        };
+
         // Cache the result
         await redisService.set(
           `campaign:${input.id}`,
-          JSON.stringify(campaign),
+          JSON.stringify(transformedCampaign),
           3600, // 1 hour TTL
         );
 
-        return campaign;
+        return transformedCampaign;
       } catch (error) {
         console.error('Error fetching campaign:', error);
         throw new Error(
@@ -136,16 +204,55 @@ export const campaignRouter = createTRPCRouter({
         }
 
         // Fetch from database
-        const campaigns = await campaignService.getByIcpId(input.icpId);
+        const campaigns = await prisma.campaign.findMany({
+          where: { icpId: input.icpId },
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        // Transform to match expected format
+        const transformedCampaigns = campaigns.map((campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          icp_id: campaign.icpId,
+          copy_style: campaign.copyStyle as
+            | 'facts'
+            | 'humour'
+            | 'smart'
+            | 'emotional'
+            | 'professional',
+          media_type: campaign.mediaType as
+            | 'google-ads'
+            | 'linkedin'
+            | 'email'
+            | 'print'
+            | 'social-media',
+          ad_copy: campaign.adCopy,
+          image_prompt: campaign.imagePrompt || undefined,
+          image_url: campaign.imageUrl || undefined,
+          cta: campaign.cta,
+          hooks: campaign.hooks,
+          landing_page_copy: campaign.landingPageCopy,
+          created_at: campaign.createdAt,
+          updated_at: campaign.updatedAt,
+        }));
 
         // Cache the result
         await redisService.set(
           `campaigns:icp:${input.icpId}`,
-          JSON.stringify(campaigns),
+          JSON.stringify(transformedCampaigns),
           1800, // 30 minutes TTL
         );
 
-        return campaigns;
+        return transformedCampaigns;
       } catch (error) {
         console.error('Error fetching campaigns by ICP:', error);
         throw new Error(
@@ -163,16 +270,54 @@ export const campaignRouter = createTRPCRouter({
       }
 
       // Fetch from database
-      const campaigns = await campaignService.getAll();
+      const campaigns = await prisma.campaign.findMany({
+        include: {
+          icpProfile: {
+            include: {
+              company: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Transform to match expected format
+      const transformedCampaigns = campaigns.map((campaign) => ({
+        id: campaign.id,
+        name: campaign.name,
+        icp_id: campaign.icpId,
+        copy_style: campaign.copyStyle as
+          | 'facts'
+          | 'humour'
+          | 'smart'
+          | 'emotional'
+          | 'professional',
+        media_type: campaign.mediaType as
+          | 'google-ads'
+          | 'linkedin'
+          | 'email'
+          | 'print'
+          | 'social-media',
+        ad_copy: campaign.adCopy,
+        image_prompt: campaign.imagePrompt || undefined,
+        image_url: campaign.imageUrl || undefined,
+        cta: campaign.cta,
+        hooks: campaign.hooks,
+        landing_page_copy: campaign.landingPageCopy,
+        created_at: campaign.createdAt,
+        updated_at: campaign.updatedAt,
+      }));
 
       // Cache the result
       await redisService.set(
         'campaigns:all',
-        JSON.stringify(campaigns),
+        JSON.stringify(transformedCampaigns),
         1800, // 30 minutes TTL
       );
 
-      return campaigns;
+      return transformedCampaigns;
     } catch (error) {
       console.error('Error fetching all campaigns:', error);
       throw new Error(
@@ -194,16 +339,59 @@ export const campaignRouter = createTRPCRouter({
         }
 
         // Fetch from database
-        const campaigns = await campaignService.getByCompanyId(input.companyId);
+        const campaigns = await prisma.campaign.findMany({
+          where: {
+            icpProfile: {
+              companyId: parseInt(input.companyId),
+            },
+          },
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        // Transform to match expected format
+        const transformedCampaigns = campaigns.map((campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          icp_id: campaign.icpId,
+          copy_style: campaign.copyStyle as
+            | 'facts'
+            | 'humour'
+            | 'smart'
+            | 'emotional'
+            | 'professional',
+          media_type: campaign.mediaType as
+            | 'google-ads'
+            | 'linkedin'
+            | 'email'
+            | 'print'
+            | 'social-media',
+          ad_copy: campaign.adCopy,
+          image_prompt: campaign.imagePrompt || undefined,
+          image_url: campaign.imageUrl || undefined,
+          cta: campaign.cta,
+          hooks: campaign.hooks,
+          landing_page_copy: campaign.landingPageCopy,
+          created_at: campaign.createdAt,
+          updated_at: campaign.updatedAt,
+        }));
 
         // Cache the result
         await redisService.set(
           `campaigns:company:${input.companyId}`,
-          JSON.stringify(campaigns),
+          JSON.stringify(transformedCampaigns),
           1800, // 30 minutes TTL
         );
 
-        return campaigns;
+        return transformedCampaigns;
       } catch (error) {
         console.error('Error fetching campaigns by company:', error);
         throw new Error(
@@ -229,29 +417,57 @@ export const campaignRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       try {
-        const updatedCampaign = await campaignService.update(
-          input.id,
-          input.updates,
-        );
+        const updatedCampaign = await prisma.campaign.update({
+          where: { id: input.id },
+          data: input.updates,
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
+        });
 
-        if (!updatedCampaign) {
-          throw new Error('Campaign not found');
-        }
+        // Transform to match expected format
+        const transformedCampaign = {
+          id: updatedCampaign.id,
+          name: updatedCampaign.name,
+          icp_id: updatedCampaign.icpId,
+          copy_style: updatedCampaign.copyStyle as
+            | 'facts'
+            | 'humour'
+            | 'smart'
+            | 'emotional'
+            | 'professional',
+          media_type: updatedCampaign.mediaType as
+            | 'google-ads'
+            | 'linkedin'
+            | 'email'
+            | 'print'
+            | 'social-media',
+          ad_copy: updatedCampaign.adCopy,
+          image_prompt: updatedCampaign.imagePrompt || undefined,
+          image_url: updatedCampaign.imageUrl || undefined,
+          cta: updatedCampaign.cta,
+          hooks: updatedCampaign.hooks,
+          landing_page_copy: updatedCampaign.landingPageCopy,
+          created_at: updatedCampaign.createdAt,
+          updated_at: updatedCampaign.updatedAt,
+        };
 
         // Update cache
         await redisService.set(
           `campaign:${input.id}`,
-          JSON.stringify(updatedCampaign),
+          JSON.stringify(transformedCampaign),
           3600, // 1 hour TTL
         );
 
         // Invalidate related caches
         await redisService.del('campaigns:all');
-        await redisService.del(`campaigns:icp:${updatedCampaign.icp_id}`);
+        await redisService.del(`campaigns:icp:${updatedCampaign.icpId}`);
 
-        // Cache invalidation temporarily disabled during reorganization
-
-        return updatedCampaign;
+        return transformedCampaign;
       } catch (error) {
         console.error('Error updating campaign:', error);
         throw new Error(
@@ -267,32 +483,31 @@ export const campaignRouter = createTRPCRouter({
         console.log('Attempting to delete campaign:', input.id);
 
         // Get campaign details BEFORE deleting to invalidate specific caches
-        const campaign = await campaignService.getById(input.id);
+        const campaign = await prisma.campaign.findUnique({
+          where: { id: input.id },
+          include: {
+            icpProfile: {
+              include: {
+                company: true,
+              },
+            },
+          },
+        });
+
         if (!campaign) {
           throw new Error('Campaign not found');
         }
 
         // Store campaign info for cache invalidation
-        const icpId = campaign.icp_id;
+        const icpId = campaign.icpId;
+        const companyId = campaign.icpProfile?.company?.id;
         console.log('Campaign ICP ID for cache invalidation:', icpId);
-        let companyId: string | null = null;
-
-        try {
-          const icpProfile = await icpProfilesService.getProfileById(icpId);
-          console.log('ICP Profile found:', icpProfile ? 'yes' : 'no');
-          if (icpProfile) {
-            console.log('ICP Profile companyId:', icpProfile.companyId);
-            companyId = icpProfile.companyId || null;
-          }
-        } catch (e) {
-          console.warn('Failed to get ICP profile for cache invalidation:', e);
-        }
+        console.log('Campaign company ID for cache invalidation:', companyId);
 
         // Now delete the campaign
-        const success = await campaignService.delete(input.id);
-        if (!success) {
-          throw new Error('Campaign not found');
-        }
+        await prisma.campaign.delete({
+          where: { id: input.id },
+        });
 
         console.log('Campaign deleted successfully:', input.id);
 

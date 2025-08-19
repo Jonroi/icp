@@ -1,5 +1,5 @@
-import { AISDKService } from '../core/ai-sdk-service';
-import { icpProfilesService, companiesService } from '../../database';
+import { AISDKService } from '@/services/ai/core/ai-sdk-service';
+import { icpProfilesService, companiesService } from '@/services/database';
 import type {
   Campaign,
   CampaignGenerationRequest,

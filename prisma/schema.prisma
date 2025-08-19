@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @unique
+  name      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  companies Company[]
+
+  @@map("users")
+}
+
+model Company {
+  id          Int           @id @default(autoincrement())
+  userId      String        @map("user_id") @db.Uuid
+  name        String
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyData CompanyData[]
+  icpProfiles ICPProfile[]
+
+  @@map("companies")
+}
+
+model CompanyData {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  Int      @map("company_id")
+  fieldName  String   @map("field_name")
+  fieldValue String   @map("field_value")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  version    Int      @default(1)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, fieldName])
+  @@map("company_data")
+}
+
+model ICPProfile {
+  id              String     @id @default(uuid()) @db.Uuid
+  companyId       Int        @map("company_id")
+  name            String
+  description     String?
+  profileData     Json       @map("profile_data")
+  confidenceLevel String     @default("medium") @map("confidence_level")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  campaigns       Campaign[]
+  company         Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("icp_profiles")
+}
+
+model Campaign {
+  id              String     @id @default(uuid()) @db.Uuid
+  name            String
+  icpId           String     @map("icp_id") @db.Uuid
+  copyStyle       String     @map("copy_style")
+  mediaType       String     @map("media_type")
+  adCopy          String     @map("ad_copy")
+  imagePrompt     String?    @map("image_prompt")
+  imageUrl        String?    @map("image_url")
+  cta             String
+  hooks           String
+  landingPageCopy String     @map("landing_page_copy")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  icpProfile      ICPProfile @relation(fields: [icpId], references: [id], onDelete: Cascade)
+
+  @@map("campaigns")
+}

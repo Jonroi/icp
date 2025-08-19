@@ -1,22 +1,53 @@
 import { z } from 'zod';
-import { createTRPCRouter, publicProcedure } from '../trpc';
-import { companiesService } from '@/services/database';
-import type { OwnCompany } from '@/services/project';
+import { createTRPCRouter, publicProcedure } from '@/server/trpc';
+import { prisma } from '@/services/database/prisma-service';
+import type { Company, CompanyData } from '@prisma/client';
 
 export const companyRouter = createTRPCRouter({
   // List all companies for the current user
   list: publicProcedure.query(async ({ ctx }) => {
     try {
-      const companies = await companiesService.getAllCompaniesWithData();
+      const companies = await prisma.company.findMany({
+        include: {
+          companyData: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
       // Transform to match expected format
-      const companyList = companies.map((company) => ({
-        ...company.data,
-        id: company.id,
-        name: company.name, // Add name field explicitly
-        created_at: company.created_at,
-        updated_at: company.updated_at,
-      }));
+      const companyList = companies.map((company) => {
+        const data: Record<string, string> = {};
+        company.companyData.forEach((field) => {
+          data[field.fieldName] = field.fieldValue;
+        });
+
+        return {
+          id: company.id,
+          name: company.name,
+          website: data.website || '',
+          social: data.social || '',
+          location: data.location || '',
+          industry: data.industry || '',
+          companySize: data.companySize || '',
+          targetMarket: data.targetMarket || '',
+          valueProposition: data.valueProposition || '',
+          mainOfferings: data.mainOfferings || '',
+          pricingModel: data.pricingModel || '',
+          uniqueFeatures: data.uniqueFeatures || '',
+          marketSegment: data.marketSegment || '',
+          competitiveAdvantages: data.competitiveAdvantages || '',
+          currentCustomers: data.currentCustomers || '',
+          successStories: data.successStories || '',
+          currentMarketingChannels: data.currentMarketingChannels || '',
+          marketingMessaging: data.marketingMessaging || '',
+          painPointsSolved: data.painPointsSolved || '',
+          customerGoals: data.customerGoals || '',
+          created_at: company.createdAt,
+          updated_at: company.updatedAt,
+        };
+      });
 
       return {
         list: companyList,
@@ -36,17 +67,45 @@ export const companyRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ input, ctx }) => {
       try {
-        const company = await companiesService.getCompanyWithData(input.id);
+        const company = await prisma.company.findUnique({
+          where: { id: parseInt(input.id) },
+          include: {
+            companyData: true,
+          },
+        });
+
         if (!company) {
           throw new Error('Company not found');
         }
 
+        const data: Record<string, string> = {};
+        company.companyData.forEach((field) => {
+          data[field.fieldName] = field.fieldValue;
+        });
+
         return {
-          ...company.data,
           id: company.id,
           name: company.name,
-          created_at: company.created_at,
-          updated_at: company.updated_at,
+          website: data.website || '',
+          social: data.social || '',
+          location: data.location || '',
+          industry: data.industry || '',
+          companySize: data.companySize || '',
+          targetMarket: data.targetMarket || '',
+          valueProposition: data.valueProposition || '',
+          mainOfferings: data.mainOfferings || '',
+          pricingModel: data.pricingModel || '',
+          uniqueFeatures: data.uniqueFeatures || '',
+          marketSegment: data.marketSegment || '',
+          competitiveAdvantages: data.competitiveAdvantages || '',
+          currentCustomers: data.currentCustomers || '',
+          successStories: data.successStories || '',
+          currentMarketingChannels: data.currentMarketingChannels || '',
+          marketingMessaging: data.marketingMessaging || '',
+          painPointsSolved: data.painPointsSolved || '',
+          customerGoals: data.customerGoals || '',
+          created_at: company.createdAt,
+          updated_at: company.updatedAt,
         };
       } catch (error) {
         throw new Error(
@@ -84,36 +143,57 @@ export const companyRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        // Create the company
-        const newCompany = await companiesService.createCompany(input.name);
+        // Create the company with all data in a single transaction
+        const newCompany = await prisma.company.create({
+          data: {
+            name: input.name,
+            userId:
+              process.env.TEST_USER_ID ||
+              '11111111-1111-1111-1111-111111111111',
+            companyData: {
+              create: Object.entries(input)
+                .filter(
+                  ([field, value]) => field !== 'name' && value !== undefined,
+                )
+                .map(([fieldName, fieldValue]) => ({
+                  fieldName,
+                  fieldValue: fieldValue!,
+                })),
+            },
+          },
+          include: {
+            companyData: true,
+          },
+        });
 
-        // Update company data fields
-        const updates = [];
-        for (const [field, value] of Object.entries(input)) {
-          if (field !== 'name' && value !== undefined) {
-            await companiesService.updateCompanyField(
-              newCompany.id.toString(),
-              field as keyof OwnCompany,
-              value,
-            );
-            updates.push({ field, value });
-          }
-        }
-
-        // Get the created company with data
-        const companyWithData = await companiesService.getCompanyWithData(
-          newCompany.id.toString(),
-        );
-        if (!companyWithData) {
-          throw new Error('Failed to retrieve created company');
-        }
+        const data: Record<string, string> = {};
+        newCompany.companyData.forEach((field) => {
+          data[field.fieldName] = field.fieldValue;
+        });
 
         return {
-          ...companyWithData.data,
-          id: companyWithData.id,
-          name: companyWithData.name,
-          created_at: companyWithData.created_at,
-          updated_at: companyWithData.updated_at,
+          id: newCompany.id,
+          name: newCompany.name,
+          website: data.website || '',
+          social: data.social || '',
+          location: data.location || '',
+          industry: data.industry || '',
+          companySize: data.companySize || '',
+          targetMarket: data.targetMarket || '',
+          valueProposition: data.valueProposition || '',
+          mainOfferings: data.mainOfferings || '',
+          pricingModel: data.pricingModel || '',
+          uniqueFeatures: data.uniqueFeatures || '',
+          marketSegment: data.marketSegment || '',
+          competitiveAdvantages: data.competitiveAdvantages || '',
+          currentCustomers: data.currentCustomers || '',
+          successStories: data.successStories || '',
+          currentMarketingChannels: data.currentMarketingChannels || '',
+          marketingMessaging: data.marketingMessaging || '',
+          painPointsSolved: data.painPointsSolved || '',
+          customerGoals: data.customerGoals || '',
+          created_at: newCompany.createdAt,
+          updated_at: newCompany.updatedAt,
         };
       } catch (error) {
         throw new Error(
@@ -135,26 +215,69 @@ export const companyRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        await companiesService.updateCompanyField(
-          input.id,
-          input.field as keyof OwnCompany,
-          input.value,
-        );
+        const companyId = parseInt(input.id);
+
+        // Upsert the field (create if doesn't exist, update if it does)
+        await prisma.companyData.upsert({
+          where: {
+            companyId_fieldName: {
+              companyId,
+              fieldName: input.field,
+            },
+          },
+          update: {
+            fieldValue: input.value,
+            version: {
+              increment: 1,
+            },
+          },
+          create: {
+            companyId,
+            fieldName: input.field,
+            fieldValue: input.value,
+          },
+        });
 
         // Get updated company data
-        const companyWithData = await companiesService.getCompanyWithData(
-          input.id,
-        );
+        const companyWithData = await prisma.company.findUnique({
+          where: { id: companyId },
+          include: {
+            companyData: true,
+          },
+        });
+
         if (!companyWithData) {
           throw new Error('Company not found');
         }
 
+        const data: Record<string, string> = {};
+        companyWithData.companyData.forEach((field) => {
+          data[field.fieldName] = field.fieldValue;
+        });
+
         return {
-          ...companyWithData.data,
           id: companyWithData.id,
           name: companyWithData.name,
-          created_at: companyWithData.created_at,
-          updated_at: companyWithData.updated_at,
+          website: data.website || '',
+          social: data.social || '',
+          location: data.location || '',
+          industry: data.industry || '',
+          companySize: data.companySize || '',
+          targetMarket: data.targetMarket || '',
+          valueProposition: data.valueProposition || '',
+          mainOfferings: data.mainOfferings || '',
+          pricingModel: data.pricingModel || '',
+          uniqueFeatures: data.uniqueFeatures || '',
+          marketSegment: data.marketSegment || '',
+          competitiveAdvantages: data.competitiveAdvantages || '',
+          currentCustomers: data.currentCustomers || '',
+          successStories: data.successStories || '',
+          currentMarketingChannels: data.currentMarketingChannels || '',
+          marketingMessaging: data.marketingMessaging || '',
+          painPointsSolved: data.painPointsSolved || '',
+          customerGoals: data.customerGoals || '',
+          created_at: companyWithData.createdAt,
+          updated_at: companyWithData.updatedAt,
         };
       } catch (error) {
         throw new Error(
@@ -170,7 +293,9 @@ export const companyRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        await companiesService.deleteCompany(input.id);
+        await prisma.company.delete({
+          where: { id: parseInt(input.id) },
+        });
         return { success: true };
       } catch (error) {
         throw new Error(
@@ -202,7 +327,10 @@ export const companyRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       try {
         // Verify company exists and belongs to user
-        const company = await companiesService.getCompanyById(input.id);
+        const company = await prisma.company.findUnique({
+          where: { id: parseInt(input.id) },
+        });
+
         if (!company) {
           throw new Error('Company not found');
         }

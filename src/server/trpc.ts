@@ -3,7 +3,7 @@ import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { z } from 'zod';
 import superjson from 'superjson';
 import { redisService } from '@/services/cache';
-import { databaseManager } from '../../database/config';
+import { prisma } from '@/services/database/prisma-service';
 
 /**
  * 1. CONTEXT
@@ -12,7 +12,7 @@ import { databaseManager } from '../../database/config';
  */
 interface CreateContextOptions {
   redis: typeof redisService;
-  db: typeof databaseManager;
+  prisma: typeof prisma;
 }
 
 /**
@@ -32,7 +32,7 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   return createInnerTRPCContext({
     redis: redisService,
-    db: databaseManager,
+    prisma,
   });
 };
 

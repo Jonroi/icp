@@ -1,11 +1,12 @@
-import type { ICPTemplate } from './b2b-templates';
+import type { ICPTemplate } from '@/services/ai/icp/templates/b2b-templates';
 
 export const B2B2C_TEMPLATES: ICPTemplate[] = [
   // Platform Partners
   {
     id: 'platform_partner',
     name: 'Platform Partner',
-    description: 'Businesses that partner with platforms to reach end consumers',
+    description:
+      'Businesses that partner with platforms to reach end consumers',
     category: 'platform',
   },
   {
