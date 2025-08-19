@@ -2,7 +2,7 @@
 
 ## 🏗️ System Overview
 
-ICP Builder is a Next.js application that generates Ideal Customer Profiles (ICPs) and marketing campaigns using local AI (Ollama). Built with TypeScript, tRPC, PostgreSQL, and Redis.
+ICP Builder is a Next.js application that generates Ideal Customer Profiles (ICPs) and marketing campaigns using AI. Built with TypeScript, tRPC, Prisma ORM, PostgreSQL, and Redis for optimal performance and type safety.
 
 ## 📁 Project Structure
 
@@ -15,10 +15,11 @@ src/
 │   └── providers/      # Context providers
 ├── services/           # Business logic
 │   ├── ai/             # AI services (ICP + Campaign generation)
-│   ├── database/       # Database services
-│   ├── cache/          # Redis caching
+│   ├── database/       # Prisma services and database operations
+│   ├── cache/          # Redis caching services
 │   └── project/        # Project management
-├── server/             # tRPC API routes
+├── server/             # tRPC API routes with Prisma integration
+├── prisma/             # Database schema and migrations
 ├── hooks/              # Custom React hooks
 └── lib/                # Utilities
 ```
@@ -26,9 +27,10 @@ src/
 ## 🔄 Data Flow
 
 ```text
-User Input → UI Components → tRPC → Services → PostgreSQL
-                                    ↘︎ AI Services → Ollama → Results
+User Input → UI Components → tRPC → Prisma Services → PostgreSQL
+                                    ↘︎ AI Services → LLM → Results
                                     ↗︎ Redis Cache ← Performance
+                                    ↗︎ Type Safety ← Prisma Client
 ```
 
 ## 🧠 AI Architecture
@@ -52,15 +54,69 @@ User Input → UI Components → tRPC → Services → PostgreSQL
 - **Campaign Generation**: 15-30 seconds per campaign
 - **Template Library**: 140+ B2B, B2C, B2B2C variations
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema (Prisma)
 
-```sql
--- Core tables
-companies (id, name, created_at)
-icp_profiles (id, company_id, profile_data JSONB, created_at)
-campaigns (id, icp_id, name, copy_style, media_type, ad_copy, cta, hooks, landing_page_copy, created_at)
-company_data (key-value form data storage)
+### Core Models
+
+```typescript
+// User management
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @unique
+  name      String
+  companies Company[]
+}
+
+// Company management
+model Company {
+  id          Int           @id @default(autoincrement())
+  userId      String        @map("user_id") @db.Uuid
+  name        String
+  user        User          @relation(fields: [userId], references: [id])
+  companyData CompanyData[]
+  icpProfiles ICPProfile[]
+}
+
+// Key-value company data storage
+model CompanyData {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  Int      @map("company_id")
+  fieldName  String   @map("field_name")
+  fieldValue String   @map("field_value")
+  version    Int      @default(1)
+  company    Company  @relation(fields: [companyId], references: [id])
+}
+
+// ICP profiles with JSON data
+model ICPProfile {
+  id              String     @id @default(uuid()) @db.Uuid
+  companyId       Int        @map("company_id")
+  name            String
+  profileData     Json       @map("profile_data")
+  confidenceLevel String     @default("medium")
+  campaigns       Campaign[]
+  company         Company    @relation(fields: [companyId], references: [id])
+}
+
+// Marketing campaigns
+model Campaign {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String
+  icpId           String @map("icp_id") @db.Uuid
+  copyStyle       String @map("copy_style")
+  mediaType       String @map("media_type")
+  adCopy          String @map("ad_copy")
+  icpProfile      ICPProfile @relation(fields: [icpId], references: [id])
+}
 ```
+
+### Benefits of Prisma Schema
+
+- **Type Safety**: Auto-generated TypeScript types
+- **Migrations**: Version-controlled schema changes
+- **Relations**: Type-safe foreign key relationships
+- **Validation**: Built-in data validation
+- **Introspection**: Schema reflection and tooling
 
 ## 🔧 Key Services
 
@@ -70,11 +126,13 @@ company_data (key-value form data storage)
 - **ICP Generation**: Complete customer profiles with single LLM call
 - **Campaign Generation**: Multi-platform campaigns with context awareness
 
-### Database Services
+### Database Services (Prisma)
 
-- **Company Management**: CRUD operations and active company selection
-- **ICP Profiles**: Generation results storage and retrieval
-- **Campaign Management**: Campaign storage and library management
+- **Prisma Client**: Type-safe database operations with auto-generated types
+- **Company Management**: CRUD operations with relational data loading
+- **ICP Profiles**: JSON storage with type validation and includes
+- **Campaign Management**: Relational campaign storage with ICP associations
+- **Query Optimization**: Efficient includes, selects, and connection pooling
 
 ### Cache Services
 
@@ -99,42 +157,72 @@ company_data (key-value form data storage)
 
 ### Technical Excellence
 
-- Type-safe API with tRPC
-- Local AI processing (no external APIs)
-- Docker-first deployment
-- Comprehensive error handling
+- **Type-safe API** with tRPC and auto-generated Prisma types
+- **Database Migrations** with version control and rollback support
+- **Performance Optimization** with Redis caching and query optimization
+- **Developer Experience** with Prisma Studio and comprehensive tooling
+- **Error Prevention** with compile-time type checking
 
 ## 🐳 Docker Architecture
 
 ```yaml
 services:
-  postgres: PostgreSQL 15 database
-  redis: Redis 7 cache
-  ollama: Local LLM server (llama3.2:3b-instruct-q4_K_M)
-  app: Next.js application
+  postgres: PostgreSQL 15 database with Prisma migrations
+  redis: Redis 7 cache for performance optimization
+  app: Next.js application with Prisma client and tRPC
 ```
 
 ## 🔒 Security & Performance
 
 ### Security
 
-- Local AI processing (no data transmission)
-- Input validation with Zod
-- Environment-based configuration
-- No external API dependencies
+- **Input Validation** with Zod schemas and Prisma type validation
+- **Environment-based Configuration** with secure environment variables
+- **Database Security** with Prisma's built-in SQL injection prevention
+- **Type Safety** preventing runtime errors and data corruption
 
-### Performance
+### Performance Optimization
 
-- Single-call AI generation
-- Redis caching with intelligent invalidation
-- Optimized database queries
-- Docker containerization
+- **Database Optimization** with Prisma query optimization and connection pooling
+- **Redis Caching** with intelligent invalidation and TTL management
+- **Type-safe Queries** with compile-time optimization
+- **Efficient Data Loading** with Prisma includes and selective field loading
 
 ## 📖 Documentation
 
-- **[README.md](README.md)** - Setup and usage guide
+- **[README.md](README.md)** - Setup and usage guide with Prisma instructions
+- **[PRISMA_MIGRATION.md](PRISMA_MIGRATION.md)** - Migration guide from raw SQL to Prisma
+- **[SETUP_PRISMA.md](SETUP_PRISMA.md)** - Complete Prisma setup guide
 - **[AI_Workflow.md](AI_Workflow.md)** - Detailed AI system documentation
+
+## 🎯 Development Workflow
+
+### Database Development
+
+```bash
+# Generate Prisma client after schema changes
+npm run db:generate
+
+# Push schema changes to development database
+npm run db:push
+
+# Create and apply migrations
+npm run db:migrate
+
+# Open Prisma Studio for data management
+npm run db:studio
+
+# Reset database with fresh schema
+npm run db:reset
+```
+
+### Type Safety Workflow
+
+1. **Schema First**: Define models in `prisma/schema.prisma`
+2. **Generate Types**: Run `npm run db:generate` to create TypeScript types
+3. **Use Types**: Import and use auto-generated types in services and components
+4. **Validate**: TypeScript compiler ensures type safety across the stack
 
 ---
 
-This simplified architecture focuses on the essential components and workflows that make ICP Builder work efficiently.
+This modern architecture leverages Prisma ORM for type-safe database operations, ensuring robust and maintainable code with excellent developer experience.

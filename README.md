@@ -61,13 +61,13 @@ git clone <repository-url>
 cd icp
 ```
 
-2. **Install dependencies**
+1. **Install dependencies**
 
 ```bash
 npm install
 ```
 
-3. **Environment Configuration**
+1. **Environment Configuration**
    Create `.env.local` file:
 
 ```env
@@ -75,7 +75,7 @@ DATABASE_URL="postgresql://icp_user:password@localhost:5432/icp_builder"
 REDIS_URL="redis://localhost:6379"
 ```
 
-4. **Database Setup**
+1. **Database Setup**
 
 ```bash
 # Generate Prisma client
@@ -88,7 +88,7 @@ npm run db:push
 npm run db:seed
 ```
 
-5. **Start Development**
+1. **Start Development**
 
 ```bash
 # Start with Docker services
