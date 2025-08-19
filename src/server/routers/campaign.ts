@@ -159,6 +159,37 @@ export const campaignRouter = createTRPCRouter({
     }
   }),
 
+  getByCompany: publicProcedure
+    .input(z.object({ companyId: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        // Try cache first
+        const cached = await redisService.get(
+          `campaigns:company:${input.companyId}`,
+        );
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        // Fetch from database
+        const campaigns = await campaignService.getByCompanyId(input.companyId);
+
+        // Cache the result
+        await redisService.set(
+          `campaigns:company:${input.companyId}`,
+          JSON.stringify(campaigns),
+          1800, // 30 minutes TTL
+        );
+
+        return campaigns;
+      } catch (error) {
+        console.error('Error fetching campaigns by company:', error);
+        throw new Error(
+          error instanceof Error ? error.message : 'Failed to fetch campaigns',
+        );
+      }
+    }),
+
   update: publicProcedure
     .input(
       z.object({
@@ -196,6 +227,17 @@ export const campaignRouter = createTRPCRouter({
         await redisService.del('campaigns:all');
         await redisService.del(`campaigns:icp:${updatedCampaign.icp_id}`);
 
+        // Get company ID from ICP to invalidate company cache
+        const icpService = await import(
+          '@/services/database/icp-profiles-service'
+        );
+        const icp = await icpService.icpProfilesService.getProfileById(
+          updatedCampaign.icp_id,
+        );
+        if (icp) {
+          await redisService.del(`campaigns:company:${icp.companyId}`);
+        }
+
         return updatedCampaign;
       } catch (error) {
         console.error('Error updating campaign:', error);
@@ -218,6 +260,20 @@ export const campaignRouter = createTRPCRouter({
         // Clear cache
         await redisService.del(`campaign:${input.id}`);
         await redisService.del('campaigns:all');
+
+        // Get company ID from ICP to invalidate company cache
+        const campaign = await campaignService.getById(input.id);
+        if (campaign) {
+          const icpService = await import(
+            '@/services/database/icp-profiles-service'
+          );
+          const icp = await icpService.icpProfilesService.getProfileById(
+            campaign.icp_id,
+          );
+          if (icp) {
+            await redisService.del(`campaigns:company:${icp.companyId}`);
+          }
+        }
 
         return { success: true };
       } catch (error) {
