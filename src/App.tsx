@@ -117,6 +117,7 @@ function AppContent() {
               <CampaignDesigner
                 activeCompanyId={activeCompanyId}
                 onCompanyIdChange={setActiveCompanyId}
+                onSwitchToLibrary={() => setActiveTab('campaign-library')}
               />
             </TabsContent>
 
