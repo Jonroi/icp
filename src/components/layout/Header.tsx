@@ -67,13 +67,8 @@ export function Header({
       </div>
 
       {/* Universal Company Selector */}
-      <div className='flex items-center justify-between p-4 bg-muted/30 rounded-lg border'>
-        <div className='flex items-center gap-4'>
-          <div className='flex items-center gap-2'>
-            <span className='text-sm font-medium text-muted-foreground'>
-              Active Company:
-            </span>
-          </div>
+      <div className='flex items-end justify-between p-4 bg-muted/30 rounded-lg border'>
+        <div className='flex items-end gap-4'>
           <CompanySelector
             value={activeCompany?.name || ''}
             onChange={() => {}}
@@ -89,43 +84,27 @@ export function Header({
             className='min-w-[300px]'
             hideLoadingSpinner={isLoading}
           />
-          {activeCompany && (
-            <div className='flex items-center gap-2'>
-              {activeCompany.industry && (
-                <span className='text-sm text-muted-foreground'>
-                  • {activeCompany.industry}
-                </span>
-              )}
-              {activeCompany.location && (
-                <span className='text-sm text-muted-foreground'>
-                  • {activeCompany.location}
-                </span>
-              )}
-              {/* Counters */}
-              {activeCompanyId && (
-                <div className='flex items-center gap-2 ml-2'>
-                  <Badge variant='secondary'>
-                    ICPs: {icpByCompanyQuery.data?.length ?? 0}
-                  </Badge>
-                  <Badge variant='secondary'>
-                    Campaigns: {campaignsByCompanyQuery.data?.length ?? 0}
-                  </Badge>
-                </div>
-              )}
+          {/* Counters */}
+          {activeCompanyId && (
+            <div className='flex items-center gap-3'>
+              <div className='px-4 py-2 bg-secondary text-secondary-foreground rounded-md border text-sm font-medium min-w-[120px] text-center'>
+                ICPs: {icpByCompanyQuery.data?.length ?? 0}
+              </div>
+              <div className='px-4 py-2 bg-secondary text-secondary-foreground rounded-md border text-sm font-medium min-w-[120px] text-center'>
+                Campaigns: {campaignsByCompanyQuery.data?.length ?? 0}
+              </div>
             </div>
           )}
         </div>
-        <div className='flex items-center gap-2'>
-          <Button
-            variant='destructive'
-            size='sm'
-            onClick={handleDeleteActiveCompany}
-            disabled={!activeCompanyId || deleteCompanyMutation.isPending}
-            title='Delete active company'>
-            <Trash2 className='h-4 w-4' />
-            {deleteCompanyMutation.isPending ? 'Deleting...' : 'Delete'}
-          </Button>
-        </div>
+        <Button
+          variant='destructive'
+          size='sm'
+          onClick={handleDeleteActiveCompany}
+          disabled={!activeCompanyId || deleteCompanyMutation.isPending}
+          title='Delete active company'>
+          <Trash2 className='h-4 w-4' />
+          {deleteCompanyMutation.isPending ? 'Deleting...' : 'Delete'}
+        </Button>
       </div>
     </div>
   );

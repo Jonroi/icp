@@ -26,10 +26,12 @@ import {
   Plus,
   Trash2,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import type { ICP } from '@/services/ai/types';
 import type { OwnCompany } from '@/services/project';
+import { ICPDetailsModal } from './ICPDetailsModal';
 
 interface ICPProfilesProps {
   generatedICPs: ICP[];
@@ -46,6 +48,8 @@ export function ICPProfiles({
 }: ICPProfilesProps) {
   const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
   const [companyName, setCompanyName] = useState<string>('');
+  const [selectedICP, setSelectedICP] = useState<ICP | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // tRPC queries and mutations
   const companyListQuery = trpc.company.list.useQuery();
@@ -117,6 +121,11 @@ export function ICPProfiles({
       console.error('Error deleting ICP:', error);
       alert('Failed to delete ICP profile. Please try again.');
     }
+  };
+
+  const handleViewDetails = (icp: any) => {
+    setSelectedICP(icp);
+    setIsDetailsModalOpen(true);
   };
 
   return (
@@ -207,17 +216,27 @@ export function ICPProfiles({
 
                     return (
                       <Card key={p.id} className='bg-muted/30 relative'>
-                        {/* Per-card delete button (top-right) */}
-                        <Button
-                          variant='destructive'
-                          size='icon'
-                          className='absolute top-3 right-3 h-7 w-7'
-                          title='Delete this ICP profile'
-                          onClick={() => handleDeleteICP(p.id)}
-                          disabled={deleteICPMutation.isPending}>
-                          <X className='h-4 w-4' />
-                        </Button>
-                        <CardHeader className='pb-3 pr-12 pt-2'>
+                        {/* Action buttons (top-right) */}
+                        <div className='absolute top-3 right-3 flex gap-1'>
+                          <Button
+                            variant='outline'
+                            size='icon'
+                            className='h-7 w-7'
+                            title='View detailed ICP information'
+                            onClick={() => handleViewDetails(p)}>
+                            <Eye className='h-4 w-4' />
+                          </Button>
+                          <Button
+                            variant='destructive'
+                            size='icon'
+                            className='h-7 w-7'
+                            title='Delete this ICP profile'
+                            onClick={() => handleDeleteICP(p.id)}
+                            disabled={deleteICPMutation.isPending}>
+                            <X className='h-4 w-4' />
+                          </Button>
+                        </div>
+                        <CardHeader className='pb-3 pr-20 pt-2'>
                           <div className='flex items-start justify-start'>
                             <div>
                               <CardTitle className='text-xl'>
@@ -256,8 +275,8 @@ export function ICPProfiles({
                               Customer Segments
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.customer_segments ||
-                                p.profileData.segments?.join(', ') ||
+                              {p.profileData.segments?.join(', ') ||
+                                p.profileData.customer_segments ||
                                 'No segments defined'}
                             </p>
                           </div>
@@ -269,7 +288,10 @@ export function ICPProfiles({
                               Pain Points
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.pain_points ||
+                              {p.profileData.needs_pain_goals?.pains?.join(
+                                ', ',
+                              ) ||
+                                p.profileData.pain_points ||
                                 'No pain points defined'}
                             </p>
                           </div>
@@ -281,7 +303,10 @@ export function ICPProfiles({
                               Jobs to be Done
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.jobs_to_be_done ||
+                              {p.profileData.needs_pain_goals?.jobs_to_be_done?.join(
+                                ', ',
+                              ) ||
+                                p.profileData.jobs_to_be_done ||
                                 'No jobs defined'}
                             </p>
                           </div>
@@ -293,7 +318,10 @@ export function ICPProfiles({
                               Desired Outcomes
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.desired_outcomes ||
+                              {p.profileData.needs_pain_goals?.desired_outcomes?.join(
+                                ', ',
+                              ) ||
+                                p.profileData.desired_outcomes ||
                                 'No outcomes defined'}
                             </p>
                           </div>
@@ -305,7 +333,7 @@ export function ICPProfiles({
                               Buying Triggers
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.buying_triggers ||
+                              {p.profileData.buying_triggers?.join(', ') ||
                                 'No triggers defined'}
                             </p>
                           </div>
@@ -317,7 +345,7 @@ export function ICPProfiles({
                               Common Objections
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.common_objections ||
+                              {p.profileData.common_objections?.join(', ') ||
                                 'No objections defined'}
                             </p>
                           </div>
@@ -329,7 +357,8 @@ export function ICPProfiles({
                               Value Proposition
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.value_proposition ||
+                              {p.profileData.value_prop_alignment?.value_prop ||
+                                p.profileData.value_proposition ||
                                 'No value proposition defined'}
                             </p>
                           </div>
@@ -341,7 +370,10 @@ export function ICPProfiles({
                               Go-to-Market Strategy
                             </h4>
                             <p className='text-sm text-muted-foreground'>
-                              {p.profileData.go_to_market_strategy ||
+                              {p.profileData.go_to_market?.primary_channels?.join(
+                                ', ',
+                              ) ||
+                                p.profileData.go_to_market_strategy ||
                                 'No strategy defined'}
                             </p>
                           </div>
@@ -375,6 +407,16 @@ export function ICPProfiles({
           )}
         </CardContent>
       </Card>
+
+      {/* ICP Details Modal */}
+      <ICPDetailsModal
+        icp={selectedICP}
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedICP(null);
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ export { Header } from './layout/Header';
 export { ICPGenerator } from './icp/ICPGenerator';
 export { ICPProfiles } from './icp/ICPProfiles';
 export { OwnCompanyForm } from './icp/OwnCompanyForm';
+export { ICPDetailsModal } from './icp/ICPDetailsModal';
 
 // Campaign components
 export { CampaignDesigner } from './campaign/CampaignDesigner';
@@ -35,6 +36,14 @@ export { Textarea } from './ui/textarea';
 export { CompanySelector } from './ui/company-selector';
 export { LocationSelector } from './ui/location-selector';
 export { Badge } from './ui/badge';
+export { Separator } from './ui/separator';
+export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 // Providers
 export { TRPCProvider } from './providers/TRPCProvider';

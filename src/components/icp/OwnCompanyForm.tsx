@@ -133,9 +133,6 @@ export function OwnCompanyForm({
         <div className='p-4 bg-muted/30 rounded-lg border'>
           <div className='flex items-center justify-between'>
             <div>
-              <h3 className='font-medium text-sm text-muted-foreground mb-1'>
-                Active Company
-              </h3>
               <p className='text-lg font-semibold'>{activeCompanyData.name}</p>
               {activeCompanyData.industry && (
                 <p className='text-sm text-muted-foreground'>
