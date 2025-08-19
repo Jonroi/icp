@@ -56,7 +56,26 @@ SEGMENTS: Startup Founders, Tech Entrepreneurs, Small Business Owners
 PAINS: High operational costs, Limited scalability, Complex compliance
 ---`;
 
-    const response = await this.ollamaClient.generateResponse(prompt);
+    const systemPrompt = `You are an expert Ideal Customer Profile (ICP) strategist and B2B/B2C market analyst.
+Your job is to convert structured company inputs and an ICP template into a COMPLETE, PRACTICAL, and INTERNALLY CONSISTENT ICP.
+
+Output policy:
+- Language: English only.
+- Be specific and practical; avoid fluff.
+- Make reasonable domain-consistent inferences when data is missing; do not contradict provided inputs.
+- Never output markdown, code fences, tables, or extra commentary.
+- Strictly follow the section labels provided by the user prompt (SEGMENTS, PAINS, JOBS, OUTCOMES, TRIGGERS, OBJECTIONS, VALUE_PROP, FEATURES, ADVANTAGES, CHANNELS, MESSAGES, CONTENT).
+- For list sections, return 2–4 items, comma-separated on a single line.
+- Ensure sections align with the business model (B2B/B2C/B2B2C) and the provided template.
+- Keep terminology consistent (e.g., segments, triggers, objections) and avoid redundancy across sections.
+- The ICP must reflect: industry, company size, geography hints, pains, jobs-to-be-done, outcomes, value prop alignment, buying triggers, objections, go-to-market hints, and fit scoring themes.
+- Do not include any headings beyond the required prefixes.
+`;
+
+    const response = await this.ollamaClient.generateResponse(
+      prompt,
+      systemPrompt,
+    );
 
     // Parse the response
     const sections = response
