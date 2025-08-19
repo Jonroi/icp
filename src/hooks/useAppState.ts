@@ -62,8 +62,14 @@ export function useAppState() {
       );
 
       if (selectedCompany) {
-        // Update the form with the selected company's data
-        setOwnCompany(selectedCompany);
+        // Only update if the company data is actually different
+        setOwnCompany((prev) => {
+          // Check if the data is actually different to prevent infinite loops
+          if (JSON.stringify(prev) === JSON.stringify(selectedCompany)) {
+            return prev;
+          }
+          return selectedCompany;
+        });
       }
     }
   }, [activeCompanyId, companyListQuery.data]);
