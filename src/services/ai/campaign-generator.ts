@@ -75,7 +75,7 @@ CAMPAIGN SPECIFICATIONS:
 ${imagePrompt ? `- Image Prompt: ${imagePrompt}` : ''}
 ${campaignDetails ? `- Campaign Details: ${campaignDetails}` : ''}
 
-REQUIRED OUTPUT STRUCTURE:
+REQUIRED OUTPUT STRUCTURE (STRICT):
 
 1. AD COPY: Create compelling, platform-optimized copy that speaks directly to the ICP's pain points and goals. Make it engaging and conversion-focused.
 
@@ -87,7 +87,7 @@ REQUIRED OUTPUT STRUCTURE:
 
 5. IMAGE SUGGESTION: Provide a detailed, creative description for AI image generation that will complement the campaign and resonate with the target audience.
 
-Please format your response as valid JSON:
+Respond with ONLY a single valid JSON object and nothing else (no explanations, no markdown, no code fences). The JSON must strictly match this schema and use double quotes for all keys/strings:
 {
   "adCopy": "Your detailed ad copy here",
   "cta": "Your compelling call-to-action here",
@@ -105,7 +105,13 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
     request: CampaignGenerationRequest,
   ): Campaign {
     try {
-      const parsed = JSON.parse(response);
+      const parsed = this.sanitizeAndParseResponse(response);
+
+      const hooksValue = Array.isArray(parsed.hooks)
+        ? (parsed.hooks as string[]).join(' | ')
+        : typeof parsed.hooks === 'string'
+        ? parsed.hooks
+        : '';
 
       return {
         id: this.generateId(),
@@ -116,7 +122,7 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
         adCopy: parsed.adCopy || '',
         imagePrompt: request.imagePrompt,
         cta: parsed.cta || '',
-        hooks: parsed.hooks || '',
+        hooks: hooksValue,
         landingPageCopy: parsed.landingPageCopy || '',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -125,6 +131,53 @@ Ensure all copy is tailored specifically to the ICP profile and optimized for th
       console.error('Error parsing campaign response:', error);
       throw new Error('Failed to parse campaign response');
     }
+  }
+
+  // Attempts to extract and parse a JSON object from LLM output
+  private sanitizeAndParseResponse(responseText: string): {
+    adCopy?: string;
+    cta?: string;
+    hooks?: string | string[];
+    landingPageCopy?: string;
+    imageSuggestion?: string;
+  } {
+    let text = responseText?.trim() || '';
+
+    // Remove markdown code fences if present
+    if (text.startsWith('```')) {
+      text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '');
+      if (text.endsWith('```')) {
+        text = text.replace(/```\s*$/, '');
+      }
+    }
+
+    // Strip any JS-style comments that might sneak in
+    // Remove /* ... */ and // ... end-of-line comments conservatively
+    text = text
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|\n)\s*\/\/.*(?=\n|$)/g, '$1');
+
+    // Extract the first balanced top-level JSON object to avoid extra chatter
+    const start = text.indexOf('{');
+    if (start !== -1) {
+      let depth = 0;
+      for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '{') depth++;
+        if (ch === '}') depth--;
+        if (depth === 0) {
+          text = text.slice(start, i + 1);
+          break;
+        }
+      }
+    }
+
+    // Last attempt: remove trailing commas which break JSON
+    // Note: conservative replace for ",}\n" and ",]\n"
+    text = text.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+
+    const parsed = JSON.parse(text);
+    return parsed;
   }
 
   private async getICPData(icpId: string): Promise<any> {
