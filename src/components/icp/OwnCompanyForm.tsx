@@ -104,21 +104,7 @@ export function OwnCompanyForm({
     (c) => c.id?.toString() === activeCompanyId,
   );
 
-  // Update form when active company changes
-  useEffect(() => {
-    if (activeCompanyData) {
-      // Update the form with the active company data
-      Object.entries(activeCompanyData).forEach(([key, value]) => {
-        if (
-          key in company &&
-          value !== undefined &&
-          company[key as keyof OwnCompany] !== (value as never)
-        ) {
-          onChange(key as keyof OwnCompany, value as string);
-        }
-      });
-    }
-  }, [activeCompanyData, onChange, company]);
+  // Note: Form updates are now handled in useAppState.ts to prevent conflicts
 
   const handleCompanySelect = (selectedCompany: OwnCompany) => {
     // Update form with selected company data

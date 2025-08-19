@@ -62,13 +62,21 @@ export function useAppState() {
       );
 
       if (selectedCompany) {
-        // Only update if the company data is actually different
+        // Only update if the form is empty or if we're switching to a different company
         setOwnCompany((prev) => {
-          // Check if the data is actually different to prevent infinite loops
-          if (JSON.stringify(prev) === JSON.stringify(selectedCompany)) {
-            return prev;
+          // If the form is mostly empty, populate it with the selected company data
+          const isFormEmpty =
+            !prev.name && !prev.website && !prev.social && !prev.industry;
+
+          // If we're switching to a different company (different ID), populate the form
+          const isDifferentCompany = prev.id !== selectedCompany.id;
+
+          if (isFormEmpty || isDifferentCompany) {
+            return selectedCompany;
           }
-          return selectedCompany;
+
+          // Otherwise, keep the current form state to preserve user input
+          return prev;
         });
       }
     }
