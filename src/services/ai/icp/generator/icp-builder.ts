@@ -1,12 +1,12 @@
 import type { ICP } from '../../types';
 import type { ICPTemplate } from '../templates';
-import { OllamaClient } from '../../ollama-client';
+import { AISDKService } from '../../ai-sdk-service';
 
 export class ICPBuilder {
-  private ollamaClient: OllamaClient;
+  private aiService: AISDKService;
 
   constructor() {
-    this.ollamaClient = OllamaClient.getInstance();
+    this.aiService = AISDKService.getInstance();
   }
 
   /**
@@ -72,7 +72,7 @@ Output policy:
 - Do not include any headings beyond the required prefixes.
 `;
 
-    const response = await this.ollamaClient.generateResponse(
+    const response = await this.aiService.generateResponse(
       prompt,
       systemPrompt,
     );

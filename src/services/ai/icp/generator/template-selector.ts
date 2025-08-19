@@ -1,12 +1,12 @@
 import type { ICPTemplate } from '../templates';
 import { ICP_TEMPLATES } from '../templates';
-import { OllamaClient } from '../../ollama-client';
+import { AISDKService } from '../../ai-sdk-service';
 
 export class TemplateSelector {
-  private ollamaClient: OllamaClient;
+  private aiService: AISDKService;
 
   constructor() {
-    this.ollamaClient = OllamaClient.getInstance();
+    this.aiService = AISDKService.getInstance();
   }
 
   /**
@@ -94,7 +94,7 @@ IMPORTANT:
 Example: ["startup_innovator", "tech_startup", "saas_startup"]
 `;
 
-    const response = await this.ollamaClient.generateResponse(prompt);
+    const response = await this.aiService.generateResponse(prompt);
 
     // Extract JSON from response - be more specific to avoid capturing too much
     const jsonMatch = response.match(/\[[\s\S]*?\]/);

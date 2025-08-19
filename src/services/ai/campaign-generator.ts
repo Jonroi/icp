@@ -1,4 +1,4 @@
-import { OllamaClient } from './ollama-client';
+import { AISDKService } from './ai-sdk-service';
 import type {
   Campaign,
   CampaignGenerationRequest,
@@ -8,10 +8,10 @@ import type {
 } from './types';
 
 export class CampaignGenerator {
-  private ollamaClient: OllamaClient;
+  private aiService: AISDKService;
 
   constructor() {
-    this.ollamaClient = OllamaClient.getInstance();
+    this.aiService = AISDKService.getInstance();
   }
 
   async generateCampaign(
@@ -58,7 +58,7 @@ Hard constraints:
 - Safety: do not include discriminatory, unsafe, or medical/financial advice beyond general marketing claims.
 `;
 
-      const response = await this.ollamaClient.generateResponse(
+      const response = await this.aiService.generateResponse(
         prompt,
         systemPrompt,
       );

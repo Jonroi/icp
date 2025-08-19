@@ -3,7 +3,7 @@ export * from './types';
 
 // Export services
 export { ICPGenerator } from './icp';
-export { OllamaClient } from './ollama-client';
+export { AISDKService } from './ai-sdk-service';
 export { CampaignGenerator } from './campaign-generator';
 
 // Export error handling

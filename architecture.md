@@ -58,7 +58,7 @@ App.tsx
 
 ### AI Services
 
-- `ollama-client.ts`: HTTP client to local Ollama (`/api/generate`)
+- `ai-sdk-service.ts`: AI SDK service using Vercel AI SDK with Ollama provider
 - `icp-generator.ts`: Efficient ICP generation with single-call approach
 - `ai-service.ts`: Orchestrator for ICP generation workflow
 
@@ -321,7 +321,7 @@ Source Code → TypeScript/Next → next build → .next output
 
 ### LLM Integration
 
-- **OllamaClient**: Singleton-pattern for LLM communication
+- **AISDKService**: Singleton-pattern for AI SDK communication with Ollama
 - **Response Parsing**: Simple text-based parsing with fallback values
 - **Error Handling**: Comprehensive error recovery and fallback mechanisms
 - **Performance**: ~30-60 seconds per ICP profile generation

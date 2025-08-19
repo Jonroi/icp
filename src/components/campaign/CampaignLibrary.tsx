@@ -132,8 +132,8 @@ export function CampaignLibrary({
             No Campaigns Yet
           </CardTitle>
           <CardDescription>
-            You haven't generated any campaigns for {companyName} yet. Create
-            your first campaign above.
+            You haven&apos;t generated any campaigns for {companyName} yet.
+            Create your first campaign above.
           </CardDescription>
         </CardHeader>
         <CardContent>

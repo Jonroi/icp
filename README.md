@@ -27,7 +27,7 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **Backend**: tRPC, Node.js
 - **Database**: PostgreSQL 15
 - **Cache**: Redis 7
-- **AI**: Ollama (local LLM with llama3.2:3b-instruct-q4_K_M)
+- **AI**: Vercel AI SDK with Ollama (local LLM with llama3.2:3b-instruct-q4_K_M)
 - **UI**: Radix UI, Tailwind CSS
 - **State Management**: React Query + tRPC
 - **Containerization**: Docker & Docker Compose
@@ -38,7 +38,7 @@ A modern React/TypeScript application that generates Ideal Customer Profiles (IC
 - **Redis Service**: Caching layer for performance optimization
 - **AI Service**: Efficient ICP generation with single LLM call per profile
 - **Database Layer**: PostgreSQL with proper schema and migrations
-- **Ollama Integration**: Local LLM processing for privacy and performance
+- **AI SDK Integration**: Vercel AI SDK with Ollama for local LLM processing
 
 ## 📦 Installation & Setup
 
