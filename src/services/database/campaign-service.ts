@@ -85,7 +85,7 @@ export class CampaignService {
       'SELECT * FROM campaigns WHERE icp_id = $1 ORDER BY created_at DESC';
     const result = await databaseManager.query(query, [icpId]);
 
-    return result.rows.map((row) => this.mapToStoredCampaign(row));
+    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
   }
 
   async getAll(): Promise<StoredCampaign[]> {
@@ -93,7 +93,21 @@ export class CampaignService {
     const query = 'SELECT * FROM campaigns ORDER BY created_at DESC';
     const result = await databaseManager.query(query);
 
-    return result.rows.map((row) => this.mapToStoredCampaign(row));
+    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
+  }
+
+  async getByCompanyId(companyId: string): Promise<StoredCampaign[]> {
+    await ensureDatabaseInitialized();
+    const query = `
+      SELECT c.* 
+      FROM campaigns c
+      JOIN icp_profiles i ON c.icp_id = i.id
+      WHERE i.company_id = $1
+      ORDER BY c.created_at DESC
+    `;
+    const result = await databaseManager.query(query, [companyId]);
+
+    return result.rows.map((row: any) => this.mapToStoredCampaign(row));
   }
 
   async update(

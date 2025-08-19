@@ -98,6 +98,37 @@ export const icpProfilesService = {
     }));
   },
 
+  async getProfileById(id: string): Promise<StoredICPProfile | null> {
+    await ensureDb();
+    const res = await databaseManager.query(
+      `SELECT id::text AS id, company_id, name, description, profile_data, confidence_level, created_at, updated_at
+			 FROM icp_profiles WHERE id = $1`,
+      [id],
+    );
+
+    if (res.rows.length === 0) {
+      return null;
+    }
+
+    const row = res.rows[0];
+    return {
+      id: row.id,
+      companyId: row.company_id,
+      name: row.name,
+      description: row.description,
+      profileData: row.profile_data as ICP,
+      confidenceLevel: row.confidence_level as 'high' | 'medium' | 'low',
+      createdAt:
+        row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : new Date(row.created_at).toISOString(),
+      updatedAt:
+        row.updated_at instanceof Date
+          ? row.updated_at.toISOString()
+          : new Date(row.updated_at).toISOString(),
+    };
+  },
+
   async deleteProfileById(id: string): Promise<void> {
     await ensureDb();
     await databaseManager.query(`DELETE FROM icp_profiles WHERE id = $1`, [id]);
