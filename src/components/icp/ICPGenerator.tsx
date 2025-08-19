@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Wand2, Save, Loader2 } from 'lucide-react';
 import { OwnCompanyForm } from './OwnCompanyForm';
 import type { OwnCompany } from '@/services/project';
+import { useCallback } from 'react';
 
 interface ICPGeneratorProps {
   ownCompany?: OwnCompany;
@@ -42,6 +43,14 @@ export function ICPGenerator({
   onCompanyDeleted,
   onCompanyIdChange,
 }: ICPGeneratorProps) {
+  // Memoize the onChange function to prevent infinite re-renders
+  const handleOwnCompanyChange = useCallback(
+    (field: keyof OwnCompany, value: string) => {
+      onOwnCompanyChange?.(field, value);
+    },
+    [onOwnCompanyChange],
+  );
+
   return (
     <Card className='mt-4 max-w-4xl mx-auto'>
       <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
@@ -87,7 +96,7 @@ export function ICPGenerator({
             company={ownCompany || { name: '', website: '', social: '' }}
             companies={companies}
             activeCompany={activeCompany}
-            onChange={(field, value) => onOwnCompanyChange?.(field, value)}
+            onChange={handleOwnCompanyChange}
             onSaveCompany={onSaveOwnCompany}
             onReset={async () => {
               if (onResetOwnCompany) {
