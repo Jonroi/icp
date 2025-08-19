@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, ImageIcon } from 'lucide-react';
-import type { CopyStyle, MediaType } from '@/services/ai/types';
+import type { CopyStyle, MediaType } from '@/services/ai';
 
 interface CampaignFormProps {
   icpOptions: Array<{ id: string; name: string }>;

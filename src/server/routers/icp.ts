@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 import { icpProfilesService } from '@/services/database';
 import { companiesService } from '@/services/database';
-import { ICPGenerator } from '@/services/ai/icp';
-import type { ICP } from '@/services/ai/types';
+import { ICPGenerator } from '@/services/ai';
+import type { ICP } from '@/services/ai';
 
 // Create ICP generator instance
 const icpGenerator = new ICPGenerator();

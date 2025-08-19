@@ -1,11 +1,11 @@
-import { AISDKService } from './ai-sdk-service';
+import { AISDKService } from '../core/ai-sdk-service';
 import type {
   Campaign,
   CampaignGenerationRequest,
   CampaignGenerationResponse,
   CopyStyle,
   MediaType,
-} from './types';
+} from '../core/types';
 
 export class CampaignGenerator {
   private aiService: AISDKService;

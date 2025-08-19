@@ -26,10 +26,9 @@ import {
   Plus,
   Trash2,
   Loader2,
-  Eye,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import type { ICP } from '@/services/ai/types';
+import type { ICP } from '@/services/ai';
 import type { OwnCompany } from '@/services/project';
 import { ICPDetailsModal } from './ICPDetailsModal';
 
@@ -205,7 +204,7 @@ export function ICPProfiles({
               <h3 className='font-semibold'>
                 Generated ICPs for {companyName} ({profiles.length})
               </h3>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch'>
                 {profiles
                   .map((p: any) => {
                     // Ensure profileData exists and has the expected structure
@@ -215,17 +214,11 @@ export function ICPProfiles({
                     }
 
                     return (
-                      <Card key={p.id} className='bg-muted/30 relative'>
+                      <Card
+                        key={p.id}
+                        className='bg-muted/30 relative flex flex-col'>
                         {/* Action buttons (top-right) */}
                         <div className='absolute top-3 right-3 flex gap-1'>
-                          <Button
-                            variant='outline'
-                            size='icon'
-                            className='h-7 w-7'
-                            title='View detailed ICP information'
-                            onClick={() => handleViewDetails(p)}>
-                            <Eye className='h-4 w-4' />
-                          </Button>
                           <Button
                             variant='destructive'
                             size='icon'
@@ -267,115 +260,128 @@ export function ICPProfiles({
                             </div>
                           </div>
                         </CardHeader>
-                        <CardContent className='space-y-4'>
-                          {/* Customer Segments */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <Target className='h-4 w-4' />
-                              Customer Segments
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.segments?.join(', ') ||
-                                p.profileData.customer_segments ||
-                                'No segments defined'}
-                            </p>
+                        <CardContent className='flex flex-col h-full'>
+                          <div className='space-y-4 flex-1'>
+                            {/* Customer Segments */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <Target className='h-4 w-4' />
+                                Customer Segments
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.segments?.join(', ') ||
+                                  p.profileData.customer_segments ||
+                                  'No segments defined'}
+                              </p>
+                            </div>
+
+                            {/* Pain Points */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <AlertTriangle className='h-4 w-4' />
+                                Pain Points
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.needs_pain_goals?.pains?.join(
+                                  ', ',
+                                ) ||
+                                  p.profileData.pain_points ||
+                                  'No pain points defined'}
+                              </p>
+                            </div>
+
+                            {/* Jobs to be Done */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <CheckCircle className='h-4 w-4' />
+                                Jobs to be Done
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.needs_pain_goals?.jobs_to_be_done?.join(
+                                  ', ',
+                                ) ||
+                                  p.profileData.jobs_to_be_done ||
+                                  'No jobs defined'}
+                              </p>
+                            </div>
+
+                            {/* Desired Outcomes */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <TrendingUp className='h-4 w-4' />
+                                Desired Outcomes
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.needs_pain_goals?.desired_outcomes?.join(
+                                  ', ',
+                                ) ||
+                                  p.profileData.desired_outcomes ||
+                                  'No outcomes defined'}
+                              </p>
+                            </div>
+
+                            {/* Buying Triggers */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <Target className='h-4 w-4' />
+                                Buying Triggers
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.buying_triggers?.join(', ') ||
+                                  'No triggers defined'}
+                              </p>
+                            </div>
+
+                            {/* Common Objections */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <XCircle className='h-4 w-4' />
+                                Common Objections
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.common_objections?.join(', ') ||
+                                  'No objections defined'}
+                              </p>
+                            </div>
+
+                            {/* Value Proposition */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <CheckCircle className='h-4 w-4' />
+                                Value Proposition
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.value_prop_alignment
+                                  ?.value_prop ||
+                                  p.profileData.value_proposition ||
+                                  'No value proposition defined'}
+                              </p>
+                            </div>
+
+                            {/* Go-to-Market Strategy */}
+                            <div>
+                              <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
+                                <TrendingUp className='h-4 w-4' />
+                                Go-to-Market Strategy
+                              </h4>
+                              <p className='text-sm text-muted-foreground'>
+                                {p.profileData.go_to_market?.primary_channels?.join(
+                                  ', ',
+                                ) ||
+                                  p.profileData.go_to_market_strategy ||
+                                  'No strategy defined'}
+                              </p>
+                            </div>
                           </div>
 
-                          {/* Pain Points */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <AlertTriangle className='h-4 w-4' />
-                              Pain Points
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.needs_pain_goals?.pains?.join(
-                                ', ',
-                              ) ||
-                                p.profileData.pain_points ||
-                                'No pain points defined'}
-                            </p>
-                          </div>
-
-                          {/* Jobs to be Done */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <CheckCircle className='h-4 w-4' />
-                              Jobs to be Done
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.needs_pain_goals?.jobs_to_be_done?.join(
-                                ', ',
-                              ) ||
-                                p.profileData.jobs_to_be_done ||
-                                'No jobs defined'}
-                            </p>
-                          </div>
-
-                          {/* Desired Outcomes */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <TrendingUp className='h-4 w-4' />
-                              Desired Outcomes
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.needs_pain_goals?.desired_outcomes?.join(
-                                ', ',
-                              ) ||
-                                p.profileData.desired_outcomes ||
-                                'No outcomes defined'}
-                            </p>
-                          </div>
-
-                          {/* Buying Triggers */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <Target className='h-4 w-4' />
-                              Buying Triggers
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.buying_triggers?.join(', ') ||
-                                'No triggers defined'}
-                            </p>
-                          </div>
-
-                          {/* Common Objections */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <XCircle className='h-4 w-4' />
-                              Common Objections
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.common_objections?.join(', ') ||
-                                'No objections defined'}
-                            </p>
-                          </div>
-
-                          {/* Value Proposition */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <CheckCircle className='h-4 w-4' />
-                              Value Proposition
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.value_prop_alignment?.value_prop ||
-                                p.profileData.value_proposition ||
-                                'No value proposition defined'}
-                            </p>
-                          </div>
-
-                          {/* Go-to-Market Strategy */}
-                          <div>
-                            <h4 className='font-semibold text-sm flex items-center gap-2 mb-2'>
-                              <TrendingUp className='h-4 w-4' />
-                              Go-to-Market Strategy
-                            </h4>
-                            <p className='text-sm text-muted-foreground'>
-                              {p.profileData.go_to_market?.primary_channels?.join(
-                                ', ',
-                              ) ||
-                                p.profileData.go_to_market_strategy ||
-                                'No strategy defined'}
-                            </p>
+                          {/* Details Button */}
+                          <div className='pt-4 border-t mt-auto'>
+                            <Button
+                              variant='default'
+                              className='w-full'
+                              onClick={() => handleViewDetails(p)}>
+                              View Details
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -391,8 +397,8 @@ export function ICPProfiles({
                 No ICP Profiles Yet
               </h3>
               <p className='text-muted-foreground mb-4'>
-                Use the "Generate" button in the header above to create your
-                first ICP profile.
+                Use the &quot;Generate&quot; button in the header above to
+                create your first ICP profile.
               </p>
             </div>
           ) : (

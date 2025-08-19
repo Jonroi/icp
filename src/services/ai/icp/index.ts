@@ -5,7 +5,7 @@ export * from './generator/template-selector';
 export * from './generator/icp-builder';
 
 // Main ICP Generator class
-import type { ICP } from '../types';
+import type { ICP } from '../core/types';
 import { determineBusinessModel } from './rules/business-model';
 import { TemplateSelector } from './generator/template-selector';
 import { ICPBuilder } from './generator/icp-builder';
@@ -37,10 +37,11 @@ export class ICPGenerator {
       console.log(`📊 Business Model: ${businessModel}`);
 
       // Step 2: Select best-fitting ICP templates
-      const selectedTemplates = await this.templateSelector.selectBestFittingTemplates(
-        companyData,
-        businessModel,
-      );
+      const selectedTemplates =
+        await this.templateSelector.selectBestFittingTemplates(
+          companyData,
+          businessModel,
+        );
       console.log(`🎯 Selected ${selectedTemplates.length} ICP templates`);
 
       // Step 3: Generate ICP profiles for selected templates

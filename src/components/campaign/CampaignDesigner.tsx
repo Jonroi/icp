@@ -11,7 +11,7 @@ import { Bot, Plus } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { CampaignForm, type CampaignFormData } from './CampaignForm';
 import { CampaignDisplay } from './CampaignDisplay';
-import type { StoredCampaign } from '@/services/database/campaign-service';
+import type { StoredCampaign } from '@/services/database';
 
 interface CampaignDesignerProps {
   activeCompanyId?: string;

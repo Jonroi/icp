@@ -1,5 +1,5 @@
-import { databaseManager } from '../../../database/config';
-import type { OwnCompany } from '../project/project-service';
+import { databaseManager } from '../../../../database/config';
+import type { OwnCompany } from '../../project/management/project-service';
 
 // Ensure database is initialized
 async function ensureDatabaseInitialized() {

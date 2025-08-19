@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card';
 import { Copy, Download, Save, Edit, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import type { StoredCampaign } from '@/services/database/campaign-service';
+import type { StoredCampaign } from '@/services/database';
 
 interface CampaignDisplayProps {
   campaign: StoredCampaign;

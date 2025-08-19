@@ -1,5 +1,5 @@
-import { databaseManager } from '../../../database/config';
-import type { Campaign, CopyStyle, MediaType } from '@/services/ai/types';
+import { databaseManager } from '../../../../database/config';
+import type { Campaign, CopyStyle, MediaType } from '@/services/ai';
 
 // Ensure database is initialized
 async function ensureDatabaseInitialized() {

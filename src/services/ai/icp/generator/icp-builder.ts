@@ -1,6 +1,6 @@
-import type { ICP } from '../../types';
+import type { ICP } from '../../core/types';
 import type { ICPTemplate } from '../templates';
-import { AISDKService } from '../../ai-sdk-service';
+import { AISDKService } from '../../core/ai-sdk-service';
 
 export class ICPBuilder {
   private aiService: AISDKService;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
-import type { ICP } from '@/services/ai/types';
+import type { ICP } from '@/services/ai';
 import type { OwnCompany } from '@/services/project';
 
 export function useAppState() {

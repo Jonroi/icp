@@ -1,1 +1,2 @@
-export { redisService } from './redis-service';
+// Cache Services
+export * from './redis';

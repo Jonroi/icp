@@ -26,7 +26,7 @@ import {
   MapPin,
   ExternalLink,
 } from 'lucide-react';
-import type { ICP } from '@/services/ai/types';
+import type { ICP } from '@/services/ai';
 
 interface ICPDetailsModalProps {
   icp: ICP | null;
@@ -41,7 +41,7 @@ export function ICPDetailsModal({
 }: ICPDetailsModalProps) {
   if (!icp) return null;
 
-  const profileData = icp.profileData || icp;
+  const profileData = icp;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -49,7 +49,7 @@ export function ICPDetailsModal({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2 text-2xl'>
             <Target className='h-6 w-6 text-primary' />
-            {profileData.icp_name || profileData.name || 'ICP Profile Details'}
+            {profileData.icp_name || 'ICP Profile Details'}
           </DialogTitle>
           <DialogDescription>
             Comprehensive analysis of your Ideal Customer Profile
@@ -74,7 +74,9 @@ export function ICPDetailsModal({
             <div className='flex items-center gap-2'>
               <BarChart3 className='h-4 w-4 text-muted-foreground' />
               <span className='text-sm font-medium'>Fit Score:</span>
-              <Badge variant='default'>{profileData.fit_score || 'N/A'}</Badge>
+              <Badge variant='default'>
+                {profileData.fit_scoring?.score || 'N/A'}
+              </Badge>
             </div>
           </div>
 
@@ -102,16 +104,17 @@ export function ICPDetailsModal({
               Customer Segments
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-              {(
-                profileData.segments ||
-                profileData.customer_segments ||
-                []
-              ).map((segment: string, index: number) => (
-                <Badge key={index} variant='outline' className='justify-start'>
-                  <Target className='h-3 w-3 mr-1' />
-                  {segment}
-                </Badge>
-              ))}
+              {(profileData.segments || []).map(
+                (segment: string, index: number) => (
+                  <Badge
+                    key={index}
+                    variant='outline'
+                    className='justify-start'>
+                    <Target className='h-3 w-3 mr-1' />
+                    {segment}
+                  </Badge>
+                ),
+              )}
             </div>
           </div>
 
@@ -124,18 +127,16 @@ export function ICPDetailsModal({
               Pain Points
             </h3>
             <div className='space-y-2'>
-              {(
-                profileData.needs_pain_goals?.pains ||
-                profileData.pain_points ||
-                []
-              ).map((pain: string, index: number) => (
-                <div
-                  key={index}
-                  className='flex items-start gap-2 p-3 bg-destructive/5 rounded-lg border border-destructive/10'>
-                  <AlertTriangle className='h-4 w-4 text-destructive mt-0.5 flex-shrink-0' />
-                  <span className='text-sm'>{pain}</span>
-                </div>
-              ))}
+              {profileData.needs_pain_goals?.pains?.map(
+                (pain: string, index: number) => (
+                  <div
+                    key={index}
+                    className='flex items-start gap-2 p-3 bg-destructive/5 rounded-lg border border-destructive/10'>
+                    <AlertTriangle className='h-4 w-4 text-destructive mt-0.5 flex-shrink-0' />
+                    <span className='text-sm'>{pain}</span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
 
@@ -148,18 +149,16 @@ export function ICPDetailsModal({
               Jobs to be Done
             </h3>
             <div className='space-y-2'>
-              {(
-                profileData.needs_pain_goals?.jobs_to_be_done ||
-                profileData.jobs_to_be_done ||
-                []
-              ).map((job: string, index: number) => (
-                <div
-                  key={index}
-                  className='flex items-start gap-2 p-3 bg-green-50 rounded-lg border border-green-200'>
-                  <CheckCircle className='h-4 w-4 text-green-600 mt-0.5 flex-shrink-0' />
-                  <span className='text-sm'>{job}</span>
-                </div>
-              ))}
+              {profileData.needs_pain_goals?.jobs_to_be_done?.map(
+                (job: string, index: number) => (
+                  <div
+                    key={index}
+                    className='flex items-start gap-2 p-3 bg-green-50 rounded-lg border border-green-200'>
+                    <CheckCircle className='h-4 w-4 text-green-600 mt-0.5 flex-shrink-0' />
+                    <span className='text-sm'>{job}</span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
 
@@ -172,18 +171,16 @@ export function ICPDetailsModal({
               Desired Outcomes
             </h3>
             <div className='space-y-2'>
-              {(
-                profileData.needs_pain_goals?.desired_outcomes ||
-                profileData.desired_outcomes ||
-                []
-              ).map((outcome: string, index: number) => (
-                <div
-                  key={index}
-                  className='flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200'>
-                  <TrendingUp className='h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0' />
-                  <span className='text-sm'>{outcome}</span>
-                </div>
-              ))}
+              {profileData.needs_pain_goals?.desired_outcomes?.map(
+                (outcome: string, index: number) => (
+                  <div
+                    key={index}
+                    className='flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                    <TrendingUp className='h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0' />
+                    <span className='text-sm'>{outcome}</span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
 
@@ -243,7 +240,6 @@ export function ICPDetailsModal({
             <div className='p-4 bg-purple-50 rounded-lg border border-purple-200'>
               <p className='text-sm leading-relaxed'>
                 {profileData.value_prop_alignment?.value_prop ||
-                  profileData.value_proposition ||
                   'No value proposition defined'}
               </p>
             </div>
@@ -258,16 +254,17 @@ export function ICPDetailsModal({
               Unique Features
             </h3>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-              {(
-                profileData.value_prop_alignment?.unique_features ||
-                profileData.unique_features ||
-                []
-              ).map((feature: string, index: number) => (
-                <Badge key={index} variant='outline' className='justify-start'>
-                  <CheckCircle className='h-3 w-3 mr-1' />
-                  {feature}
-                </Badge>
-              ))}
+              {profileData.value_prop_alignment?.unique_features?.map(
+                (feature: string, index: number) => (
+                  <Badge
+                    key={index}
+                    variant='outline'
+                    className='justify-start'>
+                    <CheckCircle className='h-3 w-3 mr-1' />
+                    {feature}
+                  </Badge>
+                ),
+              )}
             </div>
           </div>
 
@@ -280,18 +277,16 @@ export function ICPDetailsModal({
               Competitive Advantages
             </h3>
             <div className='space-y-2'>
-              {(
-                profileData.value_prop_alignment?.competitive_advantages ||
-                profileData.competitive_advantages ||
-                []
-              ).map((advantage: string, index: number) => (
-                <div
-                  key={index}
-                  className='flex items-start gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200'>
-                  <Star className='h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0' />
-                  <span className='text-sm'>{advantage}</span>
-                </div>
-              ))}
+              {profileData.value_prop_alignment?.competitive_advantages?.map(
+                (advantage: string, index: number) => (
+                  <div
+                    key={index}
+                    className='flex items-start gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200'>
+                    <Star className='h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0' />
+                    <span className='text-sm'>{advantage}</span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
 
@@ -310,19 +305,17 @@ export function ICPDetailsModal({
                 Primary Channels:
               </h4>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-                {(
-                  profileData.go_to_market?.primary_channels ||
-                  profileData.primary_channels ||
-                  []
-                ).map((channel: string, index: number) => (
-                  <Badge
-                    key={index}
-                    variant='outline'
-                    className='justify-start'>
-                    <ExternalLink className='h-3 w-3 mr-1' />
-                    {channel}
-                  </Badge>
-                ))}
+                {profileData.go_to_market?.primary_channels?.map(
+                  (channel: string, index: number) => (
+                    <Badge
+                      key={index}
+                      variant='outline'
+                      className='justify-start'>
+                      <ExternalLink className='h-3 w-3 mr-1' />
+                      {channel}
+                    </Badge>
+                  ),
+                )}
               </div>
             </div>
 
@@ -332,18 +325,16 @@ export function ICPDetailsModal({
                 Key Messages:
               </h4>
               <div className='space-y-2'>
-                {(
-                  profileData.go_to_market?.messages ||
-                  profileData.messages ||
-                  []
-                ).map((message: string, index: number) => (
-                  <div
-                    key={index}
-                    className='flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200'>
-                    <MessageSquare className='h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0' />
-                    <span className='text-sm'>{message}</span>
-                  </div>
-                ))}
+                {profileData.go_to_market?.messages?.map(
+                  (message: string, index: number) => (
+                    <div
+                      key={index}
+                      className='flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200'>
+                      <MessageSquare className='h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0' />
+                      <span className='text-sm'>{message}</span>
+                    </div>
+                  ),
+                )}
               </div>
             </div>
 
@@ -353,19 +344,17 @@ export function ICPDetailsModal({
                 Content Ideas:
               </h4>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-                {(
-                  profileData.go_to_market?.content_ideas ||
-                  profileData.content_ideas ||
-                  []
-                ).map((content: string, index: number) => (
-                  <Badge
-                    key={index}
-                    variant='outline'
-                    className='justify-start'>
-                    <FileText className='h-3 w-3 mr-1' />
-                    {content}
-                  </Badge>
-                ))}
+                {profileData.go_to_market?.content_ideas?.map(
+                  (content: string, index: number) => (
+                    <Badge
+                      key={index}
+                      variant='outline'
+                      className='justify-start'>
+                      <FileText className='h-3 w-3 mr-1' />
+                      {content}
+                    </Badge>
+                  ),
+                )}
               </div>
             </div>
           </div>

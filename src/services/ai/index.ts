@@ -1,16 +1,8 @@
-// Export types
-export * from './types';
+// AI Core Services
+export * from './core';
 
-// Export services
-export { ICPGenerator } from './icp';
-export { AISDKService } from './ai-sdk-service';
-export { CampaignGenerator } from './campaign-generator';
+// AI Campaign Services
+export * from './campaign';
 
-// Export error handling
-export {
-  AIServiceErrorFactory,
-  InputValidator,
-  type AIServiceError,
-  type ValidationResult,
-  type ICPGenerationError,
-} from './error-types';
+// AI ICP Services
+export * from './icp';

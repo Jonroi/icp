@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Trash2, Eye, Target } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import type { StoredCampaign } from '@/services/database/campaign-service';
+import type { StoredCampaign } from '@/services/database';
 
 interface CampaignLibraryProps {
   companyId: string;

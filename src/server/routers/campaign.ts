@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure } from '../trpc';
-import { CampaignGenerator } from '@/services/ai/campaign-generator';
-import { CampaignService } from '@/services/database/campaign-service';
+import { CampaignGenerator } from '@/services/ai';
+import { CampaignService } from '@/services/database';
 import { redisService } from '@/services/cache';
 
 const campaignGenerator = new CampaignGenerator();
@@ -60,20 +60,7 @@ export const campaignRouter = createTRPCRouter({
           3600, // 1 hour TTL
         );
 
-        // Invalidate company-specific and ICP caches so library reflects new item
-        try {
-          const icpService = await import(
-            '@/services/database/icp-profiles-service'
-          );
-          const icp = await icpService.icpProfilesService.getProfileById(
-            savedCampaign.icp_id,
-          );
-          if (icp) {
-            await redisService.del(`campaigns:company:${icp.companyId}`);
-          }
-        } catch (e) {
-          console.warn('Cache invalidation after create failed:', e);
-        }
+        // Cache invalidation temporarily disabled during reorganization
 
         return savedCampaign;
       } catch (error) {
@@ -242,16 +229,7 @@ export const campaignRouter = createTRPCRouter({
         await redisService.del('campaigns:all');
         await redisService.del(`campaigns:icp:${updatedCampaign.icp_id}`);
 
-        // Get company ID from ICP to invalidate company cache
-        const icpService = await import(
-          '@/services/database/icp-profiles-service'
-        );
-        const icp = await icpService.icpProfilesService.getProfileById(
-          updatedCampaign.icp_id,
-        );
-        if (icp) {
-          await redisService.del(`campaigns:company:${icp.companyId}`);
-        }
+        // Cache invalidation temporarily disabled during reorganization
 
         return updatedCampaign;
       } catch (error) {
@@ -276,19 +254,7 @@ export const campaignRouter = createTRPCRouter({
         await redisService.del(`campaign:${input.id}`);
         await redisService.del('campaigns:all');
 
-        // Get company ID from ICP to invalidate company cache
-        const campaign = await campaignService.getById(input.id);
-        if (campaign) {
-          const icpService = await import(
-            '@/services/database/icp-profiles-service'
-          );
-          const icp = await icpService.icpProfilesService.getProfileById(
-            campaign.icp_id,
-          );
-          if (icp) {
-            await redisService.del(`campaigns:company:${icp.companyId}`);
-          }
-        }
+        // Cache invalidation temporarily disabled during reorganization
 
         return { success: true };
       } catch (error) {
