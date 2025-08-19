@@ -7,11 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bot, Plus } from 'lucide-react';
+import { Bot, Plus, Target } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { CompanySelector } from '@/components/ui/company-selector';
 import { CampaignForm, type CampaignFormData } from './CampaignForm';
 import { CampaignDisplay } from './CampaignDisplay';
+import { CampaignLibrary } from './CampaignLibrary';
 import type { StoredCampaign } from '@/services/database/campaign-service';
 import type { OwnCompany } from '@/services/project';
 
@@ -27,6 +28,7 @@ export function CampaignDesigner({
   const [generatedCampaign, setGeneratedCampaign] =
     useState<StoredCampaign | null>(null);
   const [showForm, setShowForm] = useState(true);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
   const [companyName, setCompanyName] = useState<string>('');
 
@@ -36,7 +38,6 @@ export function CampaignDesigner({
     { companyId },
     { enabled: !!companyId },
   );
-  const campaignsQuery = trpc.campaign.getAll.useQuery();
 
   const generateCampaignMutation = trpc.campaign.generate.useMutation();
   const updateCampaignMutation = trpc.campaign.update.useMutation();
@@ -65,9 +66,7 @@ export function CampaignDesigner({
       const campaign = await generateCampaignMutation.mutateAsync(formData);
       setGeneratedCampaign(campaign);
       setShowForm(false);
-
-      // Refresh campaigns list
-      await campaignsQuery.refetch();
+      setShowLibrary(false);
     } catch (error) {
       console.error('Error generating campaign:', error);
       alert('Failed to generate campaign. Please try again.');
@@ -77,6 +76,7 @@ export function CampaignDesigner({
   const handleEditCampaign = (campaign: StoredCampaign) => {
     setGeneratedCampaign(campaign);
     setShowForm(false);
+    setShowLibrary(false);
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
@@ -87,10 +87,8 @@ export function CampaignDesigner({
         if (generatedCampaign?.id === campaignId) {
           setGeneratedCampaign(null);
           setShowForm(true);
+          setShowLibrary(false);
         }
-
-        // Refresh campaigns list
-        await campaignsQuery.refetch();
       } catch (error) {
         console.error('Error deleting campaign:', error);
         alert('Failed to delete campaign. Please try again.');
@@ -111,10 +109,28 @@ export function CampaignDesigner({
     }
   };
 
+  const handleViewCampaign = (campaign: StoredCampaign) => {
+    setGeneratedCampaign(campaign);
+    setShowForm(false);
+    setShowLibrary(false);
+  };
+
+  const handleShowLibrary = () => {
+    setShowLibrary(true);
+    setShowForm(false);
+    setGeneratedCampaign(null);
+  };
+
+  const handleShowForm = () => {
+    setShowForm(true);
+    setShowLibrary(false);
+    setGeneratedCampaign(null);
+  };
+
   const isLoading =
-    generateCampaignMutation.isLoading ||
-    updateCampaignMutation.isLoading ||
-    deleteCampaignMutation.isLoading;
+    generateCampaignMutation.isPending ||
+    updateCampaignMutation.isPending ||
+    deleteCampaignMutation.isPending;
 
   const icpOptions =
     icpListQuery.data?.map((icp) => ({
@@ -125,7 +141,7 @@ export function CampaignDesigner({
   return (
     <div className='space-y-6'>
       {/* Header */}
-      <Card className='max-w-4xl mx-auto'>
+      <Card className='max-w-4xl mx-auto mb-6'>
         <CardHeader className='flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between'>
           <div>
             <CardTitle className='flex items-center gap-2'>
@@ -153,14 +169,25 @@ export function CampaignDesigner({
               className='min-w-[260px]'
               hideLoadingSpinner={true}
             />
-            <Button
-              size='sm'
-              className='flex items-center gap-2'
-              onClick={() => setShowForm(true)}
-              disabled={!companyId}>
-              <Plus className='h-4 w-4' />
-              New Campaign
-            </Button>
+            <div className='flex gap-2'>
+              <Button
+                size='sm'
+                variant='outline'
+                className='flex items-center gap-2'
+                onClick={handleShowLibrary}
+                disabled={!companyId}>
+                <Target className='h-4 w-4' />
+                View Campaigns
+              </Button>
+              <Button
+                size='sm'
+                className='flex items-center gap-2'
+                onClick={handleShowForm}
+                disabled={!companyId}>
+                <Plus className='h-4 w-4' />
+                New Campaign
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -198,8 +225,19 @@ export function CampaignDesigner({
         </Card>
       )}
 
+      {/* Campaign Library */}
+      {showLibrary && companyId && (
+        <CampaignLibrary
+          companyId={companyId}
+          companyName={companyName}
+          onEditCampaign={handleEditCampaign}
+          onDeleteCampaign={handleDeleteCampaign}
+          onViewCampaign={handleViewCampaign}
+        />
+      )}
+
       {/* Generated Campaign Display */}
-      {generatedCampaign && !showForm && (
+      {generatedCampaign && !showForm && !showLibrary && (
         <div className='max-w-4xl mx-auto'>
           <CampaignDisplay
             campaign={generatedCampaign}
@@ -208,42 +246,6 @@ export function CampaignDesigner({
             onSave={handleSaveCampaign}
           />
         </div>
-      )}
-
-      {/* Existing Campaigns */}
-      {companyId && campaignsQuery.data && campaignsQuery.data.length > 0 && (
-        <Card className='max-w-4xl mx-auto'>
-          <CardHeader>
-            <CardTitle>Your Campaigns</CardTitle>
-            <CardDescription>
-              Previously generated campaigns for {companyName}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            {campaignsQuery.data.map((campaign) => (
-              <CampaignDisplay
-                key={campaign.id}
-                campaign={campaign}
-                onEdit={handleEditCampaign}
-                onDelete={handleDeleteCampaign}
-                onSave={handleSaveCampaign}
-              />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No Campaigns Message */}
-      {companyId && campaignsQuery.data && campaignsQuery.data.length === 0 && (
-        <Card className='max-w-4xl mx-auto'>
-          <CardHeader>
-            <CardTitle>No Campaigns Yet</CardTitle>
-            <CardDescription>
-              You haven't generated any campaigns for {companyName} yet. Create
-              your first campaign above.
-            </CardDescription>
-          </CardHeader>
-        </Card>
       )}
     </div>
   );
