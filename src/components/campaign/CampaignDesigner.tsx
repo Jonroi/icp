@@ -7,14 +7,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bot, Plus, Target } from 'lucide-react';
+import { Bot, Plus } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { CompanySelector } from '@/components/ui/company-selector';
 import { CampaignForm, type CampaignFormData } from './CampaignForm';
 import { CampaignDisplay } from './CampaignDisplay';
-import { CampaignLibrary } from './CampaignLibrary';
 import type { StoredCampaign } from '@/services/database/campaign-service';
-import type { OwnCompany } from '@/services/project';
 
 interface CampaignDesignerProps {
   activeCompanyId?: string;
@@ -28,7 +25,6 @@ export function CampaignDesigner({
   const [generatedCampaign, setGeneratedCampaign] =
     useState<StoredCampaign | null>(null);
   const [showForm, setShowForm] = useState(true);
-  const [showLibrary, setShowLibrary] = useState(false);
   const [companyId, setCompanyId] = useState<string>(activeCompanyId || '');
   const [companyName, setCompanyName] = useState<string>('');
 
@@ -66,7 +62,6 @@ export function CampaignDesigner({
       const campaign = await generateCampaignMutation.mutateAsync(formData);
       setGeneratedCampaign(campaign);
       setShowForm(false);
-      setShowLibrary(false);
     } catch (error) {
       console.error('Error generating campaign:', error);
       alert('Failed to generate campaign. Please try again.');
@@ -76,7 +71,6 @@ export function CampaignDesigner({
   const handleEditCampaign = (campaign: StoredCampaign) => {
     setGeneratedCampaign(campaign);
     setShowForm(false);
-    setShowLibrary(false);
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
@@ -87,7 +81,6 @@ export function CampaignDesigner({
         if (generatedCampaign?.id === campaignId) {
           setGeneratedCampaign(null);
           setShowForm(true);
-          setShowLibrary(false);
         }
       } catch (error) {
         console.error('Error deleting campaign:', error);
@@ -109,21 +102,8 @@ export function CampaignDesigner({
     }
   };
 
-  const handleViewCampaign = (campaign: StoredCampaign) => {
-    setGeneratedCampaign(campaign);
-    setShowForm(false);
-    setShowLibrary(false);
-  };
-
-  const handleShowLibrary = () => {
-    setShowLibrary(true);
-    setShowForm(false);
-    setGeneratedCampaign(null);
-  };
-
   const handleShowForm = () => {
     setShowForm(true);
-    setShowLibrary(false);
     setGeneratedCampaign(null);
   };
 
@@ -152,42 +132,15 @@ export function CampaignDesigner({
               Generate a full campaign based on your ICP.
             </CardDescription>
           </div>
-          <div className='flex flex-col space-y-3 sm:flex-row sm:items-end sm:space-y-0 sm:gap-2'>
-            <CompanySelector
-              value={companyName}
-              onChange={() => {}}
-              onCompanySelect={(c: OwnCompany) => {
-                setCompanyName(c?.name || '');
-              }}
-              onCompanyIdSelected={(id) => {
-                setCompanyId(id);
-                onCompanyIdChange?.(id);
-              }}
-              selectedCompanyId={companyId}
-              allowCreate={false}
-              allowDelete={false}
-              className='min-w-[260px]'
-              hideLoadingSpinner={true}
-            />
-            <div className='flex gap-2'>
-              <Button
-                size='sm'
-                variant='outline'
-                className='flex items-center gap-2'
-                onClick={handleShowLibrary}
-                disabled={!companyId}>
-                <Target className='h-4 w-4' />
-                View Campaigns
-              </Button>
-              <Button
-                size='sm'
-                className='flex items-center gap-2'
-                onClick={handleShowForm}
-                disabled={!companyId}>
-                <Plus className='h-4 w-4' />
-                New Campaign
-              </Button>
-            </div>
+          <div className='flex gap-2'>
+            <Button
+              size='sm'
+              className='flex items-center gap-2'
+              onClick={handleShowForm}
+              disabled={!companyId}>
+              <Plus className='h-4 w-4' />
+              New Campaign
+            </Button>
           </div>
         </CardHeader>
       </Card>
@@ -218,26 +171,15 @@ export function CampaignDesigner({
           <CardHeader>
             <CardTitle>Select a Company</CardTitle>
             <CardDescription>
-              Please select a company from the dropdown above to start
-              generating campaigns.
+              Please select a company from the header above to start generating
+              campaigns.
             </CardDescription>
           </CardHeader>
         </Card>
       )}
 
-      {/* Campaign Library */}
-      {showLibrary && companyId && (
-        <CampaignLibrary
-          companyId={companyId}
-          companyName={companyName}
-          onEditCampaign={handleEditCampaign}
-          onDeleteCampaign={handleDeleteCampaign}
-          onViewCampaign={handleViewCampaign}
-        />
-      )}
-
       {/* Generated Campaign Display */}
-      {generatedCampaign && !showForm && !showLibrary && (
+      {generatedCampaign && !showForm && (
         <div className='max-w-4xl mx-auto'>
           <CampaignDisplay
             campaign={generatedCampaign}
